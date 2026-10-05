@@ -1,4 +1,5 @@
 import { Note } from '@/components/Note';
+import { Quote } from '@/components/Quote';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,7 +17,9 @@ export default function IndexScreen() {
           </View>
 
           {/* Right Column */}
-          <View className="flex-1 gap-4"></View>
+          <View className="flex-1 gap-4">
+            <Quote text="Alguns vivem como se nunca fossem viver, outros morrem como se nunca tivessem vivido. Eu não vivo em vão, eu vivo pra ser feliz, eu não vivo pra ser normal. Sou Charlie Brown, mané!" />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
