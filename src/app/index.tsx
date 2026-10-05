@@ -46,7 +46,7 @@ export default function IndexScreen() {
               favicon="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAgVBMVEX99/H9+/X9//n+t7D+p5//ZVr/dGr/gHb+u7T/eW//bWL/RDb/YFX+rKT/hHv+yMH/U0b/KRP/npb+zsf95d/+2NH/lo3/Sz398ev+1s//i4L+sqv/GAD/OCf/WE3/AAD+wLn/nJT+o5v97ef94dv/XFD+z8j9//r+qqL/kIf/cGXuJnjqAAABiElEQVR4AWKgCgDURV8JsENQAEBdkSITZARRpiBS97+/13v5ddwOgDGG/1hF6qbt8L8M0/42AOPVPxTEKO5STGrU8HegmYl1hnnp/w6F8Oj4bB7Nff47EtnbTddqnJ+vfyBMhlis72/2D0S2nyNA+s8sjOhKZQV/AVosVrcIWJY/EEA2A18/v6u0we+m+wSxaIIRxIXvvxW1FFuLsR40AsCOSgs/onFaCmDmjuJzYnpHfevzN4VyJrZH5oSJLG4ihKSCoACfw3caqdqqneVCVypTiOLU9oz6kGhhYw6mJoZukrcm69dpLoXZ6AFQq1nkG+1dk6fDp069WulvRa5j45BNW2RFNFzsn+8V7TVTRmeWae4RiWInXTXEfZqOMwXNWz9oKRDqCNrSjqNIK0amUyI4zpJsO7JjlwkKCoWuf5KdlbBM25TMJht2guDHgYwNdnm+8kJONzmRgZez1VcJzAWkNVqOntJKBkuhCjZUlT8Gn0PACIppTn6jfJIq4ur0Vx0vUlPSbeUjpuEjyNkvA9UAAAAASUVORK5CYII="
               siteTitle="Arts & Letters Daily"
               description="Philosophy, literature, ideas, criticism, history, art, music from The Chronicle of Higher Education."
-              url="aldaily.com"
+              url="https://www.aldaily.com/articles-of-note/"
             />
           </View>
         </View>

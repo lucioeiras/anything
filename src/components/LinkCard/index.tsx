@@ -14,6 +14,22 @@ type LinkCardProps = {
 };
 
 export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCardProps) => {
+  const getShortUrl = (urlStr: string) => {
+    try {
+      const parsed = new URL(urlStr);
+
+      let hostname = parsed.hostname;
+
+      if (hostname.startsWith('www.')) {
+        hostname = hostname.substring(4);
+      }
+
+      return hostname;
+    } catch {
+      return urlStr;
+    }
+  };
+
   return (
     <View className="items-center gap-2">
       <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
@@ -31,7 +47,9 @@ export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCa
 
         <View className="flex-row items-center gap-1 mt-2">
           <LinkIcon size={14} color="#71717B" />
-          <Text className="font-sans text-sm text-zinc-500">{url}</Text>
+          <Text className="font-sans text-sm text-zinc-500" numberOfLines={1}>
+            {getShortUrl(url)}
+          </Text>
         </View>
       </View>
 
