@@ -14,9 +14,11 @@ export const NoteCard = ({ text, title }: NoteProps) => {
         </Text>
       </View>
 
-      <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
-        {title}
-      </Text>
+      {title && (
+        <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
+          {title}
+        </Text>
+      )}
     </View>
   );
 };

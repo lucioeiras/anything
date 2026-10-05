@@ -26,9 +26,11 @@ export const ImageCard = ({ url, title }: NoteProps) => {
         }}
       />
 
-      <Text className="font-sans-medium text-center text-xs text-zinc-200 mb-2" numberOfLines={1}>
-        {title}
-      </Text>
+      {title && (
+        <Text className="font-sans-medium text-center text-xs text-zinc-200 mb-2" numberOfLines={1}>
+          {title}
+        </Text>
+      )}
     </View>
   );
 };

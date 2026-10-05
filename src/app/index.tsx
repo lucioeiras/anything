@@ -1,6 +1,7 @@
 import { ImageCard } from '@/components/ImageCard';
 import { NoteCard } from '@/components/NoteCard';
 import { QuoteCard } from '@/components/QuoteCard';
+import { TweetCard } from '@/components/TweetCard';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,6 +26,12 @@ export default function IndexScreen() {
           {/* Right Column */}
           <View className="flex-1 gap-4">
             <QuoteCard text="Alguns vivem como se nunca fossem viver, outros morrem como se nunca tivessem vivido. Eu não vivo em vão, eu vivo pra ser feliz, eu não vivo pra ser normal. Sou Charlie Brown, mané!" />
+            <TweetCard
+              avatar="https://pbs.twimg.com/profile_images/2096296808729186306/YPFTW33c_400x400.jpg"
+              author="nostalgia & history"
+              text="tobacco company ceo’s declaring, under oath, that nicotine isn't addictive (1994)"
+              image="https://pbs.twimg.com/media/HTot854XIAAUCVF?format=jpg&name=small"
+            />
           </View>
         </View>
       </ScrollView>
