@@ -8,7 +8,7 @@ type QuoteProps = {
   title?: string;
 };
 
-export const Quote = ({ text, title }: QuoteProps) => {
+export const QuoteCard = ({ text, title }: QuoteProps) => {
   return (
     <View className="items-center gap-2">
       <View className="w-full bg-zinc-900 p-6 rounded-xl items-center gap-3">
@@ -21,7 +21,7 @@ export const Quote = ({ text, title }: QuoteProps) => {
         <QuoteClose />
       </View>
 
-      <Text className="font-sans-medium text-xs text-zinc-200" numberOfLines={1}>
+      <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
         {title}
       </Text>
     </View>

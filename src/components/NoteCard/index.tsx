@@ -5,7 +5,7 @@ type NoteProps = {
   title?: string;
 };
 
-export const Note = ({ text, title }: NoteProps) => {
+export const NoteCard = ({ text, title }: NoteProps) => {
   return (
     <View className="items-center gap-2">
       <View className="w-full bg-zinc-900 p-4 rounded-xl">
@@ -14,7 +14,7 @@ export const Note = ({ text, title }: NoteProps) => {
         </Text>
       </View>
 
-      <Text className="font-sans-medium text-xs text-zinc-200" numberOfLines={1}>
+      <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
         {title}
       </Text>
     </View>
