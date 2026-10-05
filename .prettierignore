@@ -1,0 +1,10 @@
+.expo/
+node_modules/
+bun.lock
+bun.lockb
+assets/
+dist/
+*.png
+*.jpg
+*.jpeg
+*.svg
