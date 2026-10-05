@@ -30,7 +30,7 @@ export default function IndexScreen() {
               avatar="https://pbs.twimg.com/profile_images/2096296808729186306/YPFTW33c_400x400.jpg"
               author="nostalgia & history"
               text="tobacco company ceo’s declaring, under oath, that nicotine isn't addictive (1994)"
-              image="https://pbs.twimg.com/media/HTot854XIAAUCVF?format=jpg&name=small"
+              images={['https://pbs.twimg.com/media/HTot854XIAAUCVF?format=jpg&name=small']}
             />
           </View>
         </View>

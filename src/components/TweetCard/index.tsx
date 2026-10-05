@@ -1,24 +1,27 @@
-import { Image } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import { TwitterLogoIcon } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { cssInterop } from 'nativewind';
+
+cssInterop(ExpoImage, { className: 'style' });
 
 type TweetProps = {
   avatar: string;
   author: string;
   text: string;
-  image?: string;
+  images?: string[];
   title?: string;
 };
 
-export const TweetCard = ({ avatar, author, text, image, title }: TweetProps) => {
-  const [aspectRatio, setAspectRatio] = useState(1); // Default to a square until loaded
+export const TweetCard = ({ avatar, author, text, images = [], title }: TweetProps) => {
+  const [aspectRatio, setAspectRatio] = useState(1);
 
   return (
     <View className="items-center gap-2">
       <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
         <View className="flex-row items-center gap-3">
-          <Image source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
+          <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
           <Text className="font-sans-medium text-sm text-zinc-100">{author}</Text>
         </View>
 
@@ -26,9 +29,9 @@ export const TweetCard = ({ avatar, author, text, image, title }: TweetProps) =>
           {text}
         </Text>
 
-        {image && (
-          <Image
-            source={{ uri: image }}
+        {images.length === 1 && (
+          <ExpoImage
+            source={{ uri: images[0] }}
             className="w-full rounded-lg"
             style={{ aspectRatio }}
             onLoad={(e) => {
@@ -37,6 +40,23 @@ export const TweetCard = ({ avatar, author, text, image, title }: TweetProps) =>
               }
             }}
           />
+        )}
+
+        {images.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="-mx-4"
+            contentContainerClassName="px-4 gap-2">
+            {images.slice(0, 4).map((img, index) => (
+              <ExpoImage
+                key={index}
+                source={{ uri: img }}
+                className="w-36 h-32 rounded-lg bg-zinc-800"
+                contentFit="cover"
+              />
+            ))}
+          </ScrollView>
         )}
 
         <View className="flex-row items-center gap-1 mt-2">
