@@ -14,6 +14,14 @@ import '@/global.css';
 
 SplashScreen.preventAutoHideAsync();
 
+const CustomDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#09090b', // tailwind zinc-950
+  },
+};
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     InstrumentSans_400Regular,
@@ -35,7 +43,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={DarkTheme}>
+    <ThemeProvider value={CustomDarkTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack>

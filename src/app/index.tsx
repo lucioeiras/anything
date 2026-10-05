@@ -1,20 +1,24 @@
-import { Text, View } from 'react-native';
+import { Note } from '@/components/Note';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Rocket, ShootingStar, Planet } from 'phosphor-react-native';
 
 export default function IndexScreen() {
   return (
-    <SafeAreaView className="flex-1 items-center justify-center bg-black p-6">
-      <View className="flex-row gap-4 mb-8">
-        <Planet color="#fff" size={48} weight="duotone" />
-        <Rocket color="#fff" size={48} weight="fill" />
-        <ShootingStar color="#fff" size={48} weight="light" />
-      </View>
+    <SafeAreaView className="flex-1 bg-zinc-950">
+      <ScrollView contentContainerClassName="p-4" showsVerticalScrollIndicator={false}>
+        <View className="flex-row items-start gap-4">
+          {/* Left Column */}
+          <View className="flex-1 gap-4">
+            <Note
+              text="Lorem ipsum dolor sit amet consectetur. Nisl interdum in dictumst quis id eu tincidunt. Aliquet dui lacus risus vel quis at morbi. Eget sed arcu a nulla purus. Erat elementum diam tempus lacus pharetra."
+              title="Sample Note"
+            />
+          </View>
 
-      <Text className="text-white text-3xl font-sans mb-4">Instrument Sans</Text>
-      <Text className="text-white text-2xl font-sans-medium mb-4">Medium Weight</Text>
-      <Text className="text-white text-2xl font-sans-bold mb-4">Bold Weight</Text>
-      <Text className="text-white text-2xl font-serif-italic">Instrument Serif Italic</Text>
+          {/* Right Column */}
+          <View className="flex-1 gap-4"></View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
