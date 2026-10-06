@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import QuoteClose from '../../../assets/quote-close.svg';
-import QuoteOpen from '../../../assets/quote-open.svg';
+import QuoteClose from '../../assets/quote-close.svg';
+import QuoteOpen from '../../assets/quote-open.svg';
 
 type QuoteProps = {
   text: string;
