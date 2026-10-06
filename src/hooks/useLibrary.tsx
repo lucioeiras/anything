@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import {
+  addImageToLibrary,
   getFolderDisplayName,
   getLibraryDirectory,
   getRecentFolders,
@@ -14,8 +15,10 @@ import {
   saveRecentFolder,
   type LibrarySource,
   type LoadResult,
+  type PickedImageAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
+import type { ImageItem } from '@/lib/library/types';
 
 export type LibraryState =
   | { status: 'loading' }
@@ -33,6 +36,7 @@ export type LibraryContextValue = {
   selectFolder: (source: LibrarySource) => Promise<void>;
   pickAndOpenFolder: () => Promise<boolean>;
   removeRecentFolder: (id: string) => Promise<void>;
+  addImage: (asset: PickedImageAsset) => Promise<ImageItem>;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -180,6 +184,19 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   const currentFolderName = getFolderDisplayName(activeSource);
 
+  const addImage = useCallback(
+    async (asset: PickedImageAsset) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addImageToLibrary(targetSource, asset);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -191,6 +208,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     selectFolder,
     pickAndOpenFolder,
     removeRecentFolder,
+    addImage,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

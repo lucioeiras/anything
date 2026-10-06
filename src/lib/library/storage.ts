@@ -2,7 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
-import { IMAGES_DIR, type ImageRef, type LibraryItem } from './types';
+import {
+  IMAGES_DIR,
+  SCHEMA_VERSION,
+  type ImageItem,
+  type ImageRef,
+  type LibraryItem,
+} from './types';
 
 // The native module won't exist if running in Expo Go.
 let AnythingLibraryAccess: {
@@ -283,6 +289,105 @@ function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
 
 export function getImagesDirectory(source: LibrarySource): Directory {
   return new Directory(getLibraryDirectory(source), IMAGES_DIR);
+}
+
+export function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
+export type PickedImageAsset = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+};
+
+/**
+ * Copies a picked image into the library's `images/` folder and writes the
+ * corresponding `<id>.json` metadata file to the root of the library.
+ */
+export async function addImageToLibrary(
+  source: LibrarySource,
+  asset: PickedImageAsset
+): Promise<ImageItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const imagesDir = getImagesDirectory(source);
+  if (!imagesDir.exists) {
+    imagesDir.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+
+  // Determine file extension
+  let ext = 'jpg';
+  if (asset.fileName && asset.fileName.includes('.')) {
+    const parts = asset.fileName.split('.');
+    const potentialExt = parts[parts.length - 1].toLowerCase();
+    if (potentialExt && potentialExt.length <= 5 && /^[a-z0-9]+$/.test(potentialExt)) {
+      ext = potentialExt;
+    }
+  } else if (asset.mimeType) {
+    const mimeMap: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/heic': 'heic',
+      'image/heif': 'heif',
+      'image/svg+xml': 'svg',
+    };
+    if (mimeMap[asset.mimeType]) {
+      ext = mimeMap[asset.mimeType];
+    }
+  } else if (asset.uri.includes('.')) {
+    const cleanUri = asset.uri.split('?')[0];
+    const parts = cleanUri.split('.');
+    const potentialExt = parts[parts.length - 1].toLowerCase();
+    if (potentialExt && potentialExt.length <= 5 && /^[a-z0-9]+$/.test(potentialExt)) {
+      ext = potentialExt;
+    }
+  }
+
+  const imageFileName = `${id}.${ext}`;
+  const relativeImagePath = `${IMAGES_DIR}/${imageFileName}`;
+
+  const sourceFile = new File(asset.uri);
+  const targetImageFile = new File(imagesDir, imageFileName);
+
+  try {
+    await sourceFile.copy(targetImageFile, { overwrite: true });
+  } catch (copyError) {
+    console.warn('sourceFile.copy failed, using arrayBuffer copy fallback', copyError);
+    const buffer = await sourceFile.arrayBuffer();
+    if (!targetImageFile.exists) {
+      targetImageFile.create({ intermediates: true, overwrite: true });
+    }
+    targetImageFile.write(new Uint8Array(buffer));
+  }
+
+  const now = new Date().toISOString();
+  const item: ImageItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'image',
+    image: relativeImagePath,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  jsonFile.write(JSON.stringify(item, null, 2));
+
+  return item;
 }
 
 function errorMessage(error: unknown): string {

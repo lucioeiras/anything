@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   BookIcon,
   ImageSquareIcon,
@@ -5,10 +7,48 @@ import {
   NotePencilIcon,
   PlusCircleIcon,
 } from 'phosphor-react-native';
-import { Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useLibrary } from '@/hooks/useLibrary';
+
 export default function AddElementScreen() {
+  const { addImage } = useLibrary();
+  const [saving, setSaving] = useState(false);
+
+  const handlePickImage = async () => {
+    if (saving) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      setSaving(true);
+      const asset = result.assets[0];
+
+      await addImage({
+        uri: asset.uri,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
+
+      router.replace('/board');
+    } catch (e) {
+      console.error('Failed to add image:', e);
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to add image');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView
       className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-40"
@@ -56,11 +96,18 @@ export default function AddElementScreen() {
           </Pressable>
 
           <Pressable
-            // onPress={changeFolder}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl"
+            onPress={handlePickImage}
+            disabled={saving}
+            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl active:opacity-70"
           >
-            <ImageSquareIcon size={20} color="#fff" />
-            <Text className="font-sans-semibold text-lg text-white">Image from gallery</Text>
+            {saving ? (
+              <ActivityIndicator size={20} color="#fff" />
+            ) : (
+              <ImageSquareIcon size={20} color="#fff" />
+            )}
+            <Text className="font-sans-semibold text-lg text-white">
+              {saving ? 'Adding image…' : 'Image from gallery'}
+            </Text>
           </Pressable>
         </View>
       </View>
