@@ -21,7 +21,8 @@ export const ImageCard = ({ url, title }: NoteProps) => {
         style={{ aspectRatio }}
         onLoad={(e) => {
           if (e.source.width && e.source.height) {
-            setAspectRatio(e.source.width / e.source.height);
+            const ratio = e.source.width / e.source.height;
+            setTimeout(() => setAspectRatio(ratio), 0);
           }
         }}
       />

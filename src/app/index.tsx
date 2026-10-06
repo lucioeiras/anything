@@ -5,6 +5,7 @@ import { NoteCard } from '@/components/NoteCard';
 import { QuoteCard } from '@/components/QuoteCard';
 import { RedditCard } from '@/components/RedditCard';
 import { TweetCard } from '@/components/TweetCard';
+import { YouTubeCard } from '@/components/YouTubeCard';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -36,6 +37,11 @@ export default function IndexScreen() {
 
           {/* Right Column */}
           <View className="flex-1 gap-4">
+            <YouTubeCard
+              videoTitle="How To Start A Million Subscriber YouTube Channel"
+              thumbnail="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3FnnuPSl4ZcuO7dBiY__5I1Zag9De0fII46_z1IDRJg&s"
+              title="Sample YouTube Video"
+            />
             <ArticleCard
               articleTitle="The surprisingly undisciplined trick to escape social media"
               thumbnail="https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=32%2032w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=48%2048w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=64%2064w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=96%2096w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=128%20128w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=256%20256w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=376%20376w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=384%20384w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=415%20415w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=480%20480w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=540%20540w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=640%20640w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=750%20750w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=828%20828w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1080%201080w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1200%201200w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1440%201440w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1920%201920w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=2048%202048w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=2400%202400w"

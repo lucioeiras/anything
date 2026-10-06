@@ -40,7 +40,8 @@ export const RedditCard = ({
             style={{ aspectRatio }}
             onLoad={(e) => {
               if (e.source.width && e.source.height) {
-                setAspectRatio(e.source.width / e.source.height);
+                const ratio = e.source.width / e.source.height;
+                setTimeout(() => setAspectRatio(ratio), 0);
               }
             }}
           />
@@ -54,7 +55,7 @@ export const RedditCard = ({
 
         <View className="flex-row items-center gap-1 mt-1">
           <RedditLogoIcon size={14} color="#71717B" weight="fill" />
-          <Text className="font-sans text-sm text-zinc-500">Reddit</Text>
+          <Text className="font-sans-semibold text-sm text-zinc-500">Reddit</Text>
         </View>
       </View>
     </View>
