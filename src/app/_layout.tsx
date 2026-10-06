@@ -42,7 +42,7 @@ function RootNavigator() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="board" />
+      <Stack.Screen name="(tabs)" />
     </Stack>
   );
 }

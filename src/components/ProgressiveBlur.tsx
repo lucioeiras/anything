@@ -13,7 +13,7 @@ type ProgressiveBlurProps = {
   height?: number;
   /**
    * Blur intensity (1 to 100).
-   * @default 80
+   * @default 100
    */
   intensity?: number;
   /**
@@ -21,17 +21,31 @@ type ProgressiveBlurProps = {
    * @default 'dark'
    */
   tint?: BlurTint;
+  /**
+   * Maximum opacity of the soft dark gradient layer at the bottom (0 to 1).
+   * Increases contrast and readability of tab bar items over bright content.
+   * @default 0.85
+   */
+  darkLayerOpacity?: number;
+  /**
+   * Whether to add safe area bottom inset to the height.
+   * @default true
+   */
+  includeBottomInset?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 export function ProgressiveBlur({
   height = 160,
-  intensity = 80,
+  intensity = 100,
   tint = 'dark',
+  darkLayerOpacity = 0.85,
+  includeBottomInset = true,
   style,
 }: ProgressiveBlurProps): ReactElement {
   const insets = useSafeAreaInsets();
-  const totalHeight = height + insets.bottom;
+  const totalHeight = height + (includeBottomInset ? insets.bottom : 0);
+  const maxDarkOpacity = Math.min(Math.max(darkLayerOpacity, 0), 1);
 
   return (
     <View
@@ -58,6 +72,20 @@ export function ProgressiveBlur({
       >
         <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
       </MaskedView>
+
+      {maxDarkOpacity > 0 && (
+        <LinearGradient
+          colors={[
+            'rgba(9, 9, 11, 0)',
+            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.2).toFixed(3)})`,
+            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.5).toFixed(3)})`,
+            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.8).toFixed(3)})`,
+            `rgba(9, 9, 11, ${maxDarkOpacity.toFixed(3)})`,
+          ]}
+          locations={[0, 0.35, 0.65, 0.85, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
     </View>
   );
 }

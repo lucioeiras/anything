@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { FoldersIcon, WarningIcon } from 'phosphor-react-native';
+import { WarningIcon } from 'phosphor-react-native';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ItemCard } from '@/components/ItemCard';
@@ -41,24 +41,12 @@ export default function BoardScreen() {
       {state.status === 'ready' && (
         <>
           <ScrollView
-            contentContainerClassName="px-3 pb-16 grow pt-16"
+            contentContainerClassName="px-3 pb-48 grow pt-20"
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
             }
           >
-            {/* Header */}
-            <View className="flex-row items-center justify-end mb-5">
-              <Pressable
-                onPress={goBack}
-                hitSlop={8}
-                className="p-3 border border-zinc-700 rounded-full active:opacity-70"
-                accessibilityLabel="Switch folder"
-              >
-                <FoldersIcon size={20} color="#D4D4D8" />
-              </Pressable>
-            </View>
-
             {state.result.issues.length > 0 && (
               <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
                 <WarningIcon size={16} color="#fbbf24" weight="fill" />

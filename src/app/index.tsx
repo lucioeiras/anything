@@ -24,6 +24,7 @@ export default function FolderSelectScreen() {
     shouldAutoOpenBoard,
     consumeAutoOpen,
   } = useLibrary();
+
   const [opening, setOpening] = useState(false);
 
   useEffect(() => {
