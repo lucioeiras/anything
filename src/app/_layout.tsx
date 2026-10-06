@@ -1,16 +1,18 @@
-import { DarkTheme, ThemeProvider, Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { useFonts } from 'expo-font';
 import {
   InstrumentSans_400Regular,
+  InstrumentSans_400Regular_Italic,
   InstrumentSans_500Medium,
   InstrumentSans_600SemiBold,
   InstrumentSans_700Bold,
-  InstrumentSans_400Regular_Italic,
 } from '@expo-google-fonts/instrument-sans';
 import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
+import { useFonts } from 'expo-font';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+
 import '@/global.css';
+import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,6 +24,29 @@ const CustomDarkTheme = {
   },
 };
 
+function RootNavigator() {
+  const { isInitialized } = useLibrary();
+
+  useEffect(() => {
+    if (isInitialized) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isInitialized]);
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#09090b' },
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="board" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     InstrumentSans_400Regular,
@@ -32,21 +57,15 @@ export default function RootLayout() {
     InstrumentSerif_400Regular_Italic,
   });
 
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
-
   if (!loaded && !error) {
     return null;
   }
 
   return (
     <ThemeProvider value={CustomDarkTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-      </Stack>
+      <LibraryProvider>
+        <RootNavigator />
+      </LibraryProvider>
     </ThemeProvider>
   );
 }

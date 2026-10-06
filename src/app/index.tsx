@@ -1,64 +1,194 @@
-import { ArticleCard } from '@/components/ArticleCard';
-import { ImageCard } from '@/components/ImageCard';
-import { LinkCard } from '@/components/LinkCard';
-import { NoteCard } from '@/components/NoteCard';
-import { QuoteCard } from '@/components/QuoteCard';
-import { RedditCard } from '@/components/RedditCard';
-import { TweetCard } from '@/components/TweetCard';
-import { YouTubeCard } from '@/components/YouTubeCard';
-import { ScrollView, View } from 'react-native';
+import { router } from 'expo-router';
+import {
+  CaretRightIcon,
+  CloudIcon,
+  DeviceMobileIcon,
+  FolderPlusIcon,
+  TrashSimpleIcon,
+} from 'phosphor-react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function IndexScreen() {
+import { useLibrary } from '@/hooks/useLibrary';
+import type { LibrarySource, SavedFolder } from '@/lib/library/storage';
+
+export default function FolderSelectScreen() {
+  const {
+    source,
+    selectFolder,
+    pickAndOpenFolder,
+    recentFolders,
+    removeRecentFolder,
+    isInitialized,
+    shouldAutoOpenBoard,
+    consumeAutoOpen,
+  } = useLibrary();
+  const [opening, setOpening] = useState(false);
+
+  useEffect(() => {
+    if (isInitialized && shouldAutoOpenBoard) {
+      consumeAutoOpen();
+      router.replace('/board');
+    }
+  }, [isInitialized, shouldAutoOpenBoard, consumeAutoOpen]);
+
+  if (!isInitialized || shouldAutoOpenBoard) {
+    return (
+      <View className="flex-1 bg-zinc-950 items-center justify-center">
+        <ActivityIndicator color="#71717a" />
+      </View>
+    );
+  }
+
+  const handlePickFolder = async () => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const selected = await pickAndOpenFolder();
+      if (selected) {
+        router.push('/board');
+      }
+    } catch (e) {
+      Alert.alert('Error opening folder', e instanceof Error ? e.message : String(e));
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  const handleSelectFolder = async (targetSource: LibrarySource) => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      await selectFolder(targetSource);
+      router.push('/board');
+    } catch (e) {
+      Alert.alert('Error opening folder', e instanceof Error ? e.message : String(e));
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  const handleRemoveFolder = (folder: SavedFolder) => {
+    Alert.alert(
+      'Remove folder',
+      `Remove "${folder.name}" from recent folders? Your actual files will not be deleted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => removeRecentFolder(folder.id),
+        },
+      ]
+    );
+  };
+
+  const isCurrentSource = (target: LibrarySource) => {
+    if (target.kind === 'local' && source.kind === 'local') return true;
+    if (target.kind === 'folder' && source.kind === 'folder' && target.uri === source.uri)
+      return true;
+    return false;
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-zinc-950">
-      <ScrollView contentContainerClassName="p-4" showsVerticalScrollIndicator={false}>
-        <View className="flex-row items-start gap-4">
-          {/* Left Column */}
-          <View className="flex-1 gap-4">
-            <NoteCard
-              text="Lorem ipsum dolor sit amet consectetur. Nisl interdum in dictumst quis id eu tincidunt. Aliquet dui lacus risus vel quis at morbi. Eget sed arcu a nulla purus. Erat elementum diam tempus lacus pharetra."
-              title="Sample Note"
-            />
+    <SafeAreaView className="flex-1 bg-zinc-950" edges={['top', 'left', 'right']}>
+      <ScrollView
+        contentContainerClassName="h-full p-8 items-center justify-center"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text className="font-sans-medium text-4xl text-white text-center">
+          Welcome to{' '}
+          <Text className="font-serif-italic text-4xl text-blue-500 text-center"> anything</Text>
+        </Text>
+        <Text className="font-sans text-lg text-zinc-300 mt-3 text-center">
+          Open your space folder or create a new one.
+        </Text>
+        <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-80">
+          Anything is offline-first and believes files should remain under your control.
+        </Text>
 
-            <ImageCard
-              url="https://i.pinimg.com/736x/83/04/81/830481a78d2d7823a9cd9a162e3134aa.jpg"
-              title="Sample Image"
-            />
+        <Pressable
+          onPress={handlePickFolder}
+          disabled={opening}
+          className="w-full max-w-80 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full mt-8"
+        >
+          {opening ? (
+            <ActivityIndicator size={20} color="#000" />
+          ) : (
+            <FolderPlusIcon size={20} color="#000" />
+          )}
+          <Text className="font-sans-semibold text-lg text-zinc-950">Select a folder</Text>
+        </Pressable>
 
-            <RedditCard
-              subredditAvatar="https://styles.redditmedia.com/t5_38nds/styles/communityIcon_gisj6ovi5z6e1.png?width=96&height=96&frame=1&auto=webp&s=0d0d70a2dccf65fa9374160882dc3ab2496890b1"
-              subredditName="r/FilosofiaBR"
-              postTitle="Existe algo muito interessante na ideia de Spinoza, o maior erro que cometemos ao pensar em Deus seja imaginar que ele precisa estar fora de tudo"
-              text="Spinoza propõe uma ideia muito mais difícil de imaginar, Deus e natureza não seriam duas coisas diferentes. Deus seria a própria existência. Não estaria apenas criando o mundo, mas se manifestando através dele. Tudo aquilo que existe faria parte desse mesmo todo. Isso muda completamente a maneira de olhar para nós mesmos. Porque, se somos parte da natureza, então não estamos simplesmente vivendo dentro de um universo que existe separado de nós. Nós somos uma expressão dele"
-              image="https://cf.preview.redd.it/existe-algo-muito-interessante-na-ideia-de-spinoza-o-maior-v0-th3lbt1r12th1.jpeg?auto=webp&s=cd1a58f867d75ab541e6245da99f535a0eea65c1"
-            />
-          </View>
+        {/* Section: Saved / Recent Folders */}
+        <View className="mt-12 w-full">
+          <Text className="font-sans-semibold text-xs uppercase tracking-wider text-zinc-500 mb-3 px-1">
+            Libraries & Recents
+          </Text>
 
-          {/* Right Column */}
-          <View className="flex-1 gap-4">
-            <YouTubeCard
-              videoTitle="How To Start A Million Subscriber YouTube Channel"
-              thumbnail="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3FnnuPSl4ZcuO7dBiY__5I1Zag9De0fII46_z1IDRJg&s"
-            />
-            <ArticleCard
-              articleTitle="The surprisingly undisciplined trick to escape social media"
-              thumbnail="https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=32%2032w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=48%2048w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=64%2064w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=96%2096w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=128%20128w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=256%20256w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=376%20376w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=384%20384w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=415%20415w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=480%20480w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=540%20540w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=640%20640w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=750%20750w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=828%20828w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1080%201080w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1200%201200w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1440%201440w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=1920%201920w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=2048%202048w,%20https://platform.vox.com/wp-content/uploads/sites/2/2026/07/GettyImages-2171457146.jpg?quality=90&strip=all&crop=12.5%2C0%2C75%2C100&w=2400%202400w"
-              origin="Vox | Culture"
-            />
-            <QuoteCard text="Alguns vivem como se nunca fossem viver, outros morrem como se nunca tivessem vivido. Eu não vivo em vão, eu vivo pra ser feliz, eu não vivo pra ser normal. Sou Charlie Brown, mané!" />
-            <TweetCard
-              avatar="https://pbs.twimg.com/profile_images/2096296808729186306/YPFTW33c_400x400.jpg"
-              author="nostalgia & history"
-              text="tobacco company ceo’s declaring, under oath, that nicotine isn't addictive (1994)"
-              images={['https://pbs.twimg.com/media/HTot854XIAAUCVF?format=jpg&name=small']}
-            />
-            <LinkCard
-              favicon="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAgVBMVEX99/H9+/X9//n+t7D+p5//ZVr/dGr/gHb+u7T/eW//bWL/RDb/YFX+rKT/hHv+yMH/U0b/KRP/npb+zsf95d/+2NH/lo3/Sz398ev+1s//i4L+sqv/GAD/OCf/WE3/AAD+wLn/nJT+o5v97ef94dv/XFD+z8j9//r+qqL/kIf/cGXuJnjqAAABiElEQVR4AWKgCgDURV8JsENQAEBdkSITZARRpiBS97+/13v5ddwOgDGG/1hF6qbt8L8M0/42AOPVPxTEKO5STGrU8HegmYl1hnnp/w6F8Oj4bB7Nff47EtnbTddqnJ+vfyBMhlis72/2D0S2nyNA+s8sjOhKZQV/AVosVrcIWJY/EEA2A18/v6u0we+m+wSxaIIRxIXvvxW1FFuLsR40AsCOSgs/onFaCmDmjuJzYnpHfevzN4VyJrZH5oSJLG4ihKSCoACfw3caqdqqneVCVypTiOLU9oz6kGhhYw6mJoZukrcm69dpLoXZ6AFQq1nkG+1dk6fDp069WulvRa5j45BNW2RFNFzsn+8V7TVTRmeWae4RiWInXTXEfZqOMwXNWz9oKRDqCNrSjqNIK0amUyI4zpJsO7JjlwkKCoWuf5KdlbBM25TMJht2guDHgYwNdnm+8kJONzmRgZez1VcJzAWkNVqOntJKBkuhCjZUlT8Gn0PACIppTn6jfJIq4ur0Vx0vUlPSbeUjpuEjyNkvA9UAAAAASUVORK5CYII="
-              siteTitle="Arts & Letters Daily"
-              description="Philosophy, literature, ideas, criticism, history, art, music from The Chronicle of Higher Education."
-              url="https://www.aldaily.com/articles-of-note/"
-            />
+          <View className="gap-2.5">
+            {recentFolders.map((item) => {
+              const isLocal = item.source.kind === 'local';
+              const isActive = isCurrentSource(item.source);
+
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => handleSelectFolder(item.source)}
+                  disabled={opening}
+                  className="flex-row items-center justify-between rounded-2xl border border-zinc-800/80 bg-zinc-900/90 p-4 active:bg-zinc-850"
+                >
+                  <View className="flex-1 flex-row items-center gap-3.5 mr-2">
+                    <View className="h-11 w-11 items-center justify-center rounded-xl bg-zinc-800/70">
+                      {isLocal ? (
+                        <DeviceMobileIcon size={22} color="#a1a1aa" weight="duotone" />
+                      ) : (
+                        <CloudIcon size={22} color="#a1a1aa" weight="duotone" />
+                      )}
+                    </View>
+
+                    <View className="flex-1">
+                      <View className="flex-row items-center gap-2">
+                        <Text
+                          className="font-sans-semibold text-base text-zinc-100"
+                          numberOfLines={1}
+                        >
+                          {item.name}
+                        </Text>
+                        {isActive && (
+                          <View className="rounded-full bg-zinc-800 px-2 py-0.5">
+                            <Text className="font-sans-medium text-[10px] text-zinc-300">
+                              Last opened
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text className="mt-0.5 font-sans text-xs text-zinc-400">
+                        {isLocal ? 'This Device • Library' : 'iCloud Drive / Files'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row items-center gap-2">
+                    {!isLocal && (
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFolder(item);
+                        }}
+                        hitSlop={10}
+                        className="p-2 rounded-lg active:opacity-60"
+                        accessibilityLabel="Remove from recent folders"
+                      >
+                        <TrashSimpleIcon size={18} color="#71717a" />
+                      </Pressable>
+                    )}
+                    <CaretRightIcon size={18} color="#71717a" />
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       </ScrollView>

@@ -54,3 +54,21 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Library storage (iCloud / on-device / picked folder)
+
+Items are `*.json` files; local images live in `images/` and are referenced by relative path. The library can live in:
+
+| Location | Notes |
+|---|---|
+| **iCloud Drive** (default when signed in) | The app's own container, shown as **Anything** in Files › iCloud Drive. Syncs across devices; files can be added by hand. |
+| **This iPhone** | `Documents/Library`, visible in Files › On My iPhone › anything. |
+| **Chosen folder** | Any folder picked in Files. Access is remembered across launches (security-scoped bookmark). |
+
+The native bits (iCloud container lookup, bookmarks, placeholder downloads) live in the local Expo module `modules/anything-icloud` (iOS only). They need a **development build**, not Expo Go:
+
+```bash
+bunx eas-cli build --profile development --platform ios
+```
+
+iCloud requires the `iCloud.com.diegoeiras.anything` container to be enabled for the App ID in your Apple Developer account. EAS normally registers the capability automatically; if the in-app picker says "iCloud unavailable", check it at developer.apple.com › Identifiers.
