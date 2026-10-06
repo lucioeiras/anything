@@ -15,14 +15,18 @@ export const QuoteCard = ({ text, title }: QuoteProps) => {
         <QuoteOpen />
         <Text
           className="font-sans text-base text-center leading-[1.8] text-zinc-300"
-          numberOfLines={8}>
+          numberOfLines={8}
+        >
           {text}
         </Text>
         <QuoteClose />
       </View>
 
       {title && (
-        <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
+        <Text
+          className="font-sans-medium text-xs text-zinc-200 mb-2 leading-[1.6]"
+          numberOfLines={2}
+        >
           {title}
         </Text>
       )}

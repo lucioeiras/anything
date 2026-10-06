@@ -21,13 +21,13 @@ export const YouTubeCard = ({ videoTitle, thumbnail }: YouTubeCardProps) => {
       </View>
 
       <View className="w-full bg-zinc-900 p-4 rounded-b-xl gap-4">
-        <Text className="font-sans-medium text-lg leading-[1.8] text-zinc-50" numberOfLines={2}>
+        <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={2}>
           {videoTitle}
         </Text>
 
         <View className="flex-row items-center gap-1 mt-2">
-          <YoutubeLogoIcon size={14} color="#71717B" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-zinc-500">YouTube</Text>
+          <YoutubeLogoIcon size={14} color="#F43F5E" weight="fill" />
+          <Text className="font-sans-semibold text-sm text-rose-500">YouTube</Text>
         </View>
       </View>
     </View>

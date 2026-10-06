@@ -15,7 +15,10 @@ export const NoteCard = ({ text, title }: NoteProps) => {
       </View>
 
       {title && (
-        <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
+        <Text
+          className="font-sans-medium text-xs text-zinc-200 mb-2 leading-[1.6]"
+          numberOfLines={2}
+        >
           {title}
         </Text>
       )}

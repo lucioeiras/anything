@@ -54,8 +54,8 @@ export const RedditCard = ({
         )}
 
         <View className="flex-row items-center gap-1 mt-1">
-          <RedditLogoIcon size={14} color="#71717B" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-zinc-500">Reddit</Text>
+          <RedditLogoIcon size={14} color="#F97315" weight="fill" />
+          <Text className="font-sans-semibold text-sm text-orange-500">Reddit</Text>
         </View>
       </View>
     </View>

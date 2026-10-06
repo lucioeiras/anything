@@ -34,7 +34,7 @@ export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps
       <ExpoImage source={{ uri: favicon }} className="w-8 h-8 rounded-full" />
 
       <View className="gap-2">
-        <Text className="font-sans-medium text-lg leading-[1.8] text-zinc-50" numberOfLines={8}>
+        <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={8}>
           {siteTitle}
         </Text>
 
@@ -44,8 +44,8 @@ export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps
       </View>
 
       <View className="flex-row items-center gap-1 mt-2">
-        <LinkIcon size={14} color="#71717B" />
-        <Text className="font-sans-semibold text-sm text-zinc-500" numberOfLines={1}>
+        <LinkIcon size={14} color="#D4D4D8" weight="bold" />
+        <Text className="font-sans-semibold text-sm text-zinc-300" numberOfLines={1}>
           {getShortUrl(url)}
         </Text>
       </View>

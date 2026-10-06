@@ -46,7 +46,8 @@ export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => 
           horizontal
           showsHorizontalScrollIndicator={false}
           className="-mx-4"
-          contentContainerClassName="px-4 gap-2">
+          contentContainerClassName="px-4 gap-2"
+        >
           {images.slice(0, 4).map((img, index) => (
             <ExpoImage
               key={index}
@@ -59,8 +60,8 @@ export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => 
       )}
 
       <View className="flex-row items-center gap-1 mt-2">
-        <TwitterLogoIcon size={14} color="#71717B" weight="fill" />
-        <Text className="font-sans-semibold text-sm text-zinc-500">Twitter</Text>
+        <TwitterLogoIcon size={14} color="#0CA5E9" weight="fill" />
+        <Text className="font-sans-semibold text-sm text-sky-500">Twitter</Text>
       </View>
     </View>
   );
