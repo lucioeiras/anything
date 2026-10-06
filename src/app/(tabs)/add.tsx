@@ -10,7 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddElementScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-zinc-950 items-center justify-center p-6" edges={['top']}>
+    <SafeAreaView
+      className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-40"
+      edges={['top']}
+    >
       <View className="h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900 mb-8">
         <PlusCircleIcon size={32} color="#3b82f6" weight="duotone" />
       </View>
