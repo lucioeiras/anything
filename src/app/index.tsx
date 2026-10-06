@@ -40,7 +40,6 @@ export default function IndexScreen() {
             <YouTubeCard
               videoTitle="How To Start A Million Subscriber YouTube Channel"
               thumbnail="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3FnnuPSl4ZcuO7dBiY__5I1Zag9De0fII46_z1IDRJg&s"
-              title="Sample YouTube Video"
             />
             <ArticleCard
               articleTitle="The surprisingly undisciplined trick to escape social media"

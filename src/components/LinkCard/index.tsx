@@ -10,10 +10,9 @@ type LinkCardProps = {
   siteTitle: string;
   description: string;
   url: string;
-  title?: string;
 };
 
-export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCardProps) => {
+export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps) => {
   const getShortUrl = (urlStr: string) => {
     try {
       const parsed = new URL(urlStr);
@@ -31,33 +30,25 @@ export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCa
   };
 
   return (
-    <View className="items-center gap-2">
-      <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
-        <ExpoImage source={{ uri: favicon }} className="w-8 h-8 rounded-full" />
+    <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
+      <ExpoImage source={{ uri: favicon }} className="w-8 h-8 rounded-full" />
 
-        <View className="gap-2">
-          <Text className="font-sans-medium text-lg leading-[1.8] text-zinc-50" numberOfLines={8}>
-            {siteTitle}
-          </Text>
+      <View className="gap-2">
+        <Text className="font-sans-medium text-lg leading-[1.8] text-zinc-50" numberOfLines={8}>
+          {siteTitle}
+        </Text>
 
-          <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={8}>
-            {description}
-          </Text>
-        </View>
-
-        <View className="flex-row items-center gap-1 mt-2">
-          <LinkIcon size={14} color="#71717B" />
-          <Text className="font-sans-semibold text-sm text-zinc-500" numberOfLines={1}>
-            {getShortUrl(url)}
-          </Text>
-        </View>
+        <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={8}>
+          {description}
+        </Text>
       </View>
 
-      {title && (
-        <Text className="font-sans-medium text-xs text-zinc-200 mb-2" numberOfLines={1}>
-          {title}
+      <View className="flex-row items-center gap-1 mt-2">
+        <LinkIcon size={14} color="#71717B" />
+        <Text className="font-sans-semibold text-sm text-zinc-500" numberOfLines={1}>
+          {getShortUrl(url)}
         </Text>
-      )}
+      </View>
     </View>
   );
 };
