@@ -8,6 +8,8 @@ import {
   type ImageItem,
   type ImageRef,
   type LibraryItem,
+  type NoteItem,
+  type QuoteItem,
 } from './types';
 
 // The native module won't exist if running in Expo Go.
@@ -377,6 +379,50 @@ export async function addImageToLibrary(
     version: SCHEMA_VERSION,
     type: 'image',
     image: relativeImagePath,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  jsonFile.write(JSON.stringify(item, null, 2));
+
+  return item;
+}
+
+/**
+ * Creates a note or quote item file in the root of the library folder.
+ * Automatically verifies if the text is a quote (starts and ends with ") or a note.
+ */
+export async function addTextItemToLibrary(
+  source: LibrarySource,
+  rawText: string,
+  title?: string
+): Promise<NoteItem | QuoteItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const trimmed = rawText.trim();
+  const isQuote =
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+    (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2);
+
+  const cleanText = isQuote ? trimmed.slice(1, -1).trim() : trimmed;
+  const itemType: 'quote' | 'note' = isQuote ? 'quote' : 'note';
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const item: NoteItem | QuoteItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: itemType,
+    text: cleanText,
+    ...(title ? { title } : {}),
     createdAt: now,
     updatedAt: now,
   };

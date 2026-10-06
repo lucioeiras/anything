@@ -1,15 +1,27 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { WarningIcon } from 'phosphor-react-native';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ItemCard } from '@/components/ItemCard';
 import { MasonryColumns } from '@/components/MasonryColumns';
+import { NewNoteDrawer } from '@/components/NewNoteDrawer';
 import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LibraryItem } from '@/lib/library/types';
 
 export default function BoardScreen() {
   const { state, refresh, refreshing } = useLibrary();
+  const { newNote } = useLocalSearchParams<{ newNote?: string }>();
+  const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
+  const lastOpenedNoteRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (newNote && newNote !== lastOpenedNoteRef.current) {
+      lastOpenedNoteRef.current = newNote;
+      setIsNoteDrawerOpen(true);
+    }
+  }, [newNote]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -78,6 +90,8 @@ export default function BoardScreen() {
           {state.result.items.length > 0 && <ProgressiveBlur />}
         </>
       )}
+
+      <NewNoteDrawer visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
     </View>
   );
 }

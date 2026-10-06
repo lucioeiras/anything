@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 
 import {
   addImageToLibrary,
+  addTextItemToLibrary,
   getFolderDisplayName,
   getLibraryDirectory,
   getRecentFolders,
@@ -18,7 +19,7 @@ import {
   type PickedImageAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
-import type { ImageItem } from '@/lib/library/types';
+import type { ImageItem, NoteItem, QuoteItem } from '@/lib/library/types';
 
 export type LibraryState =
   | { status: 'loading' }
@@ -37,6 +38,7 @@ export type LibraryContextValue = {
   pickAndOpenFolder: () => Promise<boolean>;
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset) => Promise<ImageItem>;
+  addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -197,6 +199,19 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addTextItem = useCallback(
+    async (text: string, title?: string) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addTextItemToLibrary(targetSource, text, title);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -209,6 +224,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     pickAndOpenFolder,
     removeRecentFolder,
     addImage,
+    addTextItem,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

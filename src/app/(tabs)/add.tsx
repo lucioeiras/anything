@@ -49,6 +49,13 @@ export default function AddElementScreen() {
     }
   };
 
+  const handleOpenNote = () => {
+    router.replace({
+      pathname: '/board',
+      params: { newNote: Date.now().toString() },
+    });
+  };
+
   return (
     <SafeAreaView
       className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-40"
@@ -70,8 +77,8 @@ export default function AddElementScreen() {
       <View className="mt-8 gap-5">
         <View className="flex-row flex-wrap justify-center gap-5">
           <Pressable
-            // onPress={changeFolder}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-white rounded-xl"
+            onPress={handleOpenNote}
+            className="p-5 max-w-80 justify-between h-36 w-36 bg-white rounded-xl active:opacity-80"
           >
             <NotePencilIcon size={20} color="#000" />
             <Text className="font-sans-semibold text-lg text-zinc-950">Note, quote or to-do</Text>
