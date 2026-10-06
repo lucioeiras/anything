@@ -10,46 +10,51 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { LinkIcon } from 'phosphor-react-native';
 
 import { useLibrary } from '@/hooks/useLibrary';
-import type { NoteItem, QuoteItem } from '@/lib/library/types';
+import type { LinkUploadItem } from '@/lib/library/storage';
 
-type NewNoteDrawerProps = {
+type NewLinkModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSaved?: (item: NoteItem | QuoteItem) => void;
+  onSaved?: (item: LinkUploadItem) => void;
 };
 
-export function NewNoteDrawer({ visible, onClose, onSaved }: NewNoteDrawerProps) {
-  const { addTextItem } = useLibrary();
-  const [text, setText] = useState('');
+export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
+  const { addLinkItem } = useLibrary();
+  const [url, setUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleClose = () => {
     if (saving) return;
-    setText('');
+    setUrl('');
     onClose();
   };
 
   const handleSave = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || saving) return;
+    let targetUrl = url.trim();
+    if (!targetUrl || saving) return;
+
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = `https://${targetUrl}`;
+    }
 
     setSaving(true);
     try {
-      const item = await addTextItem(trimmed);
-      setText('');
+      const item = await addLinkItem(targetUrl);
+      setUrl('');
       onSaved?.(item);
       onClose();
     } catch (e) {
-      console.error('Failed to save note:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save note');
+      console.error('Failed to save link:', e);
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save link');
     } finally {
       setSaving(false);
     }
   };
 
-  const canSave = text.trim().length > 0 && !saving;
+  const canSave = url.trim().length > 0 && !saving;
 
   return (
     <Modal
@@ -66,9 +71,9 @@ export function NewNoteDrawer({ visible, onClose, onSaved }: NewNoteDrawerProps)
         {/* Backdrop dismiss touchable */}
         <Pressable className="flex-1" onPress={handleClose} />
 
-        {/* Drawer container */}
+        {/* Modal container */}
         <View className="h-[88%] rounded-t-[32px] bg-zinc-900 px-6 pb-10 pt-5">
-          {/* Header matching user's mockup: Cancel | NEW NOTE | Save */}
+          {/* Header matching user's mockup: Cancel | NEW LINK | Save */}
           <View className="flex-row items-center justify-between pb-4">
             <Pressable
               onPress={handleClose}
@@ -80,7 +85,7 @@ export function NewNoteDrawer({ visible, onClose, onSaved }: NewNoteDrawerProps)
             </Pressable>
 
             <Text className="font-sans-bold text-sm tracking-widest text-blue-500 uppercase">
-              NEW NOTE
+              NEW LINK
             </Text>
 
             <Pressable
@@ -98,17 +103,28 @@ export function NewNoteDrawer({ visible, onClose, onSaved }: NewNoteDrawerProps)
             </Pressable>
           </View>
 
-          {/* Text Input */}
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="Type here..."
-            placeholderTextColor="#71717a"
-            multiline
-            autoFocus
-            textAlignVertical="top"
-            className="flex-1 font-sans text-xl text-zinc-100 pt-5 leading-7"
-          />
+          {/* Link Input Row */}
+          <View className="mt-8 flex-row items-center">
+            <LinkIcon size={24} color="#71717a" />
+            <TextInput
+              value={url}
+              onChangeText={setUrl}
+              placeholder="Paste the link here"
+              placeholderTextColor="#71717a"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleSave}
+              className="ml-3 flex-1 font-sans text-lg text-zinc-100"
+            />
+          </View>
+
+          {/* Subtitle */}
+          <Text className="mt-4 font-sans text-sm leading-5 text-zinc-500">
+            You can add any link, X's or Reddit posts, YouTube vídeos or articles
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </Modal>

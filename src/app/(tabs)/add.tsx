@@ -56,6 +56,13 @@ export default function AddElementScreen() {
     });
   };
 
+  const handleOpenLink = () => {
+    router.replace({
+      pathname: '/board',
+      params: { newLink: Date.now().toString() },
+    });
+  };
+
   return (
     <SafeAreaView
       className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-40"
@@ -85,8 +92,8 @@ export default function AddElementScreen() {
           </Pressable>
 
           <Pressable
-            // onPress={changeFolder}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl"
+            onPress={handleOpenLink}
+            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl active:opacity-80"
           >
             <LinkIcon size={20} color="#fff" />
             <Text className="font-sans-semibold text-lg text-white">Link from anywhere</Text>

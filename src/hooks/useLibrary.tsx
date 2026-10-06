@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 
 import {
   addImageToLibrary,
+  addLinkItemToLibrary,
   addTextItemToLibrary,
   getFolderDisplayName,
   getLibraryDirectory,
@@ -15,6 +16,7 @@ import {
   saveLibrarySource,
   saveRecentFolder,
   type LibrarySource,
+  type LinkUploadItem,
   type LoadResult,
   type PickedImageAsset,
   type SavedFolder,
@@ -39,6 +41,7 @@ export type LibraryContextValue = {
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset) => Promise<ImageItem>;
   addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
+  addLinkItem: (url: string) => Promise<LinkUploadItem>;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -212,6 +215,19 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addLinkItem = useCallback(
+    async (url: string) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addLinkItemToLibrary(targetSource, url);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -225,6 +241,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     removeRecentFolder,
     addImage,
     addTextItem,
+    addLinkItem,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

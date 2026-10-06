@@ -2,14 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
+import { resolveUrlMetadata } from './metadata';
 import {
   IMAGES_DIR,
   SCHEMA_VERSION,
+  type ArticleItem,
   type ImageItem,
   type ImageRef,
   type LibraryItem,
+  type LinkItem,
   type NoteItem,
   type QuoteItem,
+  type RedditItem,
+  type YouTubeItem,
 } from './types';
 
 // The native module won't exist if running in Expo Go.
@@ -426,6 +431,91 @@ export async function addTextItemToLibrary(
     createdAt: now,
     updatedAt: now,
   };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  jsonFile.write(JSON.stringify(item, null, 2));
+
+  return item;
+}
+
+export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem;
+
+/**
+ * Loads metadata for the given URL and saves it as a link, youtube, reddit,
+ * or article .json item file in the root of the library folder.
+ */
+export async function addLinkItemToLibrary(
+  source: LibrarySource,
+  url: string
+): Promise<LinkUploadItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const metadata = await resolveUrlMetadata(url);
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  let item: LinkUploadItem;
+  switch (metadata.type) {
+    case 'youtube':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'youtube',
+        url: metadata.url,
+        title: metadata.title,
+        thumbnail: metadata.thumbnail,
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+    case 'reddit':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'reddit',
+        url: metadata.url,
+        subreddit: metadata.subreddit,
+        subredditAvatar: metadata.subredditAvatar,
+        title: metadata.title,
+        ...(metadata.text ? { text: metadata.text } : {}),
+        ...(metadata.image ? { image: metadata.image } : {}),
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+    case 'article':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'article',
+        url: metadata.url,
+        title: metadata.title,
+        origin: metadata.origin,
+        thumbnail: metadata.thumbnail,
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+    case 'link':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'link',
+        url: metadata.url,
+        siteTitle: metadata.siteTitle,
+        description: metadata.description,
+        favicon: metadata.favicon,
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+  }
 
   const jsonFile = new File(root, `${id}.json`);
   if (!jsonFile.exists) {

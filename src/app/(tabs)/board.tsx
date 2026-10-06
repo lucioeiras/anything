@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 
 import { ItemCard } from '@/components/ItemCard';
 import { MasonryColumns } from '@/components/MasonryColumns';
+import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteDrawer } from '@/components/NewNoteDrawer';
 import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -12,9 +13,11 @@ import type { LibraryItem } from '@/lib/library/types';
 
 export default function BoardScreen() {
   const { state, refresh, refreshing } = useLibrary();
-  const { newNote } = useLocalSearchParams<{ newNote?: string }>();
+  const { newNote, newLink } = useLocalSearchParams<{ newNote?: string; newLink?: string }>();
   const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const lastOpenedNoteRef = useRef<string | null>(null);
+  const lastOpenedLinkRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (newNote && newNote !== lastOpenedNoteRef.current) {
@@ -22,6 +25,13 @@ export default function BoardScreen() {
       setIsNoteDrawerOpen(true);
     }
   }, [newNote]);
+
+  useEffect(() => {
+    if (newLink && newLink !== lastOpenedLinkRef.current) {
+      lastOpenedLinkRef.current = newLink;
+      setIsLinkModalOpen(true);
+    }
+  }, [newLink]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -92,6 +102,7 @@ export default function BoardScreen() {
       )}
 
       <NewNoteDrawer visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
+      <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
     </View>
   );
 }
