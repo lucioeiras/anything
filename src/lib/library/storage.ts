@@ -14,6 +14,7 @@ import {
   type NoteItem,
   type QuoteItem,
   type RedditItem,
+  type TweetItem,
   type YouTubeItem,
 } from './types';
 
@@ -441,11 +442,11 @@ export async function addTextItemToLibrary(
   return item;
 }
 
-export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem;
+export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem | TweetItem;
 
 /**
  * Loads metadata for the given URL and saves it as a link, youtube, reddit,
- * or article .json item file in the root of the library folder.
+ * tweet, or article .json item file in the root of the library folder.
  */
 export async function addLinkItemToLibrary(
   source: LibrarySource,
@@ -485,6 +486,20 @@ export async function addLinkItemToLibrary(
         title: metadata.title,
         ...(metadata.text ? { text: metadata.text } : {}),
         ...(metadata.image ? { image: metadata.image } : {}),
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+    case 'tweet':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'tweet',
+        url: metadata.url,
+        author: metadata.author,
+        avatar: metadata.avatar,
+        text: metadata.text,
+        ...(metadata.images?.length ? { images: metadata.images } : {}),
         createdAt: now,
         updatedAt: now,
       };

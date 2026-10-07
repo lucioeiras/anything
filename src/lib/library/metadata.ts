@@ -10,6 +10,14 @@ export type ResolvedMetadata =
       image?: string;
     }
   | {
+      type: 'tweet';
+      url: string;
+      author: string;
+      avatar: string;
+      text: string;
+      images?: string[];
+    }
+  | {
       type: 'article';
       url: string;
       title: string;
@@ -83,7 +91,7 @@ function extractFavicon(html: string, baseUrl: string): string | null {
 
 /**
  * Resolves metadata for a given URL and determines whether it should be
- * saved as a YouTube video, Reddit post, Article, or generic Link.
+ * saved as a YouTube video, Reddit post, Tweet/X post, Article, or generic Link.
  */
 export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMetadata> {
   const url = normalizeUrl(inputUrl);
@@ -139,47 +147,233 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
 
   // 2. Reddit Detection
   if (/(?:reddit\.com|redd\.it)/i.test(hostname)) {
-    const subMatch = url.match(/reddit\.com\/r\/([^/?#]+)/i);
-    const subreddit = subMatch ? `r/${subMatch[1]}` : 'r/reddit';
-    const subredditAvatar = 'https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png';
+    let finalUrl = url;
+    let postHtml = '';
+    let oembedTitle = '';
 
-    let title = `${subreddit} post`;
-    let text: string | undefined;
-    let image: string | undefined;
+    const oembedPromise = fetch(`https://www.reddit.com/oembed?url=${encodeURIComponent(url)}`)
+      .then(async (r) => (r.ok ? r.json() : null))
+      .catch(() => null);
 
+    const postPromise = fetch(url, {
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Twitterbot/1.0',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          finalUrl = r.url || url;
+          return r.text();
+        }
+        return '';
+      })
+      .catch(() => '');
+
+    const [oembedData, fetchedHtml] = await Promise.all([oembedPromise, postPromise]);
+    if (oembedData && oembedData.title) {
+      oembedTitle = oembedData.title;
+    }
+    postHtml = fetchedHtml || '';
+
+    const subMatch =
+      finalUrl.match(/reddit\.com\/r\/([^/?#]+)/i) || url.match(/reddit\.com\/r\/([^/?#]+)/i);
+    const subName = subMatch ? subMatch[1] : 'reddit';
+    const subreddit = `r/${subName}`;
+
+    // Subreddit avatar resolution
+    let subredditAvatar = 'https://www.redditstatic.com/shreddit/assets/favicon/192x192.png';
     try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
+      const subRes = await fetch(`https://www.reddit.com/r/${subName}/`, {
+        headers: { 'User-Agent': 'Twitterbot/1.0' },
       });
-      if (response.ok) {
-        const html = await response.text();
-        const ogTitle = extractMeta(html, 'og:title') || extractTitle(html);
-        if (ogTitle) title = ogTitle;
-
-        const ogDesc = extractMeta(html, 'og:description');
-        if (ogDesc) text = ogDesc;
-
-        const ogImage = extractMeta(html, 'og:image');
-        if (ogImage && !ogImage.includes('redditstatic.com/icon.png')) {
-          image = ogImage;
+      if (subRes.ok) {
+        const subHtml = await subRes.text();
+        const iconMatch = subHtml.match(
+          /https:\/\/styles\.redditmedia\.com\/t5_[^"'\\s>]*(?:communityIcon|icon)[^"'\\s>]*/i
+        );
+        if (iconMatch) {
+          subredditAvatar = decodeHtmlEntities(iconMatch[0]);
         }
       }
     } catch {
-      // Fallback
+      // fallback
+    }
+
+    // Post title resolution
+    let title = oembedTitle;
+    if (!title && postHtml) {
+      const ogTitle = extractMeta(postHtml, 'og:title') || extractMeta(postHtml, 'twitter:title');
+      if (ogTitle) {
+        title = ogTitle
+          .replace(/^(?:\[[^\]]*\]\s*)?From the .*? community on Reddit:\s*/i, '')
+          .replace(/\s*:\s*r\/[a-zA-Z0-9_]+.*$/i, '')
+          .replace(/\s*-\s*Reddit.*$/i, '')
+          .trim();
+      }
+      if (!title) {
+        const pageTitle = extractTitle(postHtml);
+        if (pageTitle && pageTitle.toLowerCase() !== 'reddit') {
+          title = pageTitle
+            .replace(/\s*:\s*r\/[a-zA-Z0-9_]+.*$/i, '')
+            .replace(/\s*-\s*Reddit.*$/i, '')
+            .trim();
+        }
+      }
+    }
+    if (!title) {
+      const slugMatch = finalUrl.match(/\/comments\/[a-z0-9]+\/([^/?#]+)/i);
+      if (slugMatch) {
+        title = decodeURIComponent(slugMatch[1].replace(/_/g, ' '));
+      }
+    }
+    if (!title || title.toLowerCase() === 'reddit') {
+      title = `${subreddit} post`;
+    }
+
+    // Post thumbnail image & body text resolution
+    let image: string | undefined;
+    let text: string | undefined;
+
+    if (postHtml) {
+      const ogImg = extractMeta(postHtml, 'og:image') || extractMeta(postHtml, 'twitter:image');
+      if (ogImg && !ogImg.includes('redditstatic.com/icon.png') && !ogImg.includes('favicon')) {
+        image = decodeHtmlEntities(ogImg);
+      }
+
+      const desc = extractMeta(postHtml, 'description') || extractMeta(postHtml, 'og:description');
+      if (desc) {
+        const cleaned = desc.replace(/^\s*\d+[\s\w,]*(?:votes?|comments?)\.?\s*/i, '').trim();
+        if (
+          cleaned &&
+          !/^Explore this post/i.test(cleaned) &&
+          !/\bsubscribers in the\b/i.test(cleaned) &&
+          !/^Posted by\b/i.test(cleaned)
+        ) {
+          text = cleaned;
+        }
+      }
     }
 
     return {
       type: 'reddit',
-      url,
+      url: finalUrl,
       subreddit,
       subredditAvatar,
       title,
+      ...(text ? { text } : {}),
+      ...(image ? { image } : {}),
+    };
+  }
+
+  // 3. Twitter / X Detection
+  if (/(?:twitter\.com|x\.com)/i.test(hostname)) {
+    const match = url.match(
+      /(?:twitter\.com|x\.com)\/(?:#!\/)?([a-zA-Z0-9_]+)(?:\/status(?:es)?\/(\d+))?/i
+    );
+    const handle = match ? match[1] : '';
+    const tweetId = match ? match[2] : '';
+
+    let author = handle ? `@${handle}` : 'X Post';
+    let avatar = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+    let text = '';
+    let images: string[] = [];
+
+    if (tweetId) {
+      // 1. Try fxtwitter API
+      try {
+        const res = await fetch(`https://api.fxtwitter.com/status/${tweetId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tweet) {
+            const t = data.tweet;
+            if (t.author?.name) {
+              author = t.author.screen_name
+                ? `${t.author.name} (@${t.author.screen_name})`
+                : t.author.name;
+            }
+            if (t.author?.avatar_url) {
+              avatar = t.author.avatar_url;
+            }
+            if (t.text) {
+              text = t.text;
+            }
+            if (t.media?.photos?.length) {
+              images = t.media.photos
+                .map((p: { url?: string }) => p.url)
+                .filter(Boolean) as string[];
+            }
+          }
+        }
+      } catch {
+        // Fallback
+      }
+
+      // 2. Fallback: Twitter Syndication API
+      if (!text) {
+        try {
+          const syndRes = await fetch(
+            `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=x`
+          );
+          if (syndRes.ok) {
+            const t = await syndRes.json();
+            if (t.user?.name) {
+              author = t.user.screen_name ? `${t.user.name} (@${t.user.screen_name})` : t.user.name;
+            }
+            if (t.user?.profile_image_url_https) {
+              avatar = t.user.profile_image_url_https.replace('_normal.', '_200x200.');
+            }
+            if (t.text) {
+              text = t.text;
+            }
+            if (t.photos?.length) {
+              images = t.photos.map((p: { url?: string }) => p.url).filter(Boolean) as string[];
+            } else if (t.mediaDetails?.length) {
+              images = t.mediaDetails
+                .filter((m: { type?: string }) => m.type === 'photo')
+                .map((m: { media_url_https?: string }) => m.media_url_https)
+                .filter(Boolean) as string[];
+            }
+          }
+        } catch {
+          // Fallback
+        }
+      }
+
+      // 3. Fallback: Twitter oEmbed
+      if (!text) {
+        try {
+          const oembedRes = await fetch(
+            `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`
+          );
+          if (oembedRes.ok) {
+            const oembed = await oembedRes.json();
+            if (oembed.author_name) author = oembed.author_name;
+            if (oembed.html) {
+              const pMatch = oembed.html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+              if (pMatch) {
+                text = decodeHtmlEntities(pMatch[1].replace(/<[^>]+>/g, '').trim());
+              }
+            }
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    if (!text) {
+      text = `Post by ${author}`;
+    }
+
+    return {
+      type: 'tweet',
+      url,
+      author,
+      avatar,
       text,
-      image,
+      ...(images.length > 0 ? { images } : {}),
     };
   }
 
