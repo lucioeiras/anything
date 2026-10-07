@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { CheckIcon, LinkIcon, XIcon } from 'phosphor-react-native';
+import { CheckIcon, XIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,27 +9,26 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibrary } from '@/hooks/useLibrary';
-import type { LinkUploadItem } from '@/lib/library/storage';
+import type { NoteItem, QuoteItem } from '@/lib/library/types';
 
-type NewLinkModalProps = {
+type NewNoteModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSaved?: (item: LinkUploadItem) => void;
+  onSaved?: (item: NoteItem | QuoteItem) => void;
 };
 
-export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
-  const { addLinkItem } = useLibrary();
+export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
+  const { addTextItem } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
 
-  const [url, setUrl] = useState('');
+  const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -43,33 +42,29 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
 
   const handleClose = () => {
     if (saving) return;
-    setUrl('');
+    setText('');
     onClose();
   };
 
   const handleSave = async () => {
-    let targetUrl = url.trim();
-    if (!targetUrl || saving) return;
-
-    if (!/^https?:\/\//i.test(targetUrl)) {
-      targetUrl = `https://${targetUrl}`;
-    }
+    const trimmed = text.trim();
+    if (!trimmed || saving) return;
 
     setSaving(true);
     try {
-      const item = await addLinkItem(targetUrl);
-      setUrl('');
+      const item = await addTextItem(trimmed);
+      setText('');
       onSaved?.(item);
       onClose();
     } catch (e) {
-      console.error('Failed to save link:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save link');
+      console.error('Failed to save note:', e);
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save note');
     } finally {
       setSaving(false);
     }
   };
 
-  const canSave = url.trim().length > 0 && !saving;
+  const canSave = text.trim().length > 0 && !saving;
 
   return (
     <Modal
@@ -92,46 +87,30 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
             style={{
               paddingTop: Math.max(insets.top, 16),
             }}
-            className="flex-1 w-full relative"
+            className="flex-1 w-full"
           >
-            {/* Center Content: Big Icon, Title, and Centralized Input */}
-            <Pressable
-              className="flex-1 w-full items-center justify-center px-8"
-              onPress={() => inputRef.current?.focus()}
-            >
-              {/* Big link icon */}
-              <LinkIcon size={40} color="#FFFFFF" weight="bold" />
-
-              {/* Title */}
-              <Text className="font-sans-semibold text-3xl text-white my-6 text-center">
-                Add a new link
-              </Text>
-
-              {/* Centralized text input */}
+            {/* Note Input starting at the top */}
+            <Pressable className="flex-1 w-full" onPress={() => inputRef.current?.focus()}>
               <TextInput
                 ref={inputRef}
-                value={url}
-                onChangeText={setUrl}
-                placeholder="Type or paste your link here"
+                value={text}
+                onChangeText={setText}
+                placeholder="Type here..."
                 placeholderTextColor="#71717A"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                returnKeyType="done"
-                onSubmitEditing={handleSave}
-                textAlign="center"
-                className="w-full font-sans text-2xl text-white text-center mt-2"
-                style={styles.borderlessInput}
-                underlineColorAndroid="transparent"
                 multiline
+                autoFocus
+                textAlignVertical="top"
+                className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 py-8"
+                style={[styles.borderlessInput, { paddingBottom: 100 }]}
+                underlineColorAndroid="transparent"
               />
             </Pressable>
 
-            {/* Floating action buttons at the bottom */}
+            {/* Floating action buttons over the text at the bottom */}
             <View
               pointerEvents="box-none"
               style={{
-                bottom: Math.max(insets.bottom, 16),
+                bottom: Math.max(insets.bottom - 16, 12),
               }}
               className="absolute left-0 right-0 items-center justify-center"
             >
@@ -155,7 +134,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                     canSave ? 'bg-white active:opacity-80' : 'bg-white/30'
                   }`}
                   accessibilityRole="button"
-                  accessibilityLabel="Save link"
+                  accessibilityLabel="Save note"
                 >
                   {saving ? (
                     <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />

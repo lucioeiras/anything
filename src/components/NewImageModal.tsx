@@ -247,7 +247,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
                         onPress={handleClose}
                         disabled={saving}
                         hitSlop={12}
-                        className="w-20 h-20 rounded-full items-center justify-center bg-white/30 active:opacity-70"
+                        className="w-20 h-20 rounded-full items-center justify-center bg-black/70 active:opacity-70"
                         accessibilityRole="button"
                         accessibilityLabel="Cancel"
                       >
@@ -259,7 +259,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
                         disabled={!canSave}
                         hitSlop={12}
                         className={`w-20 h-20 rounded-full items-center justify-center ${
-                          canSave ? 'bg-white active:opacity-80' : 'bg-black/70'
+                          canSave ? 'bg-white active:opacity-80' : 'bg-white/30'
                         }`}
                         accessibilityRole="button"
                         accessibilityLabel="Save image"

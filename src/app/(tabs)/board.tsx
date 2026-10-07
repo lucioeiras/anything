@@ -16,7 +16,7 @@ import { ItemCard } from '@/components/ItemCard';
 import { MasonryColumns } from '@/components/MasonryColumns';
 import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
-import { NewNoteDrawer } from '@/components/NewNoteDrawer';
+import { NewNoteModal } from '@/components/NewNoteModal';
 import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { RestoreToast } from '@/components/RestoreToast';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -230,7 +230,7 @@ export default function BoardScreen() {
         </>
       )}
 
-      <NewNoteDrawer visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
+      <NewNoteModal visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
       <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
       <NewImageModal
         visible={isImageModalOpen}
