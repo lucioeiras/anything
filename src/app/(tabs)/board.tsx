@@ -1,19 +1,19 @@
+import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { PlusIcon, WarningIcon } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
-  ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { CardSelectionBar } from '@/components/CardSelectionBar';
 import { ItemCard } from '@/components/ItemCard';
-import { MasonryColumns } from '@/components/MasonryColumns';
 import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteModal } from '@/components/NewNoteModal';
@@ -81,7 +81,7 @@ export default function BoardScreen() {
     }
   };
 
-  const toggleCardSelection = (itemId: string) => {
+  const toggleCardSelection = useCallback((itemId: string) => {
     setSelectedCardIds((prev) => {
       const next = new Set(prev);
       if (next.has(itemId)) {
@@ -91,27 +91,33 @@ export default function BoardScreen() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleCardLongPress = (item: LibraryItem) => {
-    if (!isEditing) {
-      setIsEditing(true);
-      setSelectedCardIds(new Set([item.id]));
-    } else {
-      toggleCardSelection(item.id);
-    }
-  };
+  const handleCardLongPress = useCallback(
+    (item: LibraryItem) => {
+      if (!isEditing) {
+        setIsEditing(true);
+        setSelectedCardIds(new Set([item.id]));
+      } else {
+        toggleCardSelection(item.id);
+      }
+    },
+    [isEditing, toggleCardSelection]
+  );
 
-  const handleCardPress = (item: LibraryItem) => {
-    if (isEditing) {
-      toggleCardSelection(item.id);
-    }
-  };
+  const handleCardPress = useCallback(
+    (item: LibraryItem) => {
+      if (isEditing) {
+        toggleCardSelection(item.id);
+      }
+    },
+    [isEditing, toggleCardSelection]
+  );
 
-  const handleCancelEdition = () => {
+  const handleCancelEdition = useCallback(() => {
     setIsEditing(false);
     setSelectedCardIds(new Set());
-  };
+  }, []);
 
   const handleDeleteSelected = async () => {
     const idsToDelete = Array.from(selectedCardIds);
@@ -151,6 +157,68 @@ export default function BoardScreen() {
     setRestoreBackup(null);
   };
 
+  const extraData = useMemo(() => ({ isEditing, selectedCardIds }), [isEditing, selectedCardIds]);
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<LibraryItem>) => (
+      <View style={styles.cardWrapper}>
+        <ItemCard
+          item={item}
+          isEditing={isEditing}
+          isSelected={selectedCardIds.has(item.id)}
+          onPress={handleCardPress}
+          onLongPress={handleCardLongPress}
+        />
+      </View>
+    ),
+    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress]
+  );
+
+  const renderHeader = useCallback(() => {
+    if (state.status !== 'ready') return null;
+    const hasIssues = state.result.issues.length > 0;
+    const hasDownloads = state.result.pendingDownloads > 0;
+    if (!hasIssues && !hasDownloads) return null;
+
+    return (
+      <View style={styles.headerWrapper}>
+        {hasIssues && (
+          <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
+            <WarningIcon size={16} color="#fbbf24" weight="fill" />
+            <Text className="flex-1 font-sans text-xs text-amber-200">
+              {state.result.issues.length} file(s) skipped:{' '}
+              {state.result.issues.map((i) => `${i.file} (${i.reason})`).join(', ')}
+            </Text>
+          </View>
+        )}
+
+        {hasDownloads && (
+          <Text className="mb-4 font-sans text-xs text-zinc-500">
+            {state.result.pendingDownloads} item(s) still downloading from iCloud…
+          </Text>
+        )}
+      </View>
+    );
+  }, [state]);
+
+  const renderEmpty = useCallback(
+    () => (
+      <Centered
+        title="You can add anything here"
+        message="This board is yours to save anything you want"
+      >
+        <Pressable
+          onPress={() => router.push('/add')}
+          className="mt-8 flex-row items-center justify-center gap-2 rounded-full bg-white px-5 py-3"
+        >
+          <PlusIcon size={18} color="#000000" />
+          <Text className="font-sans-semibold text-base text-black">Add new item</Text>
+        </Pressable>
+      </Centered>
+    ),
+    []
+  );
+
   return (
     <View className="flex-1 bg-zinc-950">
       {state.status === 'loading' && (
@@ -172,59 +240,22 @@ export default function BoardScreen() {
 
       {state.status === 'ready' && (
         <>
-          <ScrollView
-            contentContainerClassName="px-3 pb-48 grow pt-20"
+          <FlashList<LibraryItem>
+            data={state.result.items}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            numColumns={2}
+            masonry
+            optimizeItemArrangement
+            extraData={extraData}
+            contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
             }
-          >
-            {state.result.issues.length > 0 && (
-              <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
-                <WarningIcon size={16} color="#fbbf24" weight="fill" />
-                <Text className="flex-1 font-sans text-xs text-amber-200">
-                  {state.result.issues.length} file(s) skipped:{' '}
-                  {state.result.issues.map((i) => `${i.file} (${i.reason})`).join(', ')}
-                </Text>
-              </View>
-            )}
-
-            {state.result.pendingDownloads > 0 && (
-              <Text className="mb-4 font-sans text-xs text-zinc-500">
-                {state.result.pendingDownloads} item(s) still downloading from iCloud…
-              </Text>
-            )}
-
-            {state.result.items.length === 0 ? (
-              <Centered
-                title="You can add anything here"
-                message="This board is yours to save anything you want"
-              >
-                <Pressable
-                  onPress={() => router.push('/add')}
-                  className="px-5 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full mt-8"
-                >
-                  <PlusIcon size={18} color="#000000" />
-                  <Text className="font-sans-semibold text-base text-black">Add new item</Text>
-                </Pressable>
-              </Centered>
-            ) : (
-              <MasonryColumns
-                data={state.result.items}
-                keyExtractor={(item) => item.id}
-                estimateHeight={estimateHeight}
-                renderItem={(item) => (
-                  <ItemCard
-                    item={item}
-                    isEditing={isEditing}
-                    isSelected={selectedCardIds.has(item.id)}
-                    onPress={handleCardPress}
-                    onLongPress={handleCardLongPress}
-                  />
-                )}
-              />
-            )}
-          </ScrollView>
+            ListHeaderComponent={renderHeader}
+            ListEmptyComponent={renderEmpty}
+          />
 
           {state.result.items.length > 0 && <ProgressiveBlur />}
         </>
@@ -276,14 +307,23 @@ function Centered({
   );
 }
 
-function estimateHeight(item: LibraryItem): number {
-  switch (item.type) {
-    case 'link':
-      return 1.5;
-    case 'note':
-    case 'quote':
-      return 2;
-    default:
-      return 3;
-  }
+function keyExtractor(item: LibraryItem): string {
+  return item.id;
 }
+
+const styles = StyleSheet.create({
+  contentContainer: {
+    paddingHorizontal: 4,
+    paddingTop: 80,
+    paddingBottom: 192,
+    flexGrow: 1,
+  },
+  cardWrapper: {
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+  },
+  headerWrapper: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+});
