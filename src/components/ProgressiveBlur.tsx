@@ -60,8 +60,8 @@ export function ProgressiveBlur({
             colors={[
               'rgba(0, 0, 0, 0)',
               'rgba(0, 0, 0, 0.05)',
-              'rgba(0, 0, 0, 0.2)',
-              'rgba(0, 0, 0, 0.5)',
+              'rgba(0, 0, 0, 0.4)',
+              'rgba(0, 0, 0, 0.6)',
               'rgba(0, 0, 0, 0.8)',
               'rgba(0, 0, 0, 1)',
             ]}
@@ -77,8 +77,8 @@ export function ProgressiveBlur({
         <LinearGradient
           colors={[
             'rgba(9, 9, 11, 0)',
-            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.2).toFixed(3)})`,
-            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.5).toFixed(3)})`,
+            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.4).toFixed(3)})`,
+            `rgba(9, 9, 11, ${(maxDarkOpacity * 0.6).toFixed(3)})`,
             `rgba(9, 9, 11, ${(maxDarkOpacity * 0.8).toFixed(3)})`,
             `rgba(9, 9, 11, ${maxDarkOpacity.toFixed(3)})`,
           ]}

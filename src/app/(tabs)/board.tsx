@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { WarningIcon } from 'phosphor-react-native';
+import { PlusIcon, WarningIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,25 +14,37 @@ import {
 import { CardSelectionBar } from '@/components/CardSelectionBar';
 import { ItemCard } from '@/components/ItemCard';
 import { MasonryColumns } from '@/components/MasonryColumns';
+import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteDrawer } from '@/components/NewNoteDrawer';
 import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { RestoreToast } from '@/components/RestoreToast';
 import { useLibrary } from '@/hooks/useLibrary';
-import type { DeletedItemBackup } from '@/lib/library/storage';
+import type { DeletedItemBackup, PickedImageAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 export default function BoardScreen() {
   const { state, refresh, refreshing, deleteItems, restoreItems } = useLibrary();
-  const { newNote, newLink } = useLocalSearchParams<{ newNote?: string; newLink?: string }>();
+  const { newNote, newLink, newImageUri, newImageFileName, newImageMimeType, newImageTimestamp } =
+    useLocalSearchParams<{
+      newNote?: string;
+      newLink?: string;
+      newImageUri?: string;
+      newImageFileName?: string;
+      newImageMimeType?: string;
+      newImageTimestamp?: string;
+    }>();
   const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<PickedImageAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
   const lastOpenedNoteRef = useRef<string | null>(null);
   const lastOpenedLinkRef = useRef<string | null>(null);
+  const lastOpenedImageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (newNote && newNote !== lastOpenedNoteRef.current) {
@@ -47,6 +59,19 @@ export default function BoardScreen() {
       setIsLinkModalOpen(true);
     }
   }, [newLink]);
+
+  useEffect(() => {
+    const imageToken = newImageTimestamp || newImageUri;
+    if (newImageUri && imageToken && imageToken !== lastOpenedImageRef.current) {
+      lastOpenedImageRef.current = imageToken;
+      setPendingImage({
+        uri: newImageUri,
+        fileName: newImageFileName,
+        mimeType: newImageMimeType,
+      });
+      setIsImageModalOpen(true);
+    }
+  }, [newImageUri, newImageFileName, newImageMimeType, newImageTimestamp]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -171,7 +196,18 @@ export default function BoardScreen() {
             )}
 
             {state.result.items.length === 0 ? (
-              <Centered title="Nothing here yet" message="Add .json files to this folder." />
+              <Centered
+                title="You can add anything here"
+                message="This board is yours to save anything you want"
+              >
+                <Pressable
+                  onPress={() => router.push('/add')}
+                  className="px-5 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full mt-8"
+                >
+                  <PlusIcon size={18} color="#000000" />
+                  <Text className="font-sans-semibold text-base text-black">Add new item</Text>
+                </Pressable>
+              </Centered>
             ) : (
               <MasonryColumns
                 data={state.result.items}
@@ -196,6 +232,14 @@ export default function BoardScreen() {
 
       <NewNoteDrawer visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
       <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
+      <NewImageModal
+        visible={isImageModalOpen}
+        imageAsset={pendingImage}
+        onClose={() => {
+          setIsImageModalOpen(false);
+          setPendingImage(null);
+        }}
+      />
 
       <CardSelectionBar
         visible={isEditing}
@@ -225,8 +269,8 @@ function Centered({
 }) {
   return (
     <View className="flex-1 items-center justify-center px-8">
-      <Text className="font-sans-medium text-base text-zinc-200">{title}</Text>
-      <Text className="mt-2 text-center font-sans text-sm text-zinc-500">{message}</Text>
+      <Text className="font-sans-medium text-lg text-zinc-100">{title}</Text>
+      <Text className="mt-2 text-center font-sans text-base text-zinc-500">{message}</Text>
       {children}
     </View>
   );

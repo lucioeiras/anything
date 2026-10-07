@@ -312,13 +312,19 @@ export type PickedImageAsset = {
   mimeType?: string | null;
 };
 
+export type AddImageOptions = {
+  title?: string;
+  tags?: string[];
+};
+
 /**
  * Copies a picked image into the library's `images/` folder and writes the
  * corresponding `<id>.json` metadata file to the root of the library.
  */
 export async function addImageToLibrary(
   source: LibrarySource,
-  asset: PickedImageAsset
+  asset: PickedImageAsset,
+  options?: AddImageOptions
 ): Promise<ImageItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -380,11 +386,16 @@ export async function addImageToLibrary(
   }
 
   const now = new Date().toISOString();
+  const trimmedTitle = options?.title?.trim();
+  const tags = options?.tags?.filter(Boolean);
+
   const item: ImageItem = {
     id,
     version: SCHEMA_VERSION,
     type: 'image',
     image: relativeImagePath,
+    ...(trimmedTitle ? { title: trimmedTitle } : {}),
+    ...(tags && tags.length > 0 ? { tags } : {}),
     createdAt: now,
     updatedAt: now,
   };

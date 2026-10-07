@@ -4,6 +4,8 @@ import { RedditLogoIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { cleanRedditDescription } from '@/lib/library/metadata';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type RedditProps = {
@@ -23,9 +25,15 @@ export const RedditCard = ({
 }: RedditProps) => {
   const [aspectRatio, setAspectRatio] = useState(1);
 
+  const cleanText = cleanRedditDescription(text);
+  const cleanImage =
+    image && !image.includes('share.redd.it') && !image.includes('redditstatic.com')
+      ? image
+      : undefined;
+
   return (
     <View className="items-center gap-2">
-      <View className="w-full bg-zinc-900 p-4 rounded-xl gap-3">
+      <View className="w-full bg-zinc-900 p-5 rounded-xl gap-3">
         <View className="flex-row items-center gap-3">
           <ExpoImage source={{ uri: subredditAvatar }} className="w-6 h-6 rounded-full" />
           <Text className="font-sans-medium text-sm text-zinc-300">{subredditName}</Text>
@@ -33,9 +41,9 @@ export const RedditCard = ({
 
         <Text className="font-sans-medium text-base text-zinc-100">{postTitle}</Text>
 
-        {image && (
+        {cleanImage && (
           <ExpoImage
-            source={{ uri: image }}
+            source={{ uri: cleanImage }}
             className="w-full rounded-lg"
             style={{ aspectRatio }}
             onLoad={(e) => {
@@ -47,13 +55,13 @@ export const RedditCard = ({
           />
         )}
 
-        {text && (
+        {cleanText && (
           <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={3}>
-            {text}
+            {cleanText}
           </Text>
         )}
 
-        <View className="flex-row items-center gap-1 mt-1">
+        <View className="flex-row items-center gap-1.5 mt-1">
           <RedditLogoIcon size={14} color="#F97315" weight="fill" />
           <Text className="font-sans-semibold text-sm text-orange-500">Reddit</Text>
         </View>

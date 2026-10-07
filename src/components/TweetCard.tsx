@@ -17,7 +17,7 @@ export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => 
   const [aspectRatio, setAspectRatio] = useState(1);
 
   return (
-    <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
+    <View className="w-full bg-zinc-900 p-5 rounded-xl gap-4">
       <View className="flex-row items-center gap-3">
         <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
         <Text className="font-sans-medium text-sm text-zinc-300">{author}</Text>
@@ -59,7 +59,7 @@ export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => 
         </ScrollView>
       )}
 
-      <View className="flex-row items-center gap-1 mt-2">
+      <View className="flex-row items-center gap-1.5 mt-2">
         <TwitterLogoIcon size={14} color="#0CA5E9" weight="fill" />
         <Text className="font-sans-semibold text-sm text-sky-500">Twitter</Text>
       </View>

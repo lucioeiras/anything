@@ -17,6 +17,7 @@ import {
   restoreItemsToLibrary,
   saveLibrarySource,
   saveRecentFolder,
+  type AddImageOptions,
   type DeletedItemBackup,
   type LibrarySource,
   type LinkUploadItem,
@@ -42,7 +43,7 @@ export type LibraryContextValue = {
   selectFolder: (source: LibrarySource) => Promise<void>;
   pickAndOpenFolder: () => Promise<boolean>;
   removeRecentFolder: (id: string) => Promise<void>;
-  addImage: (asset: PickedImageAsset) => Promise<ImageItem>;
+  addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
   addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (url: string) => Promise<LinkUploadItem>;
   deleteItem: (itemId: string) => Promise<void>;
@@ -196,12 +197,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const currentFolderName = getFolderDisplayName(activeSource);
 
   const addImage = useCallback(
-    async (asset: PickedImageAsset) => {
+    async (asset: PickedImageAsset, options?: AddImageOptions) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);
       }
-      const item = await addImageToLibrary(targetSource, asset);
+      const item = await addImageToLibrary(targetSource, asset, options);
       await load(targetSource);
       return item;
     },

@@ -32,9 +32,9 @@ export function MasonryColumns<T>({
   }
 
   return (
-    <View className="flex-row items-start gap-5">
+    <View className="flex-row items-start gap-4">
       {columns.map((column, index) => (
-        <View key={index} className="flex-1 gap-5">
+        <View key={index} className="flex-1 gap-4">
           {column.map((item) => (
             <View key={keyExtractor(item)}>{renderItem(item)}</View>
           ))}

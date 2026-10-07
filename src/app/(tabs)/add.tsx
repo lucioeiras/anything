@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
 import {
   BookIcon,
   ImageSquareIcon,
@@ -11,16 +11,14 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useLibrary } from '@/hooks/useLibrary';
-
 export default function AddElementScreen() {
-  const { addImage } = useLibrary();
-  const [saving, setSaving] = useState(false);
+  const [isPicking, setIsPicking] = useState(false);
 
   const handlePickImage = async () => {
-    if (saving) return;
+    if (isPicking) return;
 
     try {
+      setIsPicking(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
@@ -31,21 +29,22 @@ export default function AddElementScreen() {
         return;
       }
 
-      setSaving(true);
       const asset = result.assets[0];
 
-      await addImage({
-        uri: asset.uri,
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
+      router.replace({
+        pathname: '/board',
+        params: {
+          newImageUri: asset.uri,
+          newImageFileName: asset.fileName ?? '',
+          newImageMimeType: asset.mimeType ?? '',
+          newImageTimestamp: Date.now().toString(),
+        },
       });
-
-      router.replace('/board');
     } catch (e) {
-      console.error('Failed to add image:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to add image');
+      console.error('Failed to pick image:', e);
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to pick image');
     } finally {
-      setSaving(false);
+      setIsPicking(false);
     }
   };
 
@@ -72,8 +71,8 @@ export default function AddElementScreen() {
         <PlusCircleIcon size={32} color="#3b82f6" weight="duotone" />
       </View>
 
-      <Text className="font-sans-medium text-3xl text-white text-center w-full">
-        Save <Text className="font-serif-italic text-3xl text-blue-500 text-center"> anything</Text>{' '}
+      <Text className="font-sans-medium text-2xl text-white text-center w-full">
+        Save <Text className="font-serif-italic text-2xl text-blue-500 text-center"> anything</Text>{' '}
         you want
       </Text>
       <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-80">
@@ -81,47 +80,45 @@ export default function AddElementScreen() {
         YouTube vídeos
       </Text>
 
-      <View className="mt-8 gap-5">
-        <View className="flex-row flex-wrap justify-center gap-5">
+      <View className="mt-8 gap-4">
+        <View className="flex-row flex-wrap justify-center gap-4">
           <Pressable
             onPress={handleOpenNote}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-white rounded-xl active:opacity-80"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-white rounded-xl active:opacity-80"
           >
-            <NotePencilIcon size={20} color="#000" />
+            <NotePencilIcon size={24} color="#000" />
             <Text className="font-sans-semibold text-lg text-zinc-950">Note, quote or to-do</Text>
           </Pressable>
 
           <Pressable
             onPress={handleOpenLink}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl active:opacity-80"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl active:opacity-80"
           >
-            <LinkIcon size={20} color="#fff" />
+            <LinkIcon size={24} color="#fff" />
             <Text className="font-sans-semibold text-lg text-white">Link from anywhere</Text>
           </Pressable>
         </View>
 
-        <View className="flex-row flex-wrap justify-center gap-5">
+        <View className="flex-row flex-wrap justify-center gap-4">
           <Pressable
             // onPress={changeFolder}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl"
           >
-            <BookIcon size={20} color="#fff" />
+            <BookIcon size={24} color="#fff" />
             <Text className="font-sans-semibold text-lg text-white">Book for the library</Text>
           </Pressable>
 
           <Pressable
             onPress={handlePickImage}
-            disabled={saving}
-            className="p-5 max-w-80 justify-between h-36 w-36 bg-zinc-800 rounded-xl active:opacity-70"
+            disabled={isPicking}
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl active:opacity-70"
           >
-            {saving ? (
-              <ActivityIndicator size={20} color="#fff" />
+            {isPicking ? (
+              <ActivityIndicator size={24} color="#fff" />
             ) : (
-              <ImageSquareIcon size={20} color="#fff" />
+              <ImageSquareIcon size={24} color="#fff" />
             )}
-            <Text className="font-sans-semibold text-lg text-white">
-              {saving ? 'Adding image…' : 'Image from gallery'}
-            </Text>
+            <Text className="font-sans-semibold text-lg text-white">Image from gallery</Text>
           </Pressable>
         </View>
       </View>

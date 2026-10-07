@@ -90,6 +90,102 @@ function extractFavicon(html: string, baseUrl: string): string | null {
 }
 
 /**
+ * Cleans Reddit post description text by stripping out "X votes, Y comments" prefixes
+ * in English, Portuguese, Spanish, etc., subscriber counts, and Reddit boilerplate.
+ * Returns undefined if no meaningful body text remains.
+ */
+export function cleanRedditDescription(desc?: string): string | undefined {
+  if (!desc) return undefined;
+  let text = desc.trim();
+
+  // Strip votes and comments count prefix (e.g., '107 votos, 38 comentários.', '54 votes, 13 comments.')
+  text = text
+    .replace(
+      /^\s*[\d.,\s]+[kKmMkKmilMil]*\s*(?:votes?|votos?|upvotes?)\s*[,·•]?\s*[\d.,\s]+[kKmMkKmilMil]*\s*(?:comments?|coment[aá]rios?)\.?\s*/iu,
+      ''
+    )
+    .trim();
+
+  // Strip single vote or comment count prefix
+  text = text
+    .replace(
+      /^\s*[\d.,\s]+[kKmMkKmilMil]*\s*(?:votes?|votos?|upvotes?|comments?|coment[aá]rios?)\.?\s*/iu,
+      ''
+    )
+    .trim();
+
+  // Strip subscriber / member count boilerplate
+  text = text
+    .replace(
+      /^\s*[\d.,\s]+[kKmMkKmilMil]*\s*(?:de\s+)?(?:subscribers?|members?|membros?|inscritos?)\s*(?:in the|na comunidade|no|na|da|do|de\b)?\s*[^.]*\.?\s*/iu,
+      ''
+    )
+    .trim();
+
+  // Strip common Reddit boilerplates
+  if (
+    !text ||
+    /^explore (?:this post|esta publica[cç][aã]o)/i.test(text) ||
+    /^posted by\b/i.test(text) ||
+    /^publicado por\b/i.test(text) ||
+    /^a (?:place|community) (?:for|to)\b/i.test(text) ||
+    /^uma comunidade para\b/i.test(text)
+  ) {
+    return undefined;
+  }
+
+  return text || undefined;
+}
+
+async function resolveSubredditAvatar(subName: string): Promise<string> {
+  const fallbackAvatar = 'https://www.redditstatic.com/shreddit/assets/favicon/192x192.png';
+  if (!subName || subName.toLowerCase() === 'reddit') {
+    return fallbackAvatar;
+  }
+
+  try {
+    const subRes = await fetch(`https://www.reddit.com/r/${subName}/`, {
+      headers: { 'User-Agent': 'Twitterbot/1.0' },
+    });
+    if (subRes.ok) {
+      const subHtml = await subRes.text();
+
+      // 1. Specific shreddit-subreddit-icon img
+      const m1 =
+        subHtml.match(
+          /<img[^>]*class=["'][^"']*shreddit-subreddit-icon__icon[^"']*["'][^>]*src=["']([^"']+)["']/i
+        ) ||
+        subHtml.match(
+          /<img[^>]*src=["']([^"']+)["'][^>]*class=["'][^"']*shreddit-subreddit-icon__icon[^"']*["']/i
+        );
+      if (m1) return decodeHtmlEntities(m1[1]);
+
+      // 2. Specific styles communityIcon (must be communityIcon, not profileIcon)
+      const m2 = subHtml.match(
+        /https:\/\/styles\.redditmedia\.com\/t5_[^"'\\s>]*communityIcon[^"'\\s>]*/i
+      );
+      if (m2) return decodeHtmlEntities(m2[0]);
+
+      // 3. Subreddit icon in thumbs.redditmedia.com
+      const m3 = subHtml.match(
+        /https:\/\/[ab]\.thumbs\.redditmedia\.com\/[^"'\\s<>]+\.(?:png|jpg|jpeg)/i
+      );
+      if (m3) return decodeHtmlEntities(m3[0]);
+
+      // 4. Any icon with community-icon in class or id
+      const m4 =
+        subHtml.match(/<img[^>]*community-icon[^>]*src=["']([^"']+)["']/i) ||
+        subHtml.match(/<img[^>]*src=["']([^"']+)["'][^>]*community-icon/i);
+      if (m4) return decodeHtmlEntities(m4[1]);
+    }
+  } catch {
+    // fallback
+  }
+
+  return fallbackAvatar;
+}
+
+/**
  * Resolves metadata for a given URL and determines whether it should be
  * saved as a YouTube video, Reddit post, Tweet/X post, Article, or generic Link.
  */
@@ -179,32 +275,90 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
     }
     postHtml = fetchedHtml || '';
 
+    // Check canonical og:url if available
+    if (postHtml) {
+      const ogUrl = extractMeta(postHtml, 'og:url');
+      if (ogUrl) {
+        finalUrl = ogUrl;
+      }
+    }
+
     const subMatch =
       finalUrl.match(/reddit\.com\/r\/([^/?#]+)/i) || url.match(/reddit\.com\/r\/([^/?#]+)/i);
     const subName = subMatch ? subMatch[1] : 'reddit';
     const subreddit = `r/${subName}`;
 
-    // Subreddit avatar resolution
-    let subredditAvatar = 'https://www.redditstatic.com/shreddit/assets/favicon/192x192.png';
-    try {
-      const subRes = await fetch(`https://www.reddit.com/r/${subName}/`, {
+    const postIdMatch =
+      finalUrl.match(/\/comments\/([a-z0-9]+)/i) || url.match(/\/comments\/([a-z0-9]+)/i);
+    const postId = postIdMatch ? postIdMatch[1] : '';
+
+    // Fetch avatar and RSS in parallel
+    const avatarPromise = resolveSubredditAvatar(subName);
+
+    let rssPromise: Promise<string | null> = Promise.resolve(null);
+    if (postId && subName && subName.toLowerCase() !== 'reddit') {
+      const rssUrl = `https://www.reddit.com/r/${subName}/comments/${postId}/.rss`;
+      rssPromise = fetch(rssUrl, {
         headers: { 'User-Agent': 'Twitterbot/1.0' },
-      });
-      if (subRes.ok) {
-        const subHtml = await subRes.text();
-        const iconMatch = subHtml.match(
-          /https:\/\/styles\.redditmedia\.com\/t5_[^"'\\s>]*(?:communityIcon|icon)[^"'\\s>]*/i
-        );
-        if (iconMatch) {
-          subredditAvatar = decodeHtmlEntities(iconMatch[0]);
-        }
-      }
-    } catch {
-      // fallback
+      })
+        .then(async (r) => (r.ok ? r.text() : null))
+        .catch(() => null);
     }
 
-    // Post title resolution
-    let title = oembedTitle;
+    const [subredditAvatar, rssXml] = await Promise.all([avatarPromise, rssPromise]);
+
+    let title = '';
+    let image: string | undefined;
+    let text: string | undefined;
+
+    if (rssXml) {
+      const entryMatch = rssXml.match(/<entry>([\s\S]*?)<\/entry>/);
+      if (entryMatch) {
+        const entry = entryMatch[1];
+
+        // Title from RSS
+        const tMatch = entry.match(/<title>([\s\S]*?)<\/title>/);
+        if (tMatch) {
+          title = decodeHtmlEntities(tMatch[1].trim());
+        }
+
+        // Image: direct i.redd.it first, then media:thumbnail, then preview.redd.it
+        const iReddIt = entry.match(/https:\/\/i\.redd\.it\/[^"'\\s<>&]+/i);
+        const thumbMatch = entry.match(/<media:thumbnail\s+[^>]*url=["']([^"']+)["']/i);
+        const previewMatch = entry.match(
+          /https:\/\/(?:preview|external-preview)\.redd\.it\/[^"'\\s<>&]+/i
+        );
+
+        if (iReddIt) {
+          image = decodeHtmlEntities(iReddIt[0]);
+        } else if (thumbMatch) {
+          image = decodeHtmlEntities(thumbMatch[1]);
+        } else if (previewMatch) {
+          image = decodeHtmlEntities(previewMatch[0]);
+        }
+
+        // Text from <div class="md">
+        const contentMatch = entry.match(/<content[^>]*>([\s\S]*?)<\/content>/);
+        if (contentMatch) {
+          const decodedContent = decodeHtmlEntities(contentMatch[1]);
+          const mdMatch = decodedContent.match(/<div class=["']md["']>([\s\S]*?)<\/div>/);
+          if (mdMatch) {
+            const rawText = mdMatch[1]
+              .replace(/<[^>]+>/g, '')
+              .replace(/&#32;/g, ' ')
+              .trim();
+            if (rawText) {
+              text = cleanRedditDescription(rawText);
+            }
+          }
+        }
+      }
+    }
+
+    // Title fallbacks
+    if (!title) {
+      title = oembedTitle;
+    }
     if (!title && postHtml) {
       const ogTitle = extractMeta(postHtml, 'og:title') || extractMeta(postHtml, 'twitter:title');
       if (ogTitle) {
@@ -234,27 +388,29 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
       title = `${subreddit} post`;
     }
 
-    // Post thumbnail image & body text resolution
-    let image: string | undefined;
-    let text: string | undefined;
-
-    if (postHtml) {
+    // Image fallback from postHtml (ensure share.redd.it and default icons are NEVER used)
+    if (!image && postHtml) {
       const ogImg = extractMeta(postHtml, 'og:image') || extractMeta(postHtml, 'twitter:image');
-      if (ogImg && !ogImg.includes('redditstatic.com/icon.png') && !ogImg.includes('favicon')) {
+      if (
+        ogImg &&
+        !ogImg.includes('share.redd.it') &&
+        !ogImg.includes('redditstatic.com') &&
+        !ogImg.includes('favicon')
+      ) {
         image = decodeHtmlEntities(ogImg);
+      } else {
+        const iReddIt = postHtml.match(/https:\/\/i\.redd\.it\/[^"'\\s<>&]+/i);
+        if (iReddIt) {
+          image = decodeHtmlEntities(iReddIt[0]);
+        }
       }
+    }
 
+    // Text fallback from postHtml
+    if (!text && postHtml) {
       const desc = extractMeta(postHtml, 'description') || extractMeta(postHtml, 'og:description');
       if (desc) {
-        const cleaned = desc.replace(/^\s*\d+[\s\w,]*(?:votes?|comments?)\.?\s*/i, '').trim();
-        if (
-          cleaned &&
-          !/^Explore this post/i.test(cleaned) &&
-          !/\bsubscribers in the\b/i.test(cleaned) &&
-          !/^Posted by\b/i.test(cleaned)
-        ) {
-          text = cleaned;
-        }
+        text = cleanRedditDescription(desc);
       }
     }
 

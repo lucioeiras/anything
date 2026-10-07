@@ -21,9 +21,9 @@ export default function SettingsScreen() {
         <FolderOpenIcon size={32} color="#3b82f6" weight="duotone" />
       </View>
 
-      <Text className="font-sans-medium text-3xl text-white text-center w-full">
+      <Text className="font-sans-medium text-2xl text-white text-center w-full">
         You are in the{' '}
-        <Text className="font-serif-italic text-3xl text-blue-500 text-center">
+        <Text className="font-serif-italic text-2xl text-blue-500 text-center">
           {' '}
           {currentFolderName}
         </Text>{' '}
@@ -35,10 +35,10 @@ export default function SettingsScreen() {
 
       <Pressable
         onPress={changeFolder}
-        className="w-full max-w-80 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full mt-8"
+        className="px-5 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full mt-8"
       >
-        <ArrowsDownUpIcon size={20} color="#000" />
-        <Text className="font-sans-semibold text-lg text-zinc-950">Change space</Text>
+        <ArrowsDownUpIcon size={18} color="#000000" />
+        <Text className="font-sans-semibold text-base text-black">Change space</Text>
       </Pressable>
     </SafeAreaView>
   );
