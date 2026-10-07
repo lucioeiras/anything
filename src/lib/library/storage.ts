@@ -314,6 +314,7 @@ export type PickedImageAsset = {
 
 export type AddImageOptions = {
   title?: string;
+  note?: string;
   tags?: string[];
 };
 
@@ -387,6 +388,7 @@ export async function addImageToLibrary(
 
   const now = new Date().toISOString();
   const trimmedTitle = options?.title?.trim();
+  const trimmedNote = options?.note?.trim();
   const tags = options?.tags?.filter(Boolean);
 
   const item: ImageItem = {
@@ -395,6 +397,7 @@ export async function addImageToLibrary(
     type: 'image',
     image: relativeImagePath,
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
+    ...(trimmedNote ? { note: trimmedNote } : {}),
     ...(tags && tags.length > 0 ? { tags } : {}),
     createdAt: now,
     updatedAt: now,
@@ -552,14 +555,95 @@ export async function addLinkItemToLibrary(
   return item;
 }
 
+export type DeletedImageBackup = {
+  fileName: string;
+  bytes: Uint8Array;
+};
+
 export type DeletedItemBackup = {
   id: string;
   jsonText: string;
+  images?: DeletedImageBackup[];
 };
+
+function extractImageRefsFromItem(item: unknown): string[] {
+  if (!item || typeof item !== 'object') return [];
+  const rec = item as Record<string, unknown>;
+  const refs: string[] = [];
+
+  const add = (val: unknown) => {
+    if (typeof val === 'string' && val.trim().length > 0) {
+      refs.push(val.trim());
+    }
+  };
+
+  add(rec.image);
+  add(rec.favicon);
+  add(rec.thumbnail);
+  add(rec.avatar);
+  add(rec.subredditAvatar);
+
+  if (Array.isArray(rec.images)) {
+    for (const img of rec.images) {
+      add(img);
+    }
+  }
+
+  return refs;
+}
+
+function getItemImageFileNames(
+  parsed: Record<string, unknown>,
+  availableImageFiles: File[],
+  imagesDirUri: string
+): Set<string> {
+  const result = new Set<string>();
+  const refs = extractImageRefsFromItem(parsed);
+  const normalizedImagesDir = imagesDirUri.replace(/\/+$/, '');
+
+  for (const ref of refs) {
+    if (/^(https?:|data:)/i.test(ref)) continue;
+
+    const clean = ref.split('?')[0].split('#')[0];
+
+    // If it's a file URI inside imagesDir
+    if (clean.startsWith('file:') && clean.startsWith(normalizedImagesDir + '/')) {
+      const fileName = decodeURIComponent(clean.slice(normalizedImagesDir.length + 1));
+      result.add(fileName);
+      continue;
+    }
+
+    // Relative path like "images/xyz.jpg" or "./images/xyz.jpg"
+    const relative = clean.replace(/^\.?\//, '');
+    if (relative.startsWith(`${IMAGES_DIR}/`)) {
+      const fileName = decodeURIComponent(relative.slice(IMAGES_DIR.length + 1));
+      result.add(fileName);
+      continue;
+    }
+
+    // Direct filename match in imagesDir
+    const directMatch = availableImageFiles.find((f) => f.name === relative || f.name === clean);
+    if (directMatch) {
+      result.add(directMatch.name);
+    }
+  }
+
+  // Check if any file in imagesDir starts with `${parsed.id}.` (e.g. `<id>.jpg`)
+  if (typeof parsed.id === 'string' && parsed.id) {
+    const idPrefix = `${parsed.id}.`;
+    for (const f of availableImageFiles) {
+      if (f.name.startsWith(idPrefix)) {
+        result.add(f.name);
+      }
+    }
+  }
+
+  return result;
+}
 
 /**
  * Deletes multiple cards from the library and returns backups of their JSON contents
- * so they can be restored if needed.
+ * (and any deleted image files) so they can be restored if needed.
  */
 export async function deleteItemsFromLibrary(
   source: LibrarySource,
@@ -572,30 +656,134 @@ export async function deleteItemsFromLibrary(
   const backups: DeletedItemBackup[] = [];
   const entries = root.list();
 
+  const jsonFiles: File[] = [];
   for (const entry of entries) {
     if (
       entry instanceof File &&
       entry.name.toLowerCase().endsWith('.json') &&
       !entry.name.startsWith('.')
     ) {
-      try {
-        const text = await entry.text();
-        const parsed = JSON.parse(text);
-        if (parsed && typeof parsed.id === 'string' && idSet.has(parsed.id)) {
-          backups.push({ id: parsed.id, jsonText: text });
-          entry.delete();
+      jsonFiles.push(entry);
+    }
+  }
+
+  type ParsedEntry = {
+    file: File;
+    text: string;
+    parsed: Record<string, unknown>;
+  };
+
+  const toDelete: ParsedEntry[] = [];
+  const toRetain: ParsedEntry[] = [];
+
+  for (const file of jsonFiles) {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.id === 'string') {
+        if (idSet.has(parsed.id)) {
+          toDelete.push({ file, text, parsed });
+        } else {
+          toRetain.push({ file, text, parsed });
         }
-      } catch {
-        // ignore JSON parse error
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+  }
+
+  const imagesDir = getImagesDirectory(source);
+  const availableImageFiles: File[] = [];
+  const imageFileByName = new Map<string, File>();
+
+  if (imagesDir.exists) {
+    try {
+      const imgEntries = imagesDir.list();
+      for (const entry of imgEntries) {
+        if (entry instanceof File && !entry.name.startsWith('.')) {
+          availableImageFiles.push(entry);
+          imageFileByName.set(entry.name, entry);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to list images directory:', e);
+    }
+  }
+
+  // Collect image file names retained by remaining items so we never delete an image used by another card
+  const retainedImageFileNames = new Set<string>();
+  for (const item of toRetain) {
+    const fileNames = getItemImageFileNames(item.parsed, availableImageFiles, imagesDir.uri);
+    for (const name of fileNames) {
+      retainedImageFileNames.add(name);
+    }
+  }
+
+  // Track already deleted/backed-up image files to handle multiple cards referencing the same file
+  const processedImages = new Set<string>();
+
+  for (const item of toDelete) {
+    const itemImageFileNames = getItemImageFileNames(
+      item.parsed,
+      availableImageFiles,
+      imagesDir.uri
+    );
+    const itemImageBackups: DeletedImageBackup[] = [];
+
+    for (const fileName of itemImageFileNames) {
+      if (retainedImageFileNames.has(fileName)) {
+        // Still referenced by another card that is not being deleted
+        continue;
+      }
+
+      const imageFile = imageFileByName.get(fileName);
+      if (imageFile && imageFile.exists) {
+        // Read image bytes for backup if not already processed
+        if (!processedImages.has(fileName)) {
+          try {
+            const bytes = await imageFile.bytes();
+            itemImageBackups.push({ fileName, bytes });
+          } catch {
+            try {
+              const buffer = await imageFile.arrayBuffer();
+              itemImageBackups.push({ fileName, bytes: new Uint8Array(buffer) });
+            } catch (e) {
+              console.warn(`Failed to read image ${fileName} for backup:`, e);
+            }
+          }
+
+          // Delete the image file from images/
+          try {
+            imageFile.delete();
+          } catch (e) {
+            console.warn(`Failed to delete image file ${fileName}:`, e);
+          }
+
+          processedImages.add(fileName);
+        }
       }
     }
+
+    // Delete the card's JSON file
+    try {
+      item.file.delete();
+    } catch (e) {
+      console.warn(`Failed to delete JSON file ${item.file.name}:`, e);
+    }
+
+    backups.push({
+      id: item.parsed.id as string,
+      jsonText: item.text,
+      ...(itemImageBackups.length > 0 ? { images: itemImageBackups } : {}),
+    });
   }
 
   return backups;
 }
 
 /**
- * Restores previously deleted items to the library folder from their backup JSON.
+ * Restores previously deleted items to the library folder from their backup JSON
+ * and restores any associated images.
  */
 export async function restoreItemsToLibrary(
   source: LibrarySource,
@@ -604,6 +792,8 @@ export async function restoreItemsToLibrary(
   const root = getLibraryDirectory(source);
   if (!root.exists || backups.length === 0) return;
 
+  const imagesDir = getImagesDirectory(source);
+
   for (const backup of backups) {
     try {
       const jsonFile = new File(root, `${backup.id}.json`);
@@ -611,6 +801,23 @@ export async function restoreItemsToLibrary(
         jsonFile.create({ intermediates: true, overwrite: true });
       }
       jsonFile.write(backup.jsonText);
+
+      if (backup.images && backup.images.length > 0) {
+        if (!imagesDir.exists) {
+          imagesDir.create({ intermediates: true, idempotent: true });
+        }
+        for (const img of backup.images) {
+          try {
+            const restoredImageFile = new File(imagesDir, img.fileName);
+            if (!restoredImageFile.exists) {
+              restoredImageFile.create({ intermediates: true, overwrite: true });
+            }
+            restoredImageFile.write(img.bytes);
+          } catch (imgErr) {
+            console.error(`Failed to restore image ${img.fileName}:`, imgErr);
+          }
+        }
+      }
     } catch (e) {
       console.error(`Failed to restore item ${backup.id}:`, e);
     }
@@ -618,7 +825,7 @@ export async function restoreItemsToLibrary(
 }
 
 /**
- * Deletes a single card's JSON file from the library folder.
+ * Deletes a single card's JSON file and related image from the library folder.
  */
 export async function deleteItemFromLibrary(source: LibrarySource, itemId: string): Promise<void> {
   await deleteItemsFromLibrary(source, [itemId]);

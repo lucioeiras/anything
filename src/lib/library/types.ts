@@ -28,7 +28,12 @@ type BaseItem = {
 
 export type NoteItem = BaseItem & { type: 'note'; text: string; title?: string };
 export type QuoteItem = BaseItem & { type: 'quote'; text: string; title?: string };
-export type ImageItem = BaseItem & { type: 'image'; image: ImageRef; title?: string };
+export type ImageItem = BaseItem & {
+  type: 'image';
+  image: ImageRef;
+  title?: string;
+  note?: string;
+};
 
 export type LinkItem = BaseItem & {
   type: 'link';

@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
-import { CheckIcon, TagIcon, XIcon } from 'phosphor-react-native';
-import { useRef, useState } from 'react';
+import { CheckIcon, NotePencilIcon, TagIcon, XIcon } from 'phosphor-react-native';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -45,20 +45,37 @@ export function parseTags(raw: string): string[] {
 }
 
 export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImageModalProps) {
-  const { addImage } = useLibrary();
-  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<'tags' | 'note'>('tags');
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<number>(4 / 3);
+
   const tagsInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
+  const titleInputRef = useRef<TextInput>(null);
+
+  const { addImage } = useLibrary();
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
 
   const handleClose = () => {
     if (saving) return;
     setTitle('');
     setTags([]);
     setTagInput('');
+    setNote('');
+    setActiveTab('tags');
     onClose();
   };
 
@@ -124,12 +141,15 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
 
       const item = await addImage(imageAsset, {
         title: title.trim() || undefined,
+        note: note.trim() || undefined,
         tags: finalTags.length > 0 ? finalTags : undefined,
       });
 
       setTitle('');
       setTags([]);
       setTagInput('');
+      setNote('');
+      setActiveTab('tags');
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -138,6 +158,20 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSelectTagsTab = () => {
+    setActiveTab('tags');
+    setTimeout(() => {
+      tagsInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleSelectNoteTab = () => {
+    setActiveTab('note');
+    setTimeout(() => {
+      noteInputRef.current?.focus();
+    }, 100);
   };
 
   if (!imageAsset && !visible) {
@@ -174,7 +208,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
             className="flex-1 w-full"
           >
             <ScrollView
-              className="flex-1 w-full px-10"
+              className="flex-1 w-full px-6"
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -200,6 +234,43 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
                         }
                       }}
                     />
+
+                    {/* Dark layer between the buttons and the image */}
+                    <View className="absolute inset-0 bg-black/40" />
+
+                    {/* Actions over the image, centralized */}
+                    <View
+                      pointerEvents="box-none"
+                      className="absolute inset-0 flex-row items-center justify-center gap-6"
+                    >
+                      <Pressable
+                        onPress={handleClose}
+                        disabled={saving}
+                        hitSlop={12}
+                        className="w-20 h-20 rounded-full items-center justify-center bg-white/30 active:opacity-70"
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel"
+                      >
+                        <XIcon size={40} color="#FFFFFF" />
+                      </Pressable>
+
+                      <Pressable
+                        onPress={handleSave}
+                        disabled={!canSave}
+                        hitSlop={12}
+                        className={`w-20 h-20 rounded-full items-center justify-center ${
+                          canSave ? 'bg-white active:opacity-80' : 'bg-black/70'
+                        }`}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save image"
+                      >
+                        {saving ? (
+                          <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
+                        ) : (
+                          <CheckIcon size={40} color={canSave ? '#000000' : '#71717A'} />
+                        )}
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
               )}
@@ -208,86 +279,115 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
               <View className="mt-4 w-full items-center">
                 <TextInput
                   value={title}
+                  ref={titleInputRef}
                   onChangeText={setTitle}
                   placeholder="Add a title to this image"
-                  placeholderTextColor="#71717a"
+                  placeholderTextColor="#A0A0AA"
                   returnKeyType="next"
-                  onSubmitEditing={() => tagsInputRef.current?.focus()}
+                  onSubmitEditing={() => {
+                    if (activeTab === 'tags') {
+                      tagsInputRef.current?.focus();
+                    } else {
+                      noteInputRef.current?.focus();
+                    }
+                  }}
                   className="w-full font-sans text-3xl text-white py-2 text-center"
                   style={styles.borderlessInput}
                   underlineColorAndroid="transparent"
-                  multiline
                 />
               </View>
 
-              {/* Tags Input: tag chip takes text place when typing space */}
-              <View className="w-full items-center gap-3 mt-10">
-                <View className="flex-row items-center justify-center gap-2">
-                  <TagIcon size={14} color="#FFFFFF" weight="bold" />
-                  <Text className="font-sans-semibold text-sm text-white">TAGS</Text>
-                </View>
-
-                <View className="w-full flex-row flex-wrap items-center justify-center gap-2">
-                  {tags.map((tag, idx) => (
-                    <Pressable
-                      key={`${tag}-${idx}`}
-                      onPress={() => handleRemoveTag(idx)}
-                      className="flex-row items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 border border-white/15 active:opacity-70"
+              {/* 2-Tab Box for Tags and Attached Note */}
+              <View className="w-full mt-10 min-h-[220px] mb-6">
+                {/* 2 Tabs Switcher */}
+                <View className="w-full flex-row items-center justify-center gap-2 mb-3 self-center">
+                  <Pressable
+                    onPress={handleSelectTagsTab}
+                    className="flex-grow justify-center flex-row items-center gap-1.5 px-5 py-2 rounded-xl"
+                  >
+                    <TagIcon
+                      size={16}
+                      color={activeTab === 'tags' ? '#FFFFFF' : '#71717A'}
+                      weight="bold"
+                    />
+                    <Text
+                      className={`font-sans-semibold text-sm tracking-wider uppercase ${
+                        activeTab === 'tags' ? 'text-white' : 'text-zinc-500'
+                      }`}
                     >
-                      <Text className="font-sans-medium text-sm text-zinc-100">#{tag}</Text>
-                      <XIcon size={12} color="#a1a1aa" />
-                    </Pressable>
-                  ))}
+                      TAGS{tags.length > 0 ? ` (${tags.length})` : ''}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleSelectNoteTab}
+                    className="flex-grow justify-center flex-row items-center gap-1.5 px-5 py-2 rounded-xl"
+                  >
+                    <NotePencilIcon
+                      size={16}
+                      color={activeTab === 'note' ? '#FFFFFF' : '#71717A'}
+                      weight="bold"
+                    />
+                    <Text
+                      className={`font-sans-semibold text-sm tracking-wider uppercase ${
+                        activeTab === 'note' ? 'text-white' : 'text-zinc-400'
+                      }`}
+                    >
+                      NOTE{note.trim().length > 0 ? ' •' : ''}
+                    </Text>
+                  </Pressable>
                 </View>
 
-                <TextInput
-                  ref={tagsInputRef}
-                  value={tagInput}
-                  onChangeText={handleTagInputChange}
-                  onKeyPress={handleTagInputKeyPress}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : 'Add more...'}
-                  placeholderTextColor="#71717a"
-                  returnKeyType="done"
-                  onSubmitEditing={handleTagInputSubmit}
-                  className="font-sans text-xl text-zinc-300 py-1 text-center min-w-[120px]"
-                  style={styles.borderlessInput}
-                  underlineColorAndroid="transparent"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+                {/* Tab 1: Tags Content */}
+                {activeTab === 'tags' && (
+                  <View className="flex-1 w-full flex-row flex-wrap items-center justify-start min-h-[140px] gap-2 p-6 bg-zinc-900/50 rounded-3xl">
+                    {tags.length > 0 &&
+                      tags.map((tag, idx) => (
+                        <Pressable
+                          key={`${tag}-${idx}`}
+                          onPress={() => handleRemoveTag(idx)}
+                          className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
+                        >
+                          <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
+                          <XIcon size={14} color="#61A5FA" />
+                        </Pressable>
+                      ))}
 
-              {/* Actions */}
-              <View className="flex-row items-center gap-4 mt-16">
-                <Pressable
-                  onPress={handleClose}
-                  disabled={saving}
-                  className="w-32 px-5 py-3 flex-row items-center justify-center gap-2 bg-white/20 rounded-full"
-                >
-                  {saving ? (
-                    <ActivityIndicator size={18} color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <XIcon size={18} color="#FFFFFF" weight="bold" />
-                      <Text className="font-sans-semibold text-base text-white">Cancel</Text>
-                    </>
-                  )}
-                </Pressable>
+                    <TextInput
+                      ref={tagsInputRef}
+                      value={tagInput}
+                      onChangeText={handleTagInputChange}
+                      onKeyPress={handleTagInputKeyPress}
+                      placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+                      placeholderTextColor="#71717a"
+                      returnKeyType="done"
+                      onSubmitEditing={handleTagInputSubmit}
+                      className="font-sans text-base leading-tight text-zinc-300 flex-grow"
+                      style={styles.borderlessInput}
+                      underlineColorAndroid="transparent"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                )}
 
-                <Pressable
-                  onPress={handleSave}
-                  disabled={!canSave}
-                  className="w-32 px-5 py-3 flex-row items-center justify-center gap-2 bg-white rounded-full"
-                >
-                  {saving ? (
-                    <ActivityIndicator size={18} color="#000000" />
-                  ) : (
-                    <>
-                      <CheckIcon size={18} color="#000000" weight="bold" />
-                      <Text className="font-sans-semibold text-base text-black">Save</Text>
-                    </>
-                  )}
-                </Pressable>
+                {/* Tab 2: Note Content */}
+                {activeTab === 'note' && (
+                  <View className="flex-1 w-full justify-start min-h-[140px] p-6 pt-4 bg-zinc-900/50 rounded-3xl">
+                    <TextInput
+                      ref={noteInputRef}
+                      value={note}
+                      onChangeText={setNote}
+                      placeholder="Add a text note to this image..."
+                      placeholderTextColor="#71717a"
+                      multiline
+                      textAlignVertical="top"
+                      className="w-full flex-1 font-sans text-base text-zinc-100 leading-6"
+                      style={styles.borderlessInput}
+                      underlineColorAndroid="transparent"
+                    />
+                  </View>
+                )}
               </View>
             </ScrollView>
           </KeyboardAvoidingView>

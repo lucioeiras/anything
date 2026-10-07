@@ -36,7 +36,7 @@ export const ItemCard = memo(function ItemCard({
       case 'quote':
         return <QuoteCard text={item.text} title={item.title} />;
       case 'image':
-        return <ImageCard url={item.image} title={item.title} />;
+        return <ImageCard url={item.image} title={item.title} note={item.note} />;
       case 'link':
         return (
           <LinkCard
