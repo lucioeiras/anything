@@ -14,7 +14,7 @@ export const QuoteCard = ({ text, title }: QuoteProps) => {
       <View className="w-full bg-zinc-900 p-6 rounded-xl items-center gap-3">
         <QuoteOpen />
         <Text
-          className="font-sans text-base text-center leading-[1.8] text-zinc-300"
+          className="font-sans-medium text-lg text-center leading-[1.8] text-zinc-100"
           numberOfLines={8}
         >
           {text}

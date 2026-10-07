@@ -28,7 +28,7 @@ export const RedditCard = ({
       <View className="w-full bg-zinc-900 p-4 rounded-xl gap-3">
         <View className="flex-row items-center gap-3">
           <ExpoImage source={{ uri: subredditAvatar }} className="w-6 h-6 rounded-full" />
-          <Text className="font-sans-medium text-sm text-zinc-100">{subredditName}</Text>
+          <Text className="font-sans-medium text-sm text-zinc-300">{subredditName}</Text>
         </View>
 
         <Text className="font-sans-medium text-base text-zinc-100">{postTitle}</Text>

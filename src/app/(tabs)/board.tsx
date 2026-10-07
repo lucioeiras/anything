@@ -1,21 +1,36 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { WarningIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
+import { CardSelectionBar } from '@/components/CardSelectionBar';
 import { ItemCard } from '@/components/ItemCard';
 import { MasonryColumns } from '@/components/MasonryColumns';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteDrawer } from '@/components/NewNoteDrawer';
 import { ProgressiveBlur } from '@/components/ProgressiveBlur';
+import { RestoreToast } from '@/components/RestoreToast';
 import { useLibrary } from '@/hooks/useLibrary';
+import type { DeletedItemBackup } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 export default function BoardScreen() {
-  const { state, refresh, refreshing } = useLibrary();
+  const { state, refresh, refreshing, deleteItems, restoreItems } = useLibrary();
   const { newNote, newLink } = useLocalSearchParams<{ newNote?: string; newLink?: string }>();
   const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
+  const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
+  const [isToastVisible, setIsToastVisible] = useState(false);
   const lastOpenedNoteRef = useRef<string | null>(null);
   const lastOpenedLinkRef = useRef<string | null>(null);
 
@@ -39,6 +54,76 @@ export default function BoardScreen() {
     } else {
       router.replace('/');
     }
+  };
+
+  const toggleCardSelection = (itemId: string) => {
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const handleCardLongPress = (item: LibraryItem) => {
+    if (!isEditing) {
+      setIsEditing(true);
+      setSelectedCardIds(new Set([item.id]));
+    } else {
+      toggleCardSelection(item.id);
+    }
+  };
+
+  const handleCardPress = (item: LibraryItem) => {
+    if (isEditing) {
+      toggleCardSelection(item.id);
+    }
+  };
+
+  const handleCancelEdition = () => {
+    setIsEditing(false);
+    setSelectedCardIds(new Set());
+  };
+
+  const handleDeleteSelected = async () => {
+    const idsToDelete = Array.from(selectedCardIds);
+    if (idsToDelete.length === 0) return;
+
+    try {
+      setIsEditing(false);
+      setSelectedCardIds(new Set());
+
+      const backups = await deleteItems(idsToDelete);
+
+      if (backups.length > 0) {
+        setRestoreBackup(backups);
+        setIsToastVisible(true);
+      }
+    } catch (error) {
+      console.error('Failed to delete cards:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete cards');
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!restoreBackup || restoreBackup.length === 0) return;
+    try {
+      const backups = restoreBackup;
+      setIsToastVisible(false);
+      setRestoreBackup(null);
+      await restoreItems(backups);
+    } catch (error) {
+      console.error('Failed to restore cards:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restore cards');
+    }
+  };
+
+  const handleDismissToast = () => {
+    setIsToastVisible(false);
+    setRestoreBackup(null);
   };
 
   return (
@@ -92,7 +177,15 @@ export default function BoardScreen() {
                 data={state.result.items}
                 keyExtractor={(item) => item.id}
                 estimateHeight={estimateHeight}
-                renderItem={(item) => <ItemCard item={item} />}
+                renderItem={(item) => (
+                  <ItemCard
+                    item={item}
+                    isEditing={isEditing}
+                    isSelected={selectedCardIds.has(item.id)}
+                    onPress={handleCardPress}
+                    onLongPress={handleCardLongPress}
+                  />
+                )}
               />
             )}
           </ScrollView>
@@ -103,6 +196,20 @@ export default function BoardScreen() {
 
       <NewNoteDrawer visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
       <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
+
+      <CardSelectionBar
+        visible={isEditing}
+        selectedCount={selectedCardIds.size}
+        onDelete={handleDeleteSelected}
+        onCancel={handleCancelEdition}
+      />
+
+      <RestoreToast
+        visible={isToastVisible && !isEditing}
+        count={restoreBackup?.length ?? 0}
+        onRestore={handleRestore}
+        onDismiss={handleDismissToast}
+      />
     </View>
   );
 }

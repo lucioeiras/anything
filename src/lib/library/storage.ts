@@ -541,6 +541,78 @@ export async function addLinkItemToLibrary(
   return item;
 }
 
+export type DeletedItemBackup = {
+  id: string;
+  jsonText: string;
+};
+
+/**
+ * Deletes multiple cards from the library and returns backups of their JSON contents
+ * so they can be restored if needed.
+ */
+export async function deleteItemsFromLibrary(
+  source: LibrarySource,
+  itemIds: string[]
+): Promise<DeletedItemBackup[]> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists || itemIds.length === 0) return [];
+
+  const idSet = new Set(itemIds);
+  const backups: DeletedItemBackup[] = [];
+  const entries = root.list();
+
+  for (const entry of entries) {
+    if (
+      entry instanceof File &&
+      entry.name.toLowerCase().endsWith('.json') &&
+      !entry.name.startsWith('.')
+    ) {
+      try {
+        const text = await entry.text();
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed.id === 'string' && idSet.has(parsed.id)) {
+          backups.push({ id: parsed.id, jsonText: text });
+          entry.delete();
+        }
+      } catch {
+        // ignore JSON parse error
+      }
+    }
+  }
+
+  return backups;
+}
+
+/**
+ * Restores previously deleted items to the library folder from their backup JSON.
+ */
+export async function restoreItemsToLibrary(
+  source: LibrarySource,
+  backups: DeletedItemBackup[]
+): Promise<void> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists || backups.length === 0) return;
+
+  for (const backup of backups) {
+    try {
+      const jsonFile = new File(root, `${backup.id}.json`);
+      if (!jsonFile.exists) {
+        jsonFile.create({ intermediates: true, overwrite: true });
+      }
+      jsonFile.write(backup.jsonText);
+    } catch (e) {
+      console.error(`Failed to restore item ${backup.id}:`, e);
+    }
+  }
+}
+
+/**
+ * Deletes a single card's JSON file from the library folder.
+ */
+export async function deleteItemFromLibrary(source: LibrarySource, itemId: string): Promise<void> {
+  await deleteItemsFromLibrary(source, [itemId]);
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

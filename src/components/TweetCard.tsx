@@ -20,10 +20,10 @@ export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => 
     <View className="w-full bg-zinc-900 p-4 rounded-xl gap-4">
       <View className="flex-row items-center gap-3">
         <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
-        <Text className="font-sans-medium text-sm text-zinc-100">{author}</Text>
+        <Text className="font-sans-medium text-sm text-zinc-300">{author}</Text>
       </View>
 
-      <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={8}>
+      <Text className="font-sans text-base leading-[1.8] text-zinc-50" numberOfLines={8}>
         {text}
       </Text>
 

@@ -98,8 +98,10 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
 
   let hostname = '';
   let pathname = '';
+
   try {
     const parsed = new URL(url);
+
     hostname = parsed.hostname.toLowerCase();
     pathname = parsed.pathname;
   } catch {
@@ -289,9 +291,7 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
           if (data.tweet) {
             const t = data.tweet;
             if (t.author?.name) {
-              author = t.author.screen_name
-                ? `${t.author.name} (@${t.author.screen_name})`
-                : t.author.name;
+              author = t.author.screen_name ? t.author.name : t.author.name;
             }
             if (t.author?.avatar_url) {
               avatar = t.author.avatar_url;

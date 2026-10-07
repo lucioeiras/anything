@@ -5,6 +5,7 @@ import {
   addImageToLibrary,
   addLinkItemToLibrary,
   addTextItemToLibrary,
+  deleteItemsFromLibrary,
   getFolderDisplayName,
   getLibraryDirectory,
   getRecentFolders,
@@ -13,8 +14,10 @@ import {
   pickLibraryFolder,
   removeRecentFolder as removeRecentFolderStorage,
   resolveFolderSource,
+  restoreItemsToLibrary,
   saveLibrarySource,
   saveRecentFolder,
+  type DeletedItemBackup,
   type LibrarySource,
   type LinkUploadItem,
   type LoadResult,
@@ -42,6 +45,9 @@ export type LibraryContextValue = {
   addImage: (asset: PickedImageAsset) => Promise<ImageItem>;
   addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (url: string) => Promise<LinkUploadItem>;
+  deleteItem: (itemId: string) => Promise<void>;
+  deleteItems: (itemIds: string[]) => Promise<DeletedItemBackup[]>;
+  restoreItems: (backups: DeletedItemBackup[]) => Promise<void>;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -228,6 +234,51 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const deleteItems = useCallback(
+    async (itemIds: string[]): Promise<DeletedItemBackup[]> => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      const idSet = new Set(itemIds);
+
+      // Optimistically remove items from current ready state for instantaneous UI feedback
+      setLoaded((prev) => {
+        if (prev && prev.state.status === 'ready') {
+          return {
+            ...prev,
+            state: {
+              ...prev.state,
+              result: {
+                ...prev.state.result,
+                items: prev.state.result.items.filter((item) => !idSet.has(item.id)),
+              },
+            },
+          };
+        }
+        return prev;
+      });
+
+      const backups = await deleteItemsFromLibrary(targetSource, itemIds);
+      await load(targetSource);
+      return backups;
+    },
+    [source, load]
+  );
+
+  const deleteItem = useCallback(
+    async (itemId: string) => {
+      await deleteItems([itemId]);
+    },
+    [deleteItems]
+  );
+
+  const restoreItems = useCallback(
+    async (backups: DeletedItemBackup[]): Promise<void> => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      await restoreItemsToLibrary(targetSource, backups);
+      await load(targetSource);
+    },
+    [source, load]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -242,6 +293,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     addImage,
     addTextItem,
     addLinkItem,
+    deleteItem,
+    deleteItems,
+    restoreItems,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,
