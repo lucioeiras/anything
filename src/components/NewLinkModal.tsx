@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TagsNoteBox } from '@/components/TagsNoteBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LinkUploadItem } from '@/lib/library/storage';
 
@@ -28,8 +30,14 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const { addLinkItem } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+  const tagsInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
 
   const [url, setUrl] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [note, setNote] = useState('');
+  const [activeTab, setActiveTab] = useState<'tags' | 'note'>('tags');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -44,6 +52,10 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const handleClose = () => {
     if (saving) return;
     setUrl('');
+    setTags([]);
+    setTagInput('');
+    setNote('');
+    setActiveTab('tags');
     onClose();
   };
 
@@ -57,8 +69,21 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
 
     setSaving(true);
     try {
-      const item = await addLinkItem(targetUrl);
+      const finalTags = [...tags];
+      const pending = tagInput.replace(/^#/, '').trim();
+      if (pending && !finalTags.includes(pending)) {
+        finalTags.push(pending);
+      }
+
+      const item = await addLinkItem(targetUrl, {
+        tags: finalTags.length > 0 ? finalTags : undefined,
+        note: note.trim() || undefined,
+      });
       setUrl('');
+      setTags([]);
+      setTagInput('');
+      setNote('');
+      setActiveTab('tags');
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -94,16 +119,19 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
             }}
             className="flex-1 w-full relative"
           >
-            {/* Center Content: Big Icon, Title, and Centralized Input */}
-            <Pressable
-              className="flex-1 w-full items-center justify-center px-8"
-              onPress={() => inputRef.current?.focus()}
+            <ScrollView
+              className="flex-1 w-full px-6"
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
             >
               {/* Big link icon */}
-              <LinkIcon size={40} color="#FFFFFF" weight="bold" />
+              <View className="items-center justify-center mt-2">
+                <LinkIcon size={40} color="#FFFFFF" weight="bold" />
+              </View>
 
               {/* Title */}
-              <Text className="font-sans-semibold text-3xl text-white my-6 text-center">
+              <Text className="font-sans-semibold text-3xl text-white my-4 text-center">
                 Add a new link
               </Text>
 
@@ -117,15 +145,38 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
-                returnKeyType="done"
-                onSubmitEditing={handleSave}
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  if (activeTab === 'tags') {
+                    tagsInputRef.current?.focus();
+                  } else {
+                    noteInputRef.current?.focus();
+                  }
+                }}
                 textAlign="center"
-                className="w-full font-sans text-2xl text-white text-center mt-2"
+                className="w-full font-sans text-2xl text-white text-center mt-1"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
                 multiline
               />
-            </Pressable>
+
+              {/* Tags and Note Box */}
+              <TagsNoteBox
+                tags={tags}
+                onTagsChange={setTags}
+                tagInput={tagInput}
+                onTagInputChange={setTagInput}
+                note={note}
+                onNoteChange={setNote}
+                activeTab={activeTab}
+                onActiveTabChange={setActiveTab}
+                tagsInputRef={tagsInputRef}
+                noteInputRef={noteInputRef}
+                notePlaceholder="Add a text note to this link..."
+                onSubmitTag={handleSave}
+                className="mt-8 mb-4"
+              />
+            </ScrollView>
 
             {/* Floating action buttons at the bottom */}
             <View
@@ -176,6 +227,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingBottom: 110,
   },
   borderlessInput: {
     borderWidth: 0,

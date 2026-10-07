@@ -464,7 +464,8 @@ export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem |
  */
 export async function addLinkItemToLibrary(
   source: LibrarySource,
-  url: string
+  url: string,
+  options?: { tags?: string[]; note?: string }
 ): Promise<LinkUploadItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -544,6 +545,13 @@ export async function addLinkItemToLibrary(
         updatedAt: now,
       };
       break;
+  }
+
+  if (options?.tags?.length) {
+    item.tags = options.tags;
+  }
+  if (options?.note) {
+    item.note = options.note;
   }
 
   const jsonFile = new File(root, `${id}.json`);

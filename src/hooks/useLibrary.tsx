@@ -45,7 +45,10 @@ export type LibraryContextValue = {
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
   addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
-  addLinkItem: (url: string) => Promise<LinkUploadItem>;
+  addLinkItem: (
+    url: string,
+    options?: { tags?: string[]; note?: string }
+  ) => Promise<LinkUploadItem>;
   deleteItem: (itemId: string) => Promise<void>;
   deleteItems: (itemIds: string[]) => Promise<DeletedItemBackup[]>;
   restoreItems: (backups: DeletedItemBackup[]) => Promise<void>;
@@ -223,12 +226,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addLinkItem = useCallback(
-    async (url: string) => {
+    async (url: string, options?: { tags?: string[]; note?: string }) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);
       }
-      const item = await addLinkItemToLibrary(targetSource, url);
+      const item = await addLinkItemToLibrary(targetSource, url, options);
       await load(targetSource);
       return item;
     },

@@ -24,6 +24,7 @@ type BaseItem = {
   createdAt: string;
   updatedAt: string;
   tags?: string[];
+  note?: string;
 };
 
 export type NoteItem = BaseItem & { type: 'note'; text: string; title?: string };
