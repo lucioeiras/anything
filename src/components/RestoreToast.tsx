@@ -12,7 +12,7 @@ type RestoreToastProps = {
 };
 
 const STROKE_WIDTH = 3.5;
-const DURATION_MS = 8000;
+const DURATION_MS = 5000;
 
 export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreToastProps) {
   const insets = useSafeAreaInsets();
