@@ -149,7 +149,7 @@ export function TagsNoteBox({
 
       {/* Tab 1: Tags Content */}
       {activeTab === 'tags' && (
-        <View className="flex-1 w-full flex-row flex-wrap items-center justify-start min-h-[140px] gap-2 p-6 bg-zinc-900/50 rounded-3xl">
+        <View className="flex-1 w-full flex-row flex-wrap items-center justify-start min-h-[140px] gap-2 p-6 bg-zinc-900/70 rounded-3xl">
           {tags.length > 0 &&
             tags.map((tag, idx) => (
               <Pressable
@@ -182,7 +182,7 @@ export function TagsNoteBox({
 
       {/* Tab 2: Note Content */}
       {activeTab === 'note' && (
-        <View className="flex-1 w-full justify-start min-h-[140px] p-6 pt-4 bg-zinc-900/50 rounded-3xl">
+        <View className="flex-1 w-full justify-start min-h-[140px] p-6 pt-4 bg-zinc-900/70 rounded-3xl">
           <TextInput
             ref={effectiveNoteRef}
             value={note}

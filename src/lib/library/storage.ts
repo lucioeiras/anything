@@ -839,6 +839,68 @@ export async function deleteItemFromLibrary(source: LibrarySource, itemId: strin
   await deleteItemsFromLibrary(source, [itemId]);
 }
 
+/**
+ * Updates an existing card's JSON file in the library folder and returns the resolved item.
+ */
+export async function updateItemInLibrary(
+  source: LibrarySource,
+  itemId: string,
+  updates: Partial<LibraryItem>
+): Promise<LibraryItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    throw new Error('Library directory not found');
+  }
+
+  const jsonFile = new File(root, `${itemId}.json`);
+  if (!jsonFile.exists) {
+    throw new Error(`Card ${itemId} not found`);
+  }
+
+  const text = await jsonFile.text();
+  const rawItem = JSON.parse(text);
+
+  const now = new Date().toISOString();
+  const updatedRaw = {
+    ...rawItem,
+    ...updates,
+    id: itemId,
+    updatedAt: now,
+  };
+
+  if (
+    rawItem.image &&
+    typeof rawItem.image === 'string' &&
+    !rawItem.image.startsWith('file:') &&
+    !rawItem.image.startsWith('http')
+  ) {
+    updatedRaw.image = rawItem.image;
+  }
+  if (
+    rawItem.thumbnail &&
+    typeof rawItem.thumbnail === 'string' &&
+    !rawItem.thumbnail.startsWith('file:') &&
+    !rawItem.thumbnail.startsWith('http')
+  ) {
+    updatedRaw.thumbnail = rawItem.thumbnail;
+  }
+  if (
+    rawItem.favicon &&
+    typeof rawItem.favicon === 'string' &&
+    !rawItem.favicon.startsWith('file:') &&
+    !rawItem.favicon.startsWith('http')
+  ) {
+    updatedRaw.favicon = rawItem.favicon;
+  }
+
+  if (updates.tags) {
+    updatedRaw.tags = updates.tags.filter(Boolean);
+  }
+
+  jsonFile.write(JSON.stringify(updatedRaw, null, 2));
+  return resolveImages(parseItem(updatedRaw), root);
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

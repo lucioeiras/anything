@@ -59,11 +59,11 @@ Join our community of developers creating universal apps.
 
 Items are `*.json` files; local images live in `images/` and are referenced by relative path. The library can live in:
 
-| Location | Notes |
-|---|---|
+| Location                                  | Notes                                                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **iCloud Drive** (default when signed in) | The app's own container, shown as **Anything** in Files › iCloud Drive. Syncs across devices; files can be added by hand. |
-| **This iPhone** | `Documents/Library`, visible in Files › On My iPhone › anything. |
-| **Chosen folder** | Any folder picked in Files. Access is remembered across launches (security-scoped bookmark). |
+| **This iPhone**                           | `Documents/Library`, visible in Files › On My iPhone › anything.                                                          |
+| **Chosen folder**                         | Any folder picked in Files. Access is remembered across launches (security-scoped bookmark).                              |
 
 The native bits (iCloud container lookup, bookmarks, placeholder downloads) live in the local Expo module `modules/anything-icloud` (iOS only). They need a **development build**, not Expo Go:
 

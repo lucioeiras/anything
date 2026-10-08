@@ -17,6 +17,7 @@ import {
   restoreItemsToLibrary,
   saveLibrarySource,
   saveRecentFolder,
+  updateItemInLibrary,
   type AddImageOptions,
   type DeletedItemBackup,
   type LibrarySource,
@@ -52,6 +53,10 @@ export type LibraryContextValue = {
   deleteItem: (itemId: string) => Promise<void>;
   deleteItems: (itemIds: string[]) => Promise<DeletedItemBackup[]>;
   restoreItems: (backups: DeletedItemBackup[]) => Promise<void>;
+  updateItem: (
+    itemId: string,
+    updates: Partial<import('@/lib/library/types').LibraryItem>
+  ) => Promise<import('@/lib/library/types').LibraryItem>;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -283,6 +288,32 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, load]
   );
 
+  const updateItem = useCallback(
+    async (itemId: string, updates: Partial<import('@/lib/library/types').LibraryItem>) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      const updated = await updateItemInLibrary(targetSource, itemId, updates);
+
+      setLoaded((prev) => {
+        if (prev && prev.state.status === 'ready') {
+          return {
+            ...prev,
+            state: {
+              ...prev.state,
+              result: {
+                ...prev.state.result,
+                items: prev.state.result.items.map((i) => (i.id === itemId ? updated : i)),
+              },
+            },
+          };
+        }
+        return prev;
+      });
+
+      return updated;
+    },
+    [source]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -300,6 +331,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     deleteItem,
     deleteItems,
     restoreItems,
+    updateItem,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

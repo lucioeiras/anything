@@ -56,6 +56,14 @@
             "enableSceneSupport": true
           }
         }
+      ],
+      "expo-sharing",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "The app needs access to save images to your camera roll.",
+          "savePhotosPermission": "The app needs access to save images to your camera roll."
+        }
       ]
     ],
     "experiments": {

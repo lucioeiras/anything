@@ -109,6 +109,11 @@ export default function BoardScreen() {
     (item: LibraryItem) => {
       if (isEditing) {
         toggleCardSelection(item.id);
+      } else {
+        router.push({
+          pathname: '/card/[id]',
+          params: { id: item.id },
+        });
       }
     },
     [isEditing, toggleCardSelection]
