@@ -78,9 +78,10 @@ function formatDateAdded(isoDate: string): string {
 type CardDetailContentProps = {
   item: LibraryItem;
   onDismiss: () => void;
+  onSelectTag: (tag: string) => void;
 };
 
-function CardDetailContent({ item, onDismiss }: CardDetailContentProps) {
+function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentProps) {
   const { deleteItem, updateItem } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -692,7 +693,7 @@ function CardDetailContent({ item, onDismiss }: CardDetailContentProps) {
                   tagInputRef.current?.focus();
                 }
               }}
-              className="w-full bg-zinc-900 border border-zinc-800/70 rounded-2xl p-5 gap-2.5 active:border-zinc-700"
+              className="w-full bg-zinc-900 rounded-2xl p-5 gap-2.5 active:border-zinc-700"
             >
               <View className="flex-row flex-wrap items-center gap-2">
                 {tags.map((tag, idx) => (
@@ -716,6 +717,8 @@ function CardDetailContent({ item, onDismiss }: CardDetailContentProps) {
                       onPress={() => {
                         if (isEditingTags) {
                           handleRemoveTag(idx);
+                        } else {
+                          onSelectTag(tag);
                         }
                       }}
                       className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1.5 active:opacity-70"
@@ -808,7 +811,7 @@ function CardDetailContent({ item, onDismiss }: CardDetailContentProps) {
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { state } = useLibrary();
+  const { state, setSearchQuery } = useLibrary();
 
   const item = useMemo(() => {
     if (state.status !== 'ready') return null;
@@ -853,6 +856,24 @@ export default function CardDetailScreen() {
     [translateY, dismissScreen]
   );
 
+  const handleSelectTag = useCallback(
+    (tag: string) => {
+      setSearchQuery(tag);
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/board');
+        }
+      });
+    },
+    [translateY, setSearchQuery]
+  );
+
   if (!item) {
     return (
       <View className="flex-1 bg-black/70 items-center justify-center">
@@ -885,7 +906,12 @@ export default function CardDetailScreen() {
           <View className="w-12 h-1.5 rounded-full bg-zinc-500/70 active:bg-zinc-300" />
         </Pressable>
 
-        <CardDetailContent key={item.id} item={item} onDismiss={dismissScreen} />
+        <CardDetailContent
+          key={item.id}
+          item={item}
+          onDismiss={dismissScreen}
+          onSelectTag={handleSelectTag}
+        />
       </Animated.View>
     </View>
   );

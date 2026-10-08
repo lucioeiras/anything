@@ -10,10 +10,12 @@ import {
   getLibraryDirectory,
   getRecentFolders,
   getSavedLibrarySource,
+  getSourceId,
   loadLibrary,
   pickLibraryFolder,
   removeRecentFolder as removeRecentFolderStorage,
   resolveFolderSource,
+  resolveImages,
   restoreItemsToLibrary,
   saveLibrarySource,
   saveRecentFolder,
@@ -26,6 +28,7 @@ import {
   type PickedImageAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
+import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
 import type { ImageItem, NoteItem, QuoteItem } from '@/lib/library/types';
 
 export type LibraryState =
@@ -57,6 +60,10 @@ export type LibraryContextValue = {
     itemId: string,
     updates: Partial<import('@/lib/library/types').LibraryItem>
   ) => Promise<import('@/lib/library/types').LibraryItem>;
+  getTags: () => { tag: string; count: number }[];
+  searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -68,6 +75,7 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [source, setSourceInternal] = useState<LibrarySource | null>(null);
   const [loaded, setLoaded] = useState<{ source: LibrarySource; state: LibraryState } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [recentFolders, setRecentFolders] = useState<SavedFolder[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -314,6 +322,21 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source]
   );
 
+  const getTags = useCallback(() => {
+    const targetSource = source ?? { kind: 'local', name: 'App Library' };
+    return getDistinctTags(getSourceId(targetSource));
+  }, [source]);
+
+  const searchItems = useCallback(
+    (filter: ItemIndexFilter) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      const root = getLibraryDirectory(targetSource);
+      const cachedMatches = searchCachedItems(getSourceId(targetSource), filter);
+      return cachedMatches.map((item) => resolveImages(item, root));
+    },
+    [source]
+  );
+
   const value: LibraryContextValue = {
     source: activeSource,
     setSource,
@@ -332,6 +355,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     deleteItems,
     restoreItems,
     updateItem,
+    getTags,
+    searchItems,
+    searchQuery,
+    setSearchQuery,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

@@ -4,6 +4,13 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { parseItem } from './parse';
 import { resolveUrlMetadata } from './metadata';
 import {
+  clearSourceCache,
+  getAllCachedItems,
+  getCachedMtimes,
+  removeCachedItems,
+  upsertCachedItems,
+} from './cache';
+import {
   IMAGES_DIR,
   SCHEMA_VERSION,
   type ArticleItem,
@@ -72,6 +79,10 @@ export function getLibraryDirectory(source: LibrarySource): Directory {
   return source.kind === 'local'
     ? new Directory(Paths.document, LOCAL_LIBRARY_NAME)
     : new Directory(source.uri);
+}
+
+export function getSourceId(source: LibrarySource): string {
+  return source.kind === 'local' ? 'local' : source.uri;
 }
 
 const STORAGE_KEY = 'anything:librarySource';
@@ -188,6 +199,7 @@ export async function saveRecentFolder(source: LibrarySource): Promise<SavedFold
 
 export async function removeRecentFolder(id: string): Promise<SavedFolder[]> {
   try {
+    clearSourceCache(id);
     const list = await getRecentFolders();
     const filtered = list.filter((f) => f.id !== id);
     if (!filtered.some((f) => f.id === 'local')) {
@@ -223,14 +235,18 @@ export type LoadResult = {
 };
 
 /**
- * Reads every `*.json` file at the root of the library folder, validates it and
- * resolves relative image paths to `file://` URIs.
+ * Reads every `*.json` file at the root of the library folder, using an expo-sqlite
+ * cache indexed by file modification time (`lastModified`).
+ * Only files that are newly added or whose modification time changed are read from disk.
+ * Unchanged files are served instantaneously from SQLite.
  */
 export async function loadLibrary(source: LibrarySource): Promise<LoadResult> {
   const root = getLibraryDirectory(source);
+  const sourceId = getSourceId(source);
 
   if (!root.exists) {
     if (source.kind === 'local') root.create({ intermediates: true, idempotent: true });
+    removeCachedItems(sourceId, Array.from(getCachedMtimes(sourceId).keys()));
     return { items: [], issues: [], pendingDownloads: 0 };
   }
 
@@ -249,18 +265,92 @@ export async function loadLibrary(source: LibrarySource): Promise<LoadResult> {
     jsonFiles.push(entry);
   }
 
-  const results = await Promise.allSettled(
-    jsonFiles.map(async (file) => resolveImages(parseItem(JSON.parse(await file.text())), root))
-  );
+  const cachedMtimes = getCachedMtimes(sourceId);
+  const currentDiskIds = new Set<string>();
 
-  const items: LibraryItem[] = [];
+  type FileToRead = {
+    file: File;
+    id: string;
+    mtime: number;
+  };
+
+  const filesToRead: FileToRead[] = [];
+
+  for (const file of jsonFiles) {
+    const fileName = file.name;
+    const id = fileName.slice(0, -5); // strip .json
+    currentDiskIds.add(id);
+
+    // Get file modification time
+    let mtime = 0;
+    try {
+      mtime =
+        file.lastModified ??
+        (file as unknown as { modificationTime?: number }).modificationTime ??
+        0;
+    } catch {
+      mtime = 0;
+    }
+
+    const cachedMtime = cachedMtimes.get(id);
+    if (cachedMtime === undefined || cachedMtime !== mtime) {
+      filesToRead.push({ file, id, mtime });
+    }
+  }
+
+  // Find files that were removed from disk and purge them from cache
+  const deletedIds: string[] = [];
+  for (const cachedId of cachedMtimes.keys()) {
+    if (!currentDiskIds.has(cachedId)) {
+      deletedIds.push(cachedId);
+    }
+  }
+  if (deletedIds.length > 0) {
+    removeCachedItems(sourceId, deletedIds);
+  }
+
+  // Read only changed / new files from disk
   const issues: LoadIssue[] = [];
-  results.forEach((result, i) => {
-    if (result.status === 'fulfilled') items.push(result.value);
-    else issues.push({ file: jsonFiles[i].name, reason: errorMessage(result.reason) });
-  });
+  if (filesToRead.length > 0) {
+    const readResults = await Promise.allSettled(
+      filesToRead.map(async ({ file, id, mtime }) => {
+        const rawJson = await file.text();
+        const parsed = parseItem(JSON.parse(rawJson));
+        return { id, mtime, rawJson, item: parsed };
+      })
+    );
 
-  items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+    const entriesToUpsert: {
+      id: string;
+      mtime: number;
+      rawJson: string;
+      item: LibraryItem;
+    }[] = [];
+
+    readResults.forEach((result, i) => {
+      const { file, id } = filesToRead[i];
+      if (result.status === 'fulfilled') {
+        entriesToUpsert.push(result.value);
+      } else {
+        issues.push({ file: file.name, reason: errorMessage(result.reason) });
+        // If file could not be parsed, remove any stale cached entry
+        removeCachedItems(sourceId, [id]);
+      }
+    });
+
+    if (entriesToUpsert.length > 0) {
+      upsertCachedItems(sourceId, entriesToUpsert);
+    }
+  }
+
+  // Load all items from SQLite cache
+  const { items: cachedItems, corruptIds } = getAllCachedItems(sourceId);
+  if (corruptIds.length > 0) {
+    removeCachedItems(sourceId, corruptIds);
+  }
+
+  // Resolve image references relative to this library's root
+  const items = cachedItems.map((item) => resolveImages(item, root));
 
   return { items, issues, pendingDownloads };
 }
@@ -272,7 +362,7 @@ export function resolveImageRef(ref: ImageRef, root: Directory): string {
   return new File(root, relative).uri;
 }
 
-function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
+export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
   const r = (ref: ImageRef) => resolveImageRef(ref, root);
   switch (item.type) {
     case 'image':
@@ -407,7 +497,15 @@ export async function addImageToLibrary(
   if (!jsonFile.exists) {
     jsonFile.create({ intermediates: true, overwrite: true });
   }
-  jsonFile.write(JSON.stringify(item, null, 2));
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  // Update SQLite cache immediately with modification time
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
 
   return item;
 }
@@ -451,7 +549,15 @@ export async function addTextItemToLibrary(
   if (!jsonFile.exists) {
     jsonFile.create({ intermediates: true, overwrite: true });
   }
-  jsonFile.write(JSON.stringify(item, null, 2));
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  // Update SQLite cache immediately with modification time
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
 
   return item;
 }
@@ -558,7 +664,15 @@ export async function addLinkItemToLibrary(
   if (!jsonFile.exists) {
     jsonFile.create({ intermediates: true, overwrite: true });
   }
-  jsonFile.write(JSON.stringify(item, null, 2));
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  // Update SQLite cache immediately with modification time
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
 
   return item;
 }
@@ -786,6 +900,12 @@ export async function deleteItemsFromLibrary(
     });
   }
 
+  // Remove deleted items from SQLite cache
+  removeCachedItems(
+    getSourceId(source),
+    toDelete.map((i) => i.parsed.id as string)
+  );
+
   return backups;
 }
 
@@ -808,7 +928,22 @@ export async function restoreItemsToLibrary(
       if (!jsonFile.exists) {
         jsonFile.create({ intermediates: true, overwrite: true });
       }
-      jsonFile.write(backup.jsonText);
+      const jsonText = backup.jsonText;
+      jsonFile.write(jsonText);
+
+      // Restore to SQLite cache
+      try {
+        const parsed = parseItem(JSON.parse(jsonText));
+        const mtime =
+          jsonFile.lastModified ??
+          (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+          Date.now();
+        upsertCachedItems(getSourceId(source), [
+          { id: backup.id, mtime, rawJson: jsonText, item: parsed },
+        ]);
+      } catch (cacheErr) {
+        console.warn(`Failed to cache restored item ${backup.id}:`, cacheErr);
+      }
 
       if (backup.images && backup.images.length > 0) {
         if (!imagesDir.exists) {
@@ -897,8 +1032,20 @@ export async function updateItemInLibrary(
     updatedRaw.tags = updates.tags.filter(Boolean);
   }
 
-  jsonFile.write(JSON.stringify(updatedRaw, null, 2));
-  return resolveImages(parseItem(updatedRaw), root);
+  const jsonText = JSON.stringify(updatedRaw, null, 2);
+  jsonFile.write(jsonText);
+
+  // Update SQLite cache
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  const resolvedItem = resolveImages(parseItem(updatedRaw), root);
+  upsertCachedItems(getSourceId(source), [
+    { id: itemId, mtime, rawJson: jsonText, item: parseItem(updatedRaw) },
+  ]);
+
+  return resolvedItem;
 }
 
 function errorMessage(error: unknown): string {

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { CardSelectionBar } from '@/components/CardSelectionBar';
+import { FloatingSearchBar } from '@/components/FloatingSearchBar';
 import { ItemCard } from '@/components/ItemCard';
 import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
@@ -24,7 +25,16 @@ import type { DeletedItemBackup, PickedImageAsset } from '@/lib/library/storage'
 import type { LibraryItem } from '@/lib/library/types';
 
 export default function BoardScreen() {
-  const { state, refresh, refreshing, deleteItems, restoreItems } = useLibrary();
+  const {
+    state,
+    refresh,
+    refreshing,
+    deleteItems,
+    restoreItems,
+    searchItems,
+    searchQuery,
+    setSearchQuery,
+  } = useLibrary();
   const { newNote, newLink, newImageUri, newImageFileName, newImageMimeType, newImageTimestamp } =
     useLocalSearchParams<{
       newNote?: string;
@@ -162,7 +172,18 @@ export default function BoardScreen() {
     setRestoreBackup(null);
   };
 
-  const extraData = useMemo(() => ({ isEditing, selectedCardIds }), [isEditing, selectedCardIds]);
+  const isSearching = searchQuery.trim().length > 0;
+
+  const displayedItems = useMemo(() => {
+    if (state.status !== 'ready') return [];
+    if (!isSearching) return state.result.items;
+    return searchItems({ searchQuery });
+  }, [state, isSearching, searchQuery, searchItems]);
+
+  const extraData = useMemo(
+    () => ({ isEditing, selectedCardIds, searchQuery }),
+    [isEditing, selectedCardIds, searchQuery]
+  );
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<LibraryItem>) => (
@@ -206,8 +227,21 @@ export default function BoardScreen() {
     );
   }, [state]);
 
-  const renderEmpty = useCallback(
-    () => (
+  const renderEmpty = useCallback(() => {
+    if (isSearching) {
+      return (
+        <Centered title="No results found" message={`No cards matching "${searchQuery.trim()}"`}>
+          <Pressable
+            onPress={() => setSearchQuery('')}
+            className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
+          >
+            <Text className="font-sans-medium text-sm text-zinc-200">Clear search</Text>
+          </Pressable>
+        </Centered>
+      );
+    }
+
+    return (
       <Centered
         title="You can add anything here"
         message="This board is yours to save anything you want"
@@ -220,9 +254,8 @@ export default function BoardScreen() {
           <Text className="font-sans-semibold text-base text-black">Add new item</Text>
         </Pressable>
       </Centered>
-    ),
-    []
-  );
+    );
+  }, [isSearching, searchQuery, setSearchQuery]);
 
   return (
     <View className="flex-1 bg-zinc-950">
@@ -246,7 +279,7 @@ export default function BoardScreen() {
       {state.status === 'ready' && (
         <>
           <FlashList<LibraryItem>
-            data={state.result.items}
+            data={displayedItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
             numColumns={2}
@@ -255,6 +288,8 @@ export default function BoardScreen() {
             extraData={extraData}
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
             }
@@ -262,7 +297,13 @@ export default function BoardScreen() {
             ListEmptyComponent={renderEmpty}
           />
 
-          {state.result.items.length > 0 && <ProgressiveBlur />}
+          {displayedItems.length > 0 && <ProgressiveBlur />}
+
+          <FloatingSearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            visible={!isEditing}
+          />
         </>
       )}
 
