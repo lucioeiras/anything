@@ -693,7 +693,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                   tagInputRef.current?.focus();
                 }
               }}
-              className="w-full bg-zinc-900 rounded-2xl p-5 gap-2.5 active:border-zinc-700"
+              className="w-full mt-1"
             >
               <View className="flex-row flex-wrap items-center gap-2">
                 {tags.map((tag, idx) => (
@@ -768,7 +768,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
             </Pressable>
 
             {/* Box with Notes */}
-            <View className="flex-row items-center gap-2 mt-4">
+            <View className="flex-row items-center gap-2 mt-8">
               <NotePencilIcon size={14} color="#A1A1AA" weight="bold" />
               <Text className="font-sans-semibold text-sm text-zinc-400 tracking-wider uppercase">
                 Notes
@@ -783,7 +783,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 if (isEditingTags) setIsEditingTags(false);
                 noteInputRef.current?.focus();
               }}
-              className="w-full bg-zinc-900 rounded-2xl p-5 pt-3 gap-2 active:border-zinc-700"
+              className="w-full"
             >
               <TextInput
                 ref={noteInputRef}
@@ -798,7 +798,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 placeholderTextColor="#71717A"
                 multiline
                 textAlignVertical="top"
-                className="font-sans text-base text-zinc-200 leading-relaxed min-h-32"
+                className="font-sans text-base text-zinc-200 leading-relaxed"
               />
             </Pressable>
           </Pressable>
