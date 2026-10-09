@@ -1,22 +1,22 @@
-import { BlurView } from 'expo-blur';
-import { CheckIcon, LinkIcon, XIcon } from 'phosphor-react-native';
+import { CheckIcon, LinkIcon, NotePencilIcon, TagIcon, XIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
+  type NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TagsNoteBox } from '@/components/TagsNoteBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LinkUploadItem } from '@/lib/library/storage';
 
@@ -37,7 +37,6 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
-  const [activeTab, setActiveTab] = useState<'tags' | 'note'>('tags');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -55,7 +54,6 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     setTags([]);
     setTagInput('');
     setNote('');
-    setActiveTab('tags');
     onClose();
   };
 
@@ -83,7 +81,6 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       setTags([]);
       setTagInput('');
       setNote('');
-      setActiveTab('tags');
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -92,6 +89,55 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTagInputChange = (text: string) => {
+    if (text.includes(' ') || text.includes(',')) {
+      const parts = text.split(/[\s,]+/);
+      const endsWithDelimiter = text.endsWith(' ') || text.endsWith(',');
+      const tokensToAdd = endsWithDelimiter
+        ? parts.filter(Boolean)
+        : parts.slice(0, -1).filter(Boolean);
+      const remainder = endsWithDelimiter ? '' : parts[parts.length - 1];
+
+      if (tokensToAdd.length > 0) {
+        setTags((prev) => {
+          const next = [...prev];
+          for (const token of tokensToAdd) {
+            const clean = token.replace(/^#/, '').trim();
+            if (clean && !next.includes(clean)) {
+              next.push(clean);
+            }
+          }
+          return next;
+        });
+      }
+      setTagInput(remainder);
+    } else {
+      setTagInput(text);
+    }
+  };
+
+  const handleTagInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (e.nativeEvent.key === 'Backspace' && tagInput === '' && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const handleTagInputSubmit = () => {
+    const clean = tagInput.replace(/^#/, '').trim();
+    if (clean) {
+      if (!tags.includes(clean)) {
+        setTags((prev) => [...prev, clean]);
+      }
+      setTagInput('');
+    } else {
+      noteInputRef.current?.focus();
+    }
+  };
+
+  const handleRemoveTag = (indexToRemove: number) => {
+    setTags((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const canSave = url.trim().length > 0 && !saving;
@@ -104,38 +150,35 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <View style={StyleSheet.absoluteFill}>
-        {/* Fullscreen blur and dark layer so board behind remains visible, blurred and darker */}
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.55)' }]} />
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.container}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
+        <View
+          style={{
+            paddingTop: Math.max(insets.top, 16),
+          }}
+          className="flex-1 w-full relative"
         >
-          <View
-            style={{
-              paddingTop: Math.max(insets.top, 16),
-            }}
-            className="flex-1 w-full relative"
+          <ScrollView
+            className="flex-1 w-full"
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView
-              className="flex-1 w-full px-6"
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Big link icon */}
-              <View className="items-center justify-center mt-2">
-                <LinkIcon size={40} color="#FFFFFF" weight="bold" />
-              </View>
-
-              {/* Title */}
-              <Text className="font-sans-semibold text-3xl text-white my-4 text-center">
-                Add a new link
+            {/* Header */}
+            <View className="gap-3 p-8">
+              <Text className="font-sans-semibold text-2xl text-white">Add a new link</Text>
+              <Text className="font-sans text-base text-zinc-400 leading-relaxed">
+                You can add any link, but YouTube videos, Tweets, Reddit posts, and articles have
+                special views.
               </Text>
+            </View>
 
-              {/* Centralized text input */}
+            {/* Link Input */}
+            <View className="flex-row items-center gap-4 py-5 px-8 border-t border-b border-zinc-800">
+              <LinkIcon size={20} color="#D4D4D8" />
+
               <TextInput
                 ref={inputRef}
                 value={url}
@@ -147,78 +190,122 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 keyboardType="url"
                 returnKeyType="next"
                 onSubmitEditing={() => {
-                  if (activeTab === 'tags') {
-                    tagsInputRef.current?.focus();
-                  } else {
-                    noteInputRef.current?.focus();
-                  }
+                  tagsInputRef.current?.focus();
                 }}
-                textAlign="center"
-                className="w-full font-sans text-2xl text-white text-center mt-1"
+                className="w-full font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
                 multiline
               />
+            </View>
 
-              {/* Tags and Note Box */}
-              <TagsNoteBox
-                tags={tags}
-                onTagsChange={setTags}
-                tagInput={tagInput}
-                onTagInputChange={setTagInput}
-                note={note}
-                onNoteChange={setNote}
-                activeTab={activeTab}
-                onActiveTabChange={setActiveTab}
-                tagsInputRef={tagsInputRef}
-                noteInputRef={noteInputRef}
-                notePlaceholder="Add a text note to this link..."
-                onSubmitTag={handleSave}
-                className="mt-8 mb-4"
-              />
-            </ScrollView>
-
-            {/* Floating action buttons at the bottom */}
-            <View
-              pointerEvents="box-none"
-              style={{
-                bottom: Math.max(insets.bottom, 16),
-              }}
-              className="absolute left-0 right-0 items-center justify-center"
-            >
-              <View className="flex-row items-center justify-center gap-4">
-                <Pressable
-                  onPress={handleClose}
-                  disabled={saving}
-                  hitSlop={12}
-                  className="w-14 h-14 rounded-full items-center justify-center bg-zinc-500 active:opacity-70"
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel"
-                >
-                  <XIcon size={26} color="#FFFFFF" weight="bold" />
-                </Pressable>
-
-                <Pressable
-                  onPress={handleSave}
-                  disabled={!canSave}
-                  hitSlop={12}
-                  className={`w-14 h-14 rounded-full items-center justify-center ${
-                    canSave ? 'bg-white active:opacity-80' : 'bg-white/30'
-                  }`}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save link"
-                >
-                  {saving ? (
-                    <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
-                  ) : (
-                    <CheckIcon size={26} color={canSave ? '#000000' : '#71717A'} weight="bold" />
-                  )}
-                </Pressable>
+            {/* Tags section */}
+            <View className="py-6 px-8 border-b border-zinc-800 gap-4">
+              <View className="flex-row items-center gap-2">
+                <TagIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Tags{tags.length > 0 ? ` (${tags.length})` : ''}
+                </Text>
               </View>
+
+              <Pressable
+                onPress={() => tagsInputRef.current?.focus()}
+                className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
+              >
+                {tags.map((tag, idx) => (
+                  <Pressable
+                    key={`${tag}-${idx}`}
+                    onPress={() => handleRemoveTag(idx)}
+                    className="flex-row items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
+                  >
+                    <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
+                    <XIcon size={14} color="#60A5FA" />
+                  </Pressable>
+                ))}
+
+                <TextInput
+                  ref={tagsInputRef}
+                  value={tagInput}
+                  onChangeText={handleTagInputChange}
+                  onKeyPress={handleTagInputKeyPress}
+                  placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+                  placeholderTextColor="#71717A"
+                  returnKeyType="done"
+                  onSubmitEditing={handleTagInputSubmit}
+                  className="font-sans text-lg leading-tight text-zinc-200 flex-grow min-w-[120px]"
+                  style={styles.borderlessInput}
+                  underlineColorAndroid="transparent"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </Pressable>
+            </View>
+
+            {/* Notes section */}
+            <View className="flex-1 py-6 px-8 gap-4">
+              <View className="flex-row items-center gap-2">
+                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Note
+                </Text>
+              </View>
+
+              <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
+                <TextInput
+                  ref={noteInputRef}
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Add a text note to this link..."
+                  placeholderTextColor="#71717A"
+                  multiline
+                  textAlignVertical="top"
+                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[96px]"
+                  style={styles.borderlessInput}
+                  underlineColorAndroid="transparent"
+                />
+              </Pressable>
+            </View>
+          </ScrollView>
+
+          {/* Action buttons at the bottom */}
+          <View pointerEvents="box-none">
+            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
+              <Pressable
+                onPress={handleClose}
+                disabled={saving}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+              >
+                <XIcon size={24} color="#FFFFFF" weight="bold" />
+                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSave}
+                disabled={!canSave}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
+                accessibilityRole="button"
+                accessibilityLabel="Save link"
+              >
+                {saving ? (
+                  <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
+                ) : (
+                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
+                )}
+
+                <Text
+                  className={`font-sans-bold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                >
+                  Save link
+                </Text>
+              </Pressable>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -227,13 +314,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
+    backgroundColor: '#09090B',
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingVertical: 20,
-    paddingBottom: 110,
+    paddingBottom: 40,
   },
   borderlessInput: {
     borderWidth: 0,
