@@ -18,6 +18,13 @@ export type ResolvedMetadata =
       avatar: string;
       text: string;
       images?: string[];
+      video?: {
+        url: string;
+        thumbnail?: string;
+        width?: number;
+        height?: number;
+        aspectRatio?: number;
+      };
     }
   | {
       type: 'article';
@@ -40,6 +47,14 @@ function normalizeUrl(input: string): string {
     return trimmed;
   }
   return `https://${trimmed}`;
+}
+
+export function calcAspectRatio(w?: number, h?: number): number | undefined {
+  if (typeof w === 'number' && typeof h === 'number' && w > 0 && h > 0) {
+    const ratio = w / h;
+    return isFinite(ratio) && ratio > 0 ? ratio : undefined;
+  }
+  return undefined;
 }
 
 export function decodeHtmlEntities(str: string): string {
@@ -433,6 +448,15 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
     let avatar = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
     let text = '';
     let images: string[] = [];
+    let video:
+      | {
+          url: string;
+          thumbnail?: string;
+          width?: number;
+          height?: number;
+          aspectRatio?: number;
+        }
+      | undefined;
 
     if (tweetId) {
       // 1. Try fxtwitter API
@@ -451,6 +475,26 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
             if (t.text) {
               text = t.text;
             }
+            if (t.media?.videos?.length) {
+              const v = t.media.videos[0];
+              if (v.url) {
+                video = {
+                  url: v.url,
+                  thumbnail: v.thumbnail_url || undefined,
+                  width: typeof v.width === 'number' ? v.width : undefined,
+                  height: typeof v.height === 'number' ? v.height : undefined,
+                  aspectRatio: calcAspectRatio(v.width, v.height),
+                };
+              }
+            } else if (t.video?.url) {
+              video = {
+                url: t.video.url,
+                thumbnail: t.video.thumbnail_url || undefined,
+                width: typeof t.video.width === 'number' ? t.video.width : undefined,
+                height: typeof t.video.height === 'number' ? t.video.height : undefined,
+                aspectRatio: calcAspectRatio(t.video.width, t.video.height),
+              };
+            }
             if (t.media?.photos?.length) {
               images = t.media.photos
                 .map((p: { url?: string }) => p.url)
@@ -463,7 +507,7 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
       }
 
       // 2. Fallback: Twitter Syndication API
-      if (!text) {
+      if (!text || !video) {
         try {
           const syndRes = await fetch(
             `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=x`
@@ -476,16 +520,69 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
             if (t.user?.profile_image_url_https) {
               avatar = t.user.profile_image_url_https.replace('_normal.', '_200x200.');
             }
-            if (t.text) {
+            if (t.text && !text) {
               text = t.text;
             }
-            if (t.photos?.length) {
-              images = t.photos.map((p: { url?: string }) => p.url).filter(Boolean) as string[];
-            } else if (t.mediaDetails?.length) {
-              images = t.mediaDetails
-                .filter((m: { type?: string }) => m.type === 'photo')
-                .map((m: { media_url_https?: string }) => m.media_url_https)
-                .filter(Boolean) as string[];
+            if (!video && t.video?.variants?.length) {
+              const mp4Variants = t.video.variants
+                .filter(
+                  (v: { type?: string; src?: string }) =>
+                    v.type === 'video/mp4' || v.src?.includes('.mp4')
+                )
+                .sort(
+                  (a: { bitrate?: number }, b: { bitrate?: number }) =>
+                    (b.bitrate || 0) - (a.bitrate || 0)
+                );
+              const bestVariant = mp4Variants[0] || t.video.variants[0];
+              if (bestVariant?.src) {
+                const [w, h] = Array.isArray(t.video.aspectRatio) ? t.video.aspectRatio : [16, 9];
+                video = {
+                  url: bestVariant.src,
+                  thumbnail: t.video.poster || undefined,
+                  width: typeof w === 'number' ? w : undefined,
+                  height: typeof h === 'number' ? h : undefined,
+                  aspectRatio: calcAspectRatio(w, h) || 16 / 9,
+                };
+              }
+            } else if (!video && t.mediaDetails?.length) {
+              const videoMedia = t.mediaDetails.find(
+                (m: { type?: string }) => m.type === 'video' || m.type === 'animated_gif'
+              );
+              if (videoMedia?.video_info?.variants?.length) {
+                const mp4Variants = videoMedia.video_info.variants
+                  .filter(
+                    (v: { content_type?: string; url?: string }) =>
+                      v.content_type === 'video/mp4' || v.url?.includes('.mp4')
+                  )
+                  .sort(
+                    (a: { bitrate?: number }, b: { bitrate?: number }) =>
+                      (b.bitrate || 0) - (a.bitrate || 0)
+                  );
+                const best = mp4Variants[0] || videoMedia.video_info.variants[0];
+                if (best?.url) {
+                  const [w, h] = Array.isArray(videoMedia.video_info.aspect_ratio)
+                    ? videoMedia.video_info.aspect_ratio
+                    : [16, 9];
+                  video = {
+                    url: best.url,
+                    thumbnail: videoMedia.media_url_https || undefined,
+                    width: typeof w === 'number' ? w : undefined,
+                    height: typeof h === 'number' ? h : undefined,
+                    aspectRatio: calcAspectRatio(w, h) || 16 / 9,
+                  };
+                }
+              }
+            }
+
+            if (images.length === 0) {
+              if (t.photos?.length) {
+                images = t.photos.map((p: { url?: string }) => p.url).filter(Boolean) as string[];
+              } else if (t.mediaDetails?.length) {
+                images = t.mediaDetails
+                  .filter((m: { type?: string }) => m.type === 'photo')
+                  .map((m: { media_url_https?: string }) => m.media_url_https)
+                  .filter(Boolean) as string[];
+              }
             }
           }
         } catch {
@@ -526,6 +623,7 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
       avatar,
       text,
       ...(images.length > 0 ? { images } : {}),
+      ...(video ? { video } : {}),
     };
   }
 

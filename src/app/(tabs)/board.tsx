@@ -477,6 +477,7 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '100%',
+    overflow: 'hidden',
   },
   headerWrapper: {
     paddingHorizontal: 8,

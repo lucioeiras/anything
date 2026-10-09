@@ -18,11 +18,15 @@ export const ImageCard = ({ url, title }: NoteProps) => {
       <ExpoImage
         source={{ uri: url }}
         className="w-full"
-        style={{ aspectRatio }}
+        style={{
+          aspectRatio: Math.max(0.65, Math.min(1.778, aspectRatio)),
+          maxHeight: 260,
+        }}
+        contentFit="cover"
         onLoad={(e) => {
           if (e.source.width && e.source.height) {
             const ratio = e.source.width / e.source.height;
-            setTimeout(() => setAspectRatio(ratio), 0);
+            setAspectRatio(Math.max(0.65, Math.min(1.778, ratio)));
           }
         }}
       />

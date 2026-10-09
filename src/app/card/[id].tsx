@@ -444,6 +444,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
           showsVerticalScrollIndicator={false}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
           onScrollBeginDrag={() => {
             Keyboard.dismiss();
             if (isEditingTags) setIsEditingTags(false);
@@ -459,13 +460,14 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
           }}
         >
           {/* SECTION 1: TOP SECTION (CARD DISPLAY) */}
-          <Pressable
-            onPress={() => {
-              Keyboard.dismiss();
-              if (isEditingTags) setIsEditingTags(false);
-            }}
-            className="w-full items-center justify-center px-6 pt-8 pb-16 min-h-[300px]"
-          >
+          <View className="w-full items-center justify-center px-6 pt-8 pb-16 min-h-[300px] relative">
+            <Pressable
+              onPress={() => {
+                Keyboard.dismiss();
+                if (isEditingTags) setIsEditingTags(false);
+              }}
+              style={StyleSheet.absoluteFill}
+            />
             {/* If it's an image: only display the image */}
             {isImage && (
               <View className="w-full max-w-sm max-h-[300px] items-center justify-center rounded-2xl overflow-hidden shadow-2xl">
@@ -513,6 +515,8 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                     author={item.author}
                     text={item.text}
                     images={item.images}
+                    video={item.video}
+                    isDetail
                   />
                 )}
                 {item.type === 'reddit' && (
@@ -571,7 +575,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 )}
               </View>
             )}
-          </Pressable>
+          </View>
 
           {/* ACTIONS ROW (Between the two sections, over them, centralized horizontally) */}
           <View className="z-30 self-center -my-9">
@@ -723,10 +727,10 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                           onSelectTag(tag);
                         }
                       }}
-                      className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1.5 active:opacity-70"
+                      className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3.5 py-2 active:opacity-70"
                     >
                       <HashIcon size={12} color="#60A5FA" weight="bold" />
-                      <Text className="font-sans-semibold text-sm text-blue-400">{tag}</Text>
+                      <Text className="font-sans-semibold text-base text-blue-400">{tag}</Text>
                       {isEditingTags && <XIcon size={14} color="#60A5FA" />}
                     </Pressable>
                   </Animated.View>

@@ -47,11 +47,15 @@ export const RedditCard = ({
         <ExpoImage
           source={{ uri: cleanImage }}
           className="w-full rounded-lg"
-          style={{ aspectRatio }}
+          style={{
+            aspectRatio: Math.max(0.75, Math.min(1.778, aspectRatio)),
+            maxHeight: 220,
+          }}
+          contentFit="cover"
           onLoad={(e) => {
             if (e.source.width && e.source.height) {
               const ratio = e.source.width / e.source.height;
-              setTimeout(() => setAspectRatio(ratio), 0);
+              setAspectRatio(Math.max(0.75, Math.min(1.778, ratio)));
             }
           }}
         />
