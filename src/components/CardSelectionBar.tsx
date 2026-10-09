@@ -1,6 +1,5 @@
 import { TrashSimpleIcon, XIcon } from 'phosphor-react-native';
 import { Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type CardSelectionBarProps = {
   visible: boolean;
@@ -15,13 +14,11 @@ export function CardSelectionBar({
   onDelete,
   onCancel,
 }: CardSelectionBarProps) {
-  const insets = useSafeAreaInsets();
-
   if (!visible) return null;
 
   return (
     <View
-      style={{ bottom: Math.max(insets.bottom + 64, 80) }}
+      style={{ bottom: 16 }}
       className="absolute left-4 right-4 z-40 items-center"
       pointerEvents="box-none"
     >

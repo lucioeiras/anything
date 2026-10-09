@@ -35,7 +35,7 @@ export const RedditCard = ({
       : undefined;
 
   return (
-    <View className="w-full p-7 gap-3">
+    <View className="w-full p-7 gap-3 bg-orange-950/15">
       <View className="flex-row items-center gap-3">
         <ExpoImage source={{ uri: subredditAvatar }} className="w-6 h-6 rounded-full" />
         <Text className="font-sans-medium text-sm text-zinc-300">{subredditName}</Text>

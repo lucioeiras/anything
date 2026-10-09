@@ -21,7 +21,7 @@ export const YouTubeCard = ({ videoTitle, thumbnail }: YouTubeCardProps) => {
         </View>
       </View>
 
-      <View className="w-full p-7 gap-4">
+      <View className="w-full p-7 gap-4 bg-rose-950/15">
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
           {decodeHTML(videoTitle)}
         </Text>

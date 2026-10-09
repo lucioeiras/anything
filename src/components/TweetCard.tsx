@@ -29,7 +29,7 @@ function TweetVideoPlayer({
 
   return (
     <View
-      className="w-full rounded-xl overflow-hidden bg-black items-center justify-center"
+      className="w-full rounded-xl overflow-hidden bg-blue-950 items-center justify-center"
       style={{
         width: '100%',
         aspectRatio: safeAspectRatio,
@@ -80,7 +80,7 @@ export const TweetCard = ({
   const hasMultipleImages = images.length > 1;
 
   return (
-    <View className="w-full p-7 gap-4 relative">
+    <View className="w-full p-7 gap-4 relative bg-sky-950/15">
       {onPress && (
         <Pressable
           onPress={onPress}

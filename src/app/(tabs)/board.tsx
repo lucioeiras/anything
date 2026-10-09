@@ -22,13 +22,12 @@ import {
 } from 'react-native';
 
 import { CardSelectionBar } from '@/components/CardSelectionBar';
-import { FloatingSearchBar } from '@/components/FloatingSearchBar';
 import { ItemCard } from '@/components/ItemCard';
 import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteModal } from '@/components/NewNoteModal';
-import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { RestoreToast } from '@/components/RestoreToast';
+import { SearchBar } from '@/components/SearchBar';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { DeletedItemBackup, PickedImageAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
@@ -337,37 +336,33 @@ export default function BoardScreen() {
       )}
 
       {state.status === 'ready' && (
-        <>
-          <BoardGridContext.Provider value={gridContextValue}>
-            <FlashList<LibraryItem>
-              data={displayedItems}
-              renderItem={renderItem}
-              keyExtractor={keyExtractor}
-              numColumns={2}
-              masonry
-              optimizeItemArrangement
-              extraData={extraData}
-              CellRendererComponent={CellRenderer}
-              contentContainerStyle={styles.contentContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardDismissMode="on-drag"
-              keyboardShouldPersistTaps="handled"
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
-              }
-              ListHeaderComponent={renderHeader}
-              ListEmptyComponent={renderEmpty}
-            />
-          </BoardGridContext.Provider>
+        <View className="flex-1">
+          <View className="flex-1">
+            <BoardGridContext.Provider value={gridContextValue}>
+              <FlashList<LibraryItem>
+                data={displayedItems}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                numColumns={2}
+                masonry
+                optimizeItemArrangement
+                extraData={extraData}
+                CellRendererComponent={CellRenderer}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
+                }
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={renderEmpty}
+              />
+            </BoardGridContext.Provider>
+          </View>
 
-          {displayedItems.length > 0 && <ProgressiveBlur />}
-
-          <FloatingSearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            visible={!isEditing}
-          />
-        </>
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} visible={!isEditing} />
+        </View>
       )}
 
       <NewNoteModal visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
@@ -464,7 +459,7 @@ function keyExtractor(item: LibraryItem): string {
 const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 56,
-    paddingBottom: 192,
+    paddingBottom: 0,
     flexGrow: 1,
   },
   cell: {
