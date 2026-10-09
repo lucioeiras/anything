@@ -1,3 +1,5 @@
+import { decodeHTML } from 'entities';
+
 export type ResolvedMetadata =
   | { type: 'youtube'; url: string; title: string; thumbnail: string }
   | {
@@ -40,15 +42,9 @@ function normalizeUrl(input: string): string {
   return `https://${trimmed}`;
 }
 
-function decodeHtmlEntities(str: string): string {
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
-    .replace(/&#([0-9]+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+export function decodeHtmlEntities(str: string): string {
+  if (!str) return '';
+  return decodeHTML(str);
 }
 
 function extractMeta(html: string, propertyOrName: string): string | null {

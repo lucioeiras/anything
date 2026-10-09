@@ -1,3 +1,4 @@
+import { decodeHTML } from 'entities';
 import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import { File } from 'expo-file-system';
@@ -85,8 +86,9 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   const { deleteItem, updateItem } = useLibrary();
   const insets = useSafeAreaInsets();
 
-  const initialTitle = 'title' in item && typeof item.title === 'string' ? item.title : '';
-  const initialText = 'text' in item && typeof item.text === 'string' ? item.text : '';
+  const initialTitle =
+    'title' in item && typeof item.title === 'string' ? decodeHTML(item.title) : '';
+  const initialText = 'text' in item && typeof item.text === 'string' ? decodeHTML(item.text) : '';
 
   const [title, setTitle] = useState(initialTitle);
   const [tags, setTags] = useState<string[]>(item.tags || []);
@@ -486,7 +488,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
 
             {/* If it's any sort of link: show the card */}
             {isLink && (
-              <View className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+              <View className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-zinc-900 border border-zinc-800">
                 {item.type === 'link' && (
                   <LinkCard
                     favicon={item.favicon}
@@ -885,8 +887,8 @@ export default function CardDetailScreen() {
   return (
     <View style={StyleSheet.absoluteFill} className="flex-1">
       {/* Background Blur + Dark Layer */}
-      <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.65)' }]} />
+      <BlurView intensity={64} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]} />
 
       <Animated.View
         style={[

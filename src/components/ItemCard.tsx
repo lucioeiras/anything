@@ -98,12 +98,12 @@ export const ItemCard = memo(function ItemCard({
             : undefined
         }
       >
-        <View className="w-full rounded-2xl overflow-hidden">{renderCardContent()}</View>
+        <View className="w-full overflow-hidden">{renderCardContent()}</View>
 
         {isSelected && (
           <View
             pointerEvents="none"
-            className="absolute inset-0 rounded-2xl border-[3px] border-blue-500 z-10"
+            className="absolute inset-0 border-[3px] border-blue-500 z-10"
           />
         )}
 

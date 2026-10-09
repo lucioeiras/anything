@@ -7,16 +7,14 @@ type NoteProps = {
 
 export const NoteCard = ({ text, title }: NoteProps) => {
   return (
-    <View className="items-center gap-2">
-      <View className="w-full bg-zinc-900 p-5 rounded-xl">
-        <Text className="font-sans text-base leading-[1.8] text-zinc-100" numberOfLines={8}>
-          {text}
-        </Text>
-      </View>
+    <View className="w-full p-7">
+      <Text className="font-sans text-base leading-[1.8] text-zinc-100" numberOfLines={8}>
+        {text}
+      </Text>
 
       {title && (
         <Text
-          className="font-sans-medium text-xs text-zinc-200 mb-2 leading-[1.6]"
+          className="font-sans-medium text-xs text-zinc-500 leading-[1.6] text-center mt-6"
           numberOfLines={2}
         >
           {title}

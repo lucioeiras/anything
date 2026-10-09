@@ -4,6 +4,8 @@ import { TwitterLogoIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
+import { decodeHTML } from 'entities';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type TweetProps = {
@@ -15,16 +17,17 @@ type TweetProps = {
 
 export const TweetCard = ({ avatar, author, text, images = [] }: TweetProps) => {
   const [aspectRatio, setAspectRatio] = useState(1);
+  const cleanText = text ? decodeHTML(text) : '';
 
   return (
-    <View className="w-full bg-zinc-900 p-5 rounded-xl gap-4">
+    <View className="w-full p-7 gap-4">
       <View className="flex-row items-center gap-3">
         <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
         <Text className="font-sans-medium text-sm text-zinc-300">{author}</Text>
       </View>
 
       <Text className="font-sans text-base leading-[1.8] text-zinc-50" numberOfLines={8}>
-        {text}
+        {cleanText}
       </Text>
 
       {images.length === 1 && (
