@@ -24,6 +24,7 @@ type BaseItem = {
   createdAt: string;
   updatedAt: string;
   tags?: string[];
+  autoTags?: string[];
   note?: string;
 };
 
@@ -42,6 +43,7 @@ export type LinkItem = BaseItem & {
   siteTitle: string;
   description: string;
   favicon: ImageRef;
+  title?: string;
 };
 
 export type ArticleItem = BaseItem & {

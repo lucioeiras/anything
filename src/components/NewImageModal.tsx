@@ -1,7 +1,6 @@
-import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
-import { CheckIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { CheckIcon, NotePencilIcon, TextTIcon, XIcon } from 'phosphor-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,15 +10,25 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TagsNoteBox } from '@/components/TagsNoteBox';
+import { TagsBox } from '@/components/TagsBox';
+
 import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedImageAsset } from '@/lib/library/storage';
 import type { ImageItem } from '@/lib/library/types';
+import { generateAutoTagsAsync, isGibberishOrMachineId } from '@/lib/tags/autoTags';
+
+function getCleanImageTitle(fileName?: string | null): string {
+  if (!fileName) return '';
+  const nameWithoutExt = fileName.replace(/\.[a-zA-Z0-9]{2,5}$/, '').trim();
+  if (isGibberishOrMachineId(nameWithoutExt)) return '';
+  return nameWithoutExt.replace(/[-_]+/g, ' ').trim();
+}
 
 type NewImageModalProps = {
   visible: boolean;
@@ -28,22 +37,7 @@ type NewImageModalProps = {
   onSaved?: (item: ImageItem) => void;
 };
 
-export function parseTags(raw: string): string[] {
-  if (!raw.trim()) return [];
-  let tokens: string[] = [];
-  if (raw.includes(',')) {
-    tokens = raw.split(',').map((t) => t.trim().replace(/^#/, ''));
-  } else if (raw.includes('#')) {
-    tokens = raw.split(/[\s#]+/).map((t) => t.trim());
-  } else {
-    tokens = raw.split(/\s+/).map((t) => t.trim());
-  }
-  const clean = tokens.filter((t) => t.length > 0);
-  return Array.from(new Set(clean));
-}
-
 export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImageModalProps) {
-  const [activeTab, setActiveTab] = useState<'tags' | 'note'>('tags');
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -51,29 +45,99 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
   const [saving, setSaving] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<number>(4 / 3);
 
+  const titleInputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
-  const titleInputRef = useRef<TextInput>(null);
+  const [autoTags, setAutoTags] = useState<string[]>([]);
+  const autoTagsRef = useRef<string[]>([]);
 
-  const { addImage } = useLibrary();
+  const { addImage, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => {
-        titleInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((t) => t.tag) : []),
+    [getTags, visible]
+  );
+
+  const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    const prevAutoTags = autoTagsRef.current;
+    const combinedAutoTags = [...prevAutoTags];
+    for (const t of newAutoTags) {
+      if (!combinedAutoTags.includes(t)) {
+        combinedAutoTags.push(t);
+      }
     }
+    autoTagsRef.current = combinedAutoTags;
+    setAutoTags(combinedAutoTags);
+
+    setTags((prev) => {
+      const manualTags = prev.filter((t) => !prevAutoTags.includes(t));
+      const merged = [...manualTags];
+      for (const t of combinedAutoTags) {
+        if (!merged.includes(t)) {
+          merged.push(t);
+        }
+      }
+      return merged;
+    });
+  }, []);
+
+  const clearAutoTags = useCallback(() => {
+    setTags((prev) => prev.filter((t) => !autoTagsRef.current.includes(t)));
+    autoTagsRef.current = [];
+    setAutoTags([]);
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const timer = setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const cleanTitle = title.trim();
+    const cleanNote = note.trim();
+    const fallbackTitle = getCleanImageTitle(imageAsset?.fileName);
+
+    const textToAnalyze = cleanTitle || cleanNote || fallbackTitle;
+    if (!textToAnalyze) {
+      clearAutoTags();
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const auto = await generateAutoTagsAsync({
+          title: cleanTitle || fallbackTitle,
+          note: cleanNote,
+          type: 'image',
+          existingTags,
+        });
+        if (auto.length > 0) {
+          updateAutoTags(auto);
+        }
+      } catch (e) {
+        console.warn('Failed to generate image tags:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [visible, title, note, imageAsset, existingTags, updateAutoTags, clearAutoTags]);
 
   const handleClose = () => {
     if (saving) return;
     setTitle('');
     setTags([]);
+    setAutoTags([]);
+    autoTagsRef.current = [];
     setTagInput('');
     setNote('');
-    setActiveTab('tags');
     onClose();
   };
 
@@ -87,18 +151,21 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
       if (pending && !finalTags.includes(pending)) {
         finalTags.push(pending);
       }
+      const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
       const item = await addImage(imageAsset, {
         title: title.trim() || undefined,
         note: note.trim() || undefined,
         tags: finalTags.length > 0 ? finalTags : undefined,
+        autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
       });
 
       setTitle('');
       setTags([]);
+      setAutoTags([]);
+      autoTagsRef.current = [];
       setTagInput('');
       setNote('');
-      setActiveTab('tags');
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -123,135 +190,155 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <View style={StyleSheet.absoluteFill}>
-        {/* Fullscreen blur and dark layer so board behind remains visible, blurred and darker */}
-        <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.55)' }]} />
-
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
         <View
-          style={[
-            styles.container,
-            {
-              paddingTop: Math.max(insets.top, 16),
-              paddingBottom: Math.max(insets.bottom, 16),
-            },
-          ]}
+          style={{
+            paddingTop: Math.max(insets.top, 16),
+          }}
+          className="flex-1 w-full relative"
         >
-          {/* Form Content */}
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          <ScrollView
             className="flex-1 w-full"
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView
-              className="flex-1 w-full px-6"
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Image Preview before inputs */}
+            {/* Header */}
+            <View className="flex-row p-8 pt-0 gap-8 items-center max-h-48 border-b border-zinc-800">
               {imageAsset && (
-                <View className="w-full my-3 items-center justify-center">
-                  <View
-                    className="w-full rounded-2xl overflow-hidden bg-zinc-900/60 border border-white/10"
-                    style={{
-                      maxHeight: 300,
-                      aspectRatio: Math.min(Math.max(aspectRatio, 0.75), 1.9),
-                      alignSelf: 'center',
+                <View
+                  className="h-full overflow-hidden bg-zinc-900 border border-zinc-800"
+                  style={{
+                    maxHeight: 280,
+                    aspectRatio: Math.min(Math.max(aspectRatio, 0.75), 1.9),
+                    alignSelf: 'center',
+                  }}
+                >
+                  <ExpoImage
+                    source={{ uri: imageAsset.uri }}
+                    contentFit="cover"
+                    style={StyleSheet.absoluteFill}
+                    onLoad={(e) => {
+                      if (e.source.width && e.source.height) {
+                        setAspectRatio(e.source.width / e.source.height);
+                      }
                     }}
-                  >
-                    <ExpoImage
-                      source={{ uri: imageAsset.uri }}
-                      contentFit="cover"
-                      style={StyleSheet.absoluteFill}
-                      onLoad={(e) => {
-                        if (e.source.width && e.source.height) {
-                          setAspectRatio(e.source.width / e.source.height);
-                        }
-                      }}
-                    />
-
-                    {/* Dark layer between the buttons and the image */}
-                    <View className="absolute inset-0 bg-black/40" />
-
-                    {/* Actions over the image, centralized */}
-                    <View
-                      pointerEvents="box-none"
-                      className="absolute inset-0 flex-row items-center justify-center gap-6"
-                    >
-                      <Pressable
-                        onPress={handleClose}
-                        disabled={saving}
-                        hitSlop={12}
-                        className="w-20 h-20 rounded-full items-center justify-center bg-black/70 active:opacity-70"
-                        accessibilityRole="button"
-                        accessibilityLabel="Cancel"
-                      >
-                        <XIcon size={40} color="#FFFFFF" />
-                      </Pressable>
-
-                      <Pressable
-                        onPress={handleSave}
-                        disabled={!canSave}
-                        hitSlop={12}
-                        className={`w-20 h-20 rounded-full items-center justify-center ${
-                          canSave ? 'bg-white active:opacity-80' : 'bg-white/30'
-                        }`}
-                        accessibilityRole="button"
-                        accessibilityLabel="Save image"
-                      >
-                        {saving ? (
-                          <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
-                        ) : (
-                          <CheckIcon size={40} color={canSave ? '#000000' : '#71717A'} />
-                        )}
-                      </Pressable>
-                    </View>
-                  </View>
+                  />
                 </View>
               )}
+              <View className="flex-1 gap-3">
+                <Text className="font-sans-semibold text-2xl text-white">Add a new image</Text>
+                <Text className="font-sans text-base text-zinc-400 leading-relaxed">
+                  Save images from your gallery to your board with tags and notes.
+                </Text>
+              </View>
+            </View>
 
-              {/* Title Input: big font size, no borders, no background */}
-              <View className="mt-4 w-full items-center">
+            {/* Title Input */}
+            <View className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800">
+              <TextTIcon size={20} color="#D4D4D8" />
+
+              <TextInput
+                ref={titleInputRef}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Add a title to this image"
+                placeholderTextColor="#71717A"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  tagsInputRef.current?.focus();
+                }}
+                className="w-full font-sans text-xl text-white leading-tight"
+                style={styles.borderlessInput}
+                underlineColorAndroid="transparent"
+              />
+            </View>
+
+            {/* Tags section */}
+            <TagsBox
+              tags={tags}
+              autoTags={autoTags}
+              onTagsChange={setTags}
+              onAutoTagsChange={setAutoTags}
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagsInputRef}
+              onSubmitEditing={() => {
+                noteInputRef.current?.focus();
+              }}
+              onRemoveTag={(removed) => {
+                autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+              }}
+            />
+
+            {/* Notes section */}
+            <View className="flex-1 py-6 px-8 gap-4">
+              <View className="flex-row items-center gap-2">
+                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Note
+                </Text>
+              </View>
+
+              <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
                 <TextInput
-                  value={title}
-                  ref={titleInputRef}
-                  onChangeText={setTitle}
-                  placeholder="Add a title to this image"
-                  placeholderTextColor="#A0A0AA"
-                  returnKeyType="next"
-                  onSubmitEditing={() => {
-                    if (activeTab === 'tags') {
-                      tagsInputRef.current?.focus();
-                    } else {
-                      noteInputRef.current?.focus();
-                    }
-                  }}
-                  className="w-full font-sans text-3xl text-white py-2 text-center"
+                  ref={noteInputRef}
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Add a text note to this image..."
+                  placeholderTextColor="#71717A"
+                  multiline
+                  textAlignVertical="top"
+                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[96px]"
                   style={styles.borderlessInput}
                   underlineColorAndroid="transparent"
                 />
-              </View>
+              </Pressable>
+            </View>
+          </ScrollView>
 
-              {/* 2-Tab Box for Tags and Attached Note */}
-              <TagsNoteBox
-                tags={tags}
-                onTagsChange={setTags}
-                tagInput={tagInput}
-                onTagInputChange={setTagInput}
-                note={note}
-                onNoteChange={setNote}
-                activeTab={activeTab}
-                onActiveTabChange={setActiveTab}
-                tagsInputRef={tagsInputRef}
-                noteInputRef={noteInputRef}
-                notePlaceholder="Add a text note to this image..."
-                onSubmitTag={handleSave}
-                className="mt-10 mb-6"
-              />
-            </ScrollView>
-          </KeyboardAvoidingView>
+          {/* Action buttons at the bottom */}
+          <View pointerEvents="box-none">
+            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
+              <Pressable
+                onPress={handleClose}
+                disabled={saving}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+              >
+                <XIcon size={24} color="#FFFFFF" weight="bold" />
+                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSave}
+                disabled={!canSave}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
+                accessibilityRole="button"
+                accessibilityLabel="Save image"
+              >
+                {saving ? (
+                  <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
+                ) : (
+                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
+                )}
+
+                <Text
+                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                >
+                  Save image
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -260,14 +347,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#09090B',
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingVertical: 20,
+    paddingBottom: 40,
   },
   borderlessInput: {
     borderWidth: 0,

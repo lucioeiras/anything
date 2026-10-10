@@ -1,24 +1,25 @@
-import { CheckIcon, LinkIcon, NotePencilIcon, TagIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { CheckIcon, LinkIcon, NotePencilIcon, XIcon } from 'phosphor-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
+import { type ResolvedMetadata, resolveUrlMetadata } from '@/lib/library/metadata';
 import type { LinkUploadItem } from '@/lib/library/storage';
+import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewLinkModalProps = {
   visible: boolean;
@@ -27,7 +28,7 @@ type NewLinkModalProps = {
 };
 
 export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
-  const { addLinkItem } = useLibrary();
+  const { addLinkItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
@@ -38,6 +39,145 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [resolvedMetadata, setResolvedMetadata] = useState<ResolvedMetadata | null>(null);
+  const lastFetchedUrlRef = useRef<string>('');
+  const [autoTags, setAutoTags] = useState<string[]>([]);
+  const autoTagsRef = useRef<string[]>([]);
+
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((t) => t.tag) : []),
+    [getTags, visible]
+  );
+
+  const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    const prevAutoTags = autoTagsRef.current;
+    const combinedAutoTags = [...prevAutoTags];
+    for (const t of newAutoTags) {
+      if (!combinedAutoTags.includes(t)) {
+        combinedAutoTags.push(t);
+      }
+    }
+    autoTagsRef.current = combinedAutoTags;
+    setAutoTags(combinedAutoTags);
+
+    setTags((prev) => {
+      const manualTags = prev.filter((t) => !prevAutoTags.includes(t));
+      const merged = [...manualTags];
+      for (const t of combinedAutoTags) {
+        if (!merged.includes(t)) {
+          merged.push(t);
+        }
+      }
+      return merged;
+    });
+  }, []);
+
+  const clearAutoTags = useCallback(() => {
+    const tagsToRemove = [...autoTagsRef.current];
+    autoTagsRef.current = [];
+    setAutoTags([]);
+    setTags((prev) => prev.filter((t) => !tagsToRemove.includes(t)));
+  }, []);
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    if (!newUrl.trim()) {
+      setResolvedMetadata(null);
+      lastFetchedUrlRef.current = '';
+      clearAutoTags();
+      return;
+    }
+
+    let target = newUrl.trim();
+    if (!/^https?:\/\//i.test(target)) {
+      target = `https://${target}`;
+    }
+    try {
+      const parsed = new URL(target);
+      if (parsed.hostname.includes('.') && parsed.hostname.length >= 4) {
+        if (target !== lastFetchedUrlRef.current) {
+          clearAutoTags();
+          const instantTags = generateAutoTags({
+            url: target,
+            note: note.trim() || undefined,
+            existingTags,
+          });
+          updateAutoTags(instantTags);
+        }
+      } else {
+        lastFetchedUrlRef.current = '';
+        clearAutoTags();
+      }
+    } catch {
+      lastFetchedUrlRef.current = '';
+      clearAutoTags();
+    }
+  };
+
+  const handleClearUrl = () => {
+    setUrl('');
+    setResolvedMetadata(null);
+    lastFetchedUrlRef.current = '';
+    clearAutoTags();
+    inputRef.current?.focus();
+  };
+
+  useEffect(() => {
+    let targetUrl = url.trim();
+    if (!targetUrl) {
+      return;
+    }
+
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = `https://${targetUrl}`;
+    }
+
+    try {
+      const parsed = new URL(targetUrl);
+      if (!parsed.hostname.includes('.') || parsed.hostname.length < 4) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    if (targetUrl === lastFetchedUrlRef.current) return;
+
+    const timer = setTimeout(async () => {
+      lastFetchedUrlRef.current = targetUrl;
+      try {
+        const meta = await resolveUrlMetadata(targetUrl);
+        if (lastFetchedUrlRef.current !== targetUrl) return;
+        setResolvedMetadata(meta);
+
+        const title = 'title' in meta ? meta.title : 'siteTitle' in meta ? meta.siteTitle : '';
+        const text = 'text' in meta ? meta.text : 'description' in meta ? meta.description : '';
+        const origin = 'origin' in meta ? meta.origin : undefined;
+        const author = 'author' in meta ? meta.author : undefined;
+        const subreddit = 'subreddit' in meta ? meta.subreddit : undefined;
+
+        const auto = await generateAutoTagsAsync({
+          title,
+          text,
+          note: note.trim() || undefined,
+          url: meta.url,
+          origin,
+          author,
+          subreddit,
+          type: meta.type,
+          existingTags,
+        });
+
+        if (lastFetchedUrlRef.current !== targetUrl) return;
+
+        updateAutoTags(auto);
+      } catch (e) {
+        console.warn('Failed to pre-fetch metadata:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [url, existingTags, note, updateAutoTags]);
 
   useEffect(() => {
     if (visible) {
@@ -52,8 +192,12 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     if (saving) return;
     setUrl('');
     setTags([]);
+    setAutoTags([]);
+    autoTagsRef.current = [];
     setTagInput('');
     setNote('');
+    setResolvedMetadata(null);
+    lastFetchedUrlRef.current = '';
     onClose();
   };
 
@@ -72,15 +216,22 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       if (pending && !finalTags.includes(pending)) {
         finalTags.push(pending);
       }
+      const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
       const item = await addLinkItem(targetUrl, {
         tags: finalTags.length > 0 ? finalTags : undefined,
+        autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
         note: note.trim() || undefined,
+        preloadedMetadata: resolvedMetadata ?? undefined,
       });
       setUrl('');
       setTags([]);
+      setAutoTags([]);
+      autoTagsRef.current = [];
       setTagInput('');
       setNote('');
+      setResolvedMetadata(null);
+      lastFetchedUrlRef.current = '';
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -89,55 +240,6 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleTagInputChange = (text: string) => {
-    if (text.includes(' ') || text.includes(',')) {
-      const parts = text.split(/[\s,]+/);
-      const endsWithDelimiter = text.endsWith(' ') || text.endsWith(',');
-      const tokensToAdd = endsWithDelimiter
-        ? parts.filter(Boolean)
-        : parts.slice(0, -1).filter(Boolean);
-      const remainder = endsWithDelimiter ? '' : parts[parts.length - 1];
-
-      if (tokensToAdd.length > 0) {
-        setTags((prev) => {
-          const next = [...prev];
-          for (const token of tokensToAdd) {
-            const clean = token.replace(/^#/, '').trim();
-            if (clean && !next.includes(clean)) {
-              next.push(clean);
-            }
-          }
-          return next;
-        });
-      }
-      setTagInput(remainder);
-    } else {
-      setTagInput(text);
-    }
-  };
-
-  const handleTagInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  };
-
-  const handleTagInputSubmit = () => {
-    const clean = tagInput.replace(/^#/, '').trim();
-    if (clean) {
-      if (!tags.includes(clean)) {
-        setTags((prev) => [...prev, clean]);
-      }
-      setTagInput('');
-    } else {
-      noteInputRef.current?.focus();
-    }
-  };
-
-  const handleRemoveTag = (indexToRemove: number) => {
-    setTags((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const canSave = url.trim().length > 0 && !saving;
@@ -167,7 +269,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
             showsVerticalScrollIndicator={false}
           >
             {/* Header */}
-            <View className="gap-3 p-8">
+            <View className="gap-3 p-8 pt-0">
               <Text className="font-sans-semibold text-2xl text-white">Add a new link</Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
                 You can add any link, but YouTube videos, Tweets, Reddit posts, and articles have
@@ -182,7 +284,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
               <TextInput
                 ref={inputRef}
                 value={url}
-                onChangeText={setUrl}
+                onChangeText={handleUrlChange}
                 placeholder="Type or paste your link here"
                 placeholderTextColor="#71717A"
                 autoCapitalize="none"
@@ -192,54 +294,41 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 onSubmitEditing={() => {
                   tagsInputRef.current?.focus();
                 }}
-                className="w-full font-sans text-xl text-white leading-tight"
+                className="flex-1 font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
-                multiline
+                clearButtonMode="never"
               />
+
+              {url.length > 0 && (
+                <Pressable
+                  onPress={handleClearUrl}
+                  hitSlop={10}
+                  className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear link"
+                >
+                  <XIcon size={12} color="#E4E4E7" weight="bold" />
+                </Pressable>
+              )}
             </View>
 
             {/* Tags section */}
-            <View className="py-6 px-8 border-b border-zinc-800 gap-4">
-              <View className="flex-row items-center gap-2">
-                <TagIcon size={14} color="#E4E4E7" weight="bold" />
-                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Tags{tags.length > 0 ? ` (${tags.length})` : ''}
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={() => tagsInputRef.current?.focus()}
-                className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
-              >
-                {tags.map((tag, idx) => (
-                  <Pressable
-                    key={`${tag}-${idx}`}
-                    onPress={() => handleRemoveTag(idx)}
-                    className="flex-row items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
-                  >
-                    <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
-                    <XIcon size={14} color="#60A5FA" />
-                  </Pressable>
-                ))}
-
-                <TextInput
-                  ref={tagsInputRef}
-                  value={tagInput}
-                  onChangeText={handleTagInputChange}
-                  onKeyPress={handleTagInputKeyPress}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : ''}
-                  placeholderTextColor="#71717A"
-                  returnKeyType="done"
-                  onSubmitEditing={handleTagInputSubmit}
-                  className="font-sans text-lg leading-tight text-zinc-200 flex-grow min-w-[120px]"
-                  style={styles.borderlessInput}
-                  underlineColorAndroid="transparent"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </Pressable>
-            </View>
+            <TagsBox
+              tags={tags}
+              autoTags={autoTags}
+              onTagsChange={setTags}
+              onAutoTagsChange={setAutoTags}
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagsInputRef}
+              onSubmitEditing={() => {
+                noteInputRef.current?.focus();
+              }}
+              onRemoveTag={(removed) => {
+                autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+              }}
+            />
 
             {/* Notes section */}
             <View className="flex-1 py-6 px-8 gap-4">
@@ -297,7 +386,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 )}
 
                 <Text
-                  className={`font-sans-bold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
                 >
                   Save link
                 </Text>

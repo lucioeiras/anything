@@ -11,9 +11,10 @@ type LinkCardProps = {
   siteTitle: string;
   description: string;
   url: string;
+  title?: string;
 };
 
-export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps) => {
+export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCardProps) => {
   const getShortUrl = (urlStr: string) => {
     try {
       const parsed = new URL(urlStr);
@@ -36,7 +37,7 @@ export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps
 
       <View className="gap-2">
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
-          {decodeHTML(siteTitle)}
+          {decodeHTML(title || siteTitle)}
         </Text>
 
         <Text className="font-sans text-xs leading-[1.8] text-zinc-300" numberOfLines={4}>

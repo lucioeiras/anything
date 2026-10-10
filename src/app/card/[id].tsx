@@ -14,11 +14,10 @@ import {
   CopyIcon,
   DownloadSimpleIcon,
   ExportIcon,
-  HashIcon,
+  InfoIcon,
   NotePencilIcon,
-  TagIcon,
+  TextTIcon,
   TrashSimpleIcon,
-  XIcon,
 } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -45,6 +44,7 @@ import QuoteOpen from '@/../assets/quote-open.svg';
 import { ArticleCard } from '@/components/ArticleCard';
 import { LinkCard } from '@/components/LinkCard';
 import { RedditCard } from '@/components/RedditCard';
+import { TagsBox } from '@/components/TagsBox';
 import { TweetCard } from '@/components/TweetCard';
 import { YouTubeCard } from '@/components/YouTubeCard';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -87,7 +87,11 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   const insets = useSafeAreaInsets();
 
   const initialTitle =
-    'title' in item && typeof item.title === 'string' ? decodeHTML(item.title) : '';
+    'title' in item && typeof item.title === 'string' && item.title
+      ? decodeHTML(item.title)
+      : item.type === 'link' && 'siteTitle' in item && typeof item.siteTitle === 'string'
+        ? decodeHTML(item.siteTitle)
+        : '';
   const initialText = 'text' in item && typeof item.text === 'string' ? decodeHTML(item.text) : '';
 
   const [title, setTitle] = useState(initialTitle);
@@ -251,7 +255,13 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
 
   const handleSaveTitle = async () => {
     const cleanTitle = title.trim();
-    if ('title' in item && item.title === cleanTitle) return;
+    const existingTitle =
+      'title' in item && typeof item.title === 'string' && item.title
+        ? item.title
+        : item.type === 'link' && 'siteTitle' in item && typeof item.siteTitle === 'string'
+          ? item.siteTitle
+          : '';
+    if (existingTitle === cleanTitle) return;
     try {
       await updateItem(item.id, { title: cleanTitle || undefined } as Partial<LibraryItem>);
     } catch (e) {
@@ -286,13 +296,18 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   };
 
   const handleRemoveTag = async (indexToRemove: number) => {
+    const removedTag = tags[indexToRemove];
     const updatedTags = tags.filter((_, idx) => idx !== indexToRemove);
     setTags(updatedTags);
     if (updatedTags.length === 0) {
       setIsEditingTags(false);
     }
+    const updatedAutoTags = item.autoTags?.filter((t) => t !== removedTag);
     try {
-      await updateItem(item.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+      await updateItem(item.id, {
+        tags: updatedTags.length > 0 ? updatedTags : undefined,
+        autoTags: updatedAutoTags && updatedAutoTags.length > 0 ? updatedAutoTags : undefined,
+      });
     } catch (e) {
       console.warn('Failed to remove tag', e);
     }
@@ -460,7 +475,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
           }}
         >
           {/* SECTION 1: TOP SECTION (CARD DISPLAY) */}
-          <View className="w-full items-center justify-center px-6 pt-8 pb-16 min-h-[300px] relative">
+          <View className="w-full items-center justify-center px-6 py-8 min-h-[300px] relative">
             <Pressable
               onPress={() => {
                 Keyboard.dismiss();
@@ -470,15 +485,14 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
             />
             {/* If it's an image: only display the image */}
             {isImage && (
-              <View className="w-full max-w-sm max-h-[300px] items-center justify-center rounded-2xl overflow-hidden shadow-2xl">
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
                 <ExpoImage
                   source={{ uri: item.image }}
-                  className="w-full rounded-2xl"
+                  className="w-full"
                   style={{
                     aspectRatio: imageRatio,
-                    maxHeight: 290,
                   }}
-                  contentFit="contain"
+                  contentFit="cover"
                   onLoad={(e) => {
                     if (e.source.width && e.source.height) {
                       setImageRatio(e.source.width / e.source.height);
@@ -490,11 +504,12 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
 
             {/* If it's any sort of link: show the card */}
             {isLink && (
-              <View className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-zinc-900 border border-zinc-800">
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
                 {item.type === 'link' && (
                   <LinkCard
                     favicon={item.favicon}
                     siteTitle={item.siteTitle}
+                    title={title || item.title}
                     description={item.description}
                     url={item.url}
                   />
@@ -577,69 +592,6 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
             )}
           </View>
 
-          {/* ACTIONS ROW (Between the two sections, over them, centralized horizontally) */}
-          <View className="z-30 self-center -my-9">
-            <View className="bg-zinc-900 rounded-full px-5 py-4 shadow-2xl flex-row items-center justify-center gap-6">
-              {/* For all of them: delete */}
-              <Pressable
-                onPress={handleDelete}
-                hitSlop={8}
-                className="rounded-full active:bg-red-500/30 items-center justify-center"
-                accessibilityLabel="Delete"
-              >
-                <TrashSimpleIcon size={24} color="#EF4444" />
-              </Pressable>
-
-              {/* Only for images: download (save at camera roll) */}
-              {isImage && (
-                <Pressable
-                  onPress={handleDownload}
-                  hitSlop={8}
-                  className="rounded-full active:bg-zinc-700 items-center justify-center"
-                  accessibilityLabel="Download image"
-                >
-                  <DownloadSimpleIcon size={24} color="#FFFFFF" />
-                </Pressable>
-              )}
-
-              {/* For images, notes and quotes: copy */}
-              {(isImage || isNoteOrQuote) && (
-                <Pressable
-                  onPress={handleCopy}
-                  hitSlop={8}
-                  className="rounded-full active:bg-zinc-700 items-center justify-center"
-                  accessibilityLabel="Copy"
-                >
-                  <CopyIcon size={24} color="#FFFFFF" />
-                </Pressable>
-              )}
-
-              {/* For links and images: share */}
-              {(isLink || isImage) && (
-                <Pressable
-                  onPress={handleShare}
-                  hitSlop={8}
-                  className="rounded-full active:bg-zinc-700 items-center justify-center"
-                  accessibilityLabel="Share"
-                >
-                  <ExportIcon size={24} color="#FFFFFF" />
-                </Pressable>
-              )}
-
-              {/* Only for links: open link */}
-              {isLink && (
-                <Pressable
-                  onPress={handleOpenLink}
-                  hitSlop={8}
-                  className="rounded-full active:bg-zinc-700 items-center justify-center"
-                  accessibilityLabel="Open link"
-                >
-                  <ArrowSquareOutIcon size={24} color="#FFFFFF" />
-                </Pressable>
-              )}
-            </View>
-          </View>
-
           {/* SECTION 2: BOTTOM SECTION (INFORMATION ABOUT THE CARD) */}
           <Pressable
             onLayout={(e) => {
@@ -649,166 +601,209 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               Keyboard.dismiss();
               if (isEditingTags) setIsEditingTags(false);
             }}
-            className="w-full flex-1 bg-zinc-950 pt-8 pb-16 px-6 gap-4 mt-1"
+            className="w-full flex-1 bg-zinc-950 border-t border-zinc-800 pb-16"
           >
-            {/* Title (besides links, that don't have titles) */}
-            {item.type !== 'link' && (
-              <View className="w-full">
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  onFocus={() => {
-                    scrollToTitle();
-                    if (isEditingTags) setIsEditingTags(false);
-                  }}
-                  onBlur={handleSaveTitle}
-                  placeholder="Add a title here"
-                  placeholderTextColor="#71717A"
-                  className="font-sans text-3xl text-zinc-100 mt-6 text-center"
-                  multiline
-                  textAlign="center"
-                  scrollEnabled={false}
-                />
-              </View>
-            )}
-
-            {/* Date Added */}
-            <View className="flex-row items-center gap-1.5 self-center">
-              <CalendarBlankIcon size={13} color="#A1A1AA" />
-              <Text className="font-sans text-sm text-zinc-400">
-                Added {formatDateAdded(item.createdAt)}
-              </Text>
+            {/* Title Section */}
+            <View className="flex-row items-center gap-4 py-5 px-6 border-b border-zinc-800">
+              <TextTIcon size={20} color="#D4D4D8" />
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                onFocus={() => {
+                  scrollToTitle();
+                  if (isEditingTags) setIsEditingTags(false);
+                }}
+                onBlur={handleSaveTitle}
+                placeholder="Add a title here..."
+                placeholderTextColor="#71717A"
+                className="flex-1 font-sans text-xl text-white leading-tight"
+                style={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                underlineColorAndroid="transparent"
+              />
             </View>
 
-            {/* Box with Tags */}
-            <View className="flex-row items-center gap-2 mt-4">
-              <TagIcon size={14} color="#A1A1AA" weight="bold" />
-              <Text className="font-sans-semibold text-sm text-zinc-400 tracking-wider uppercase">
-                Tags ({tags.length})
-              </Text>
-            </View>
-
-            <Pressable
+            {/* Tags section */}
+            <TagsBox
+              tags={tags}
+              autoTags={item.autoTags}
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagInputRef}
+              showRemoveIcon={isEditingTags}
               onLayout={(e) => {
                 tagsY.current = e.nativeEvent.layout.y;
               }}
-              onPress={() => {
+              onContainerPress={() => {
                 if (isEditingTags) {
                   setIsEditingTags(false);
                 } else {
                   tagInputRef.current?.focus();
                 }
               }}
-              className="w-full mt-1"
-            >
-              <View className="flex-row flex-wrap items-center gap-2">
-                {tags.map((tag, idx) => (
-                  <Animated.View
-                    key={`${tag}-${idx}`}
-                    style={{
-                      transform: [
-                        {
-                          rotate: isEditingTags
-                            ? idx % 2 === 0
-                              ? rotationEven
-                              : rotationOdd
-                            : '0deg',
-                        },
-                      ],
-                    }}
-                  >
-                    <Pressable
-                      onLongPress={() => setIsEditingTags(true)}
-                      delayLongPress={250}
-                      onPress={() => {
-                        if (isEditingTags) {
-                          handleRemoveTag(idx);
-                        } else {
-                          onSelectTag(tag);
-                        }
-                      }}
-                      className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3.5 py-2 active:opacity-70"
-                    >
-                      <HashIcon size={12} color="#60A5FA" weight="bold" />
-                      <Text className="font-sans-semibold text-base text-blue-400">{tag}</Text>
-                      {isEditingTags && <XIcon size={14} color="#60A5FA" />}
-                    </Pressable>
-                  </Animated.View>
-                ))}
-
-                <TextInput
-                  ref={tagInputRef}
-                  value={tagInput}
-                  onFocus={() => {
-                    scrollToTags();
-                    if (isEditingTags) setIsEditingTags(false);
+              onInputFocus={() => {
+                scrollToTags();
+                if (isEditingTags) setIsEditingTags(false);
+              }}
+              onTagPress={(tag, idx) => {
+                if (isEditingTags) {
+                  handleRemoveTag(idx);
+                } else {
+                  onSelectTag(tag);
+                }
+              }}
+              onTagLongPress={() => setIsEditingTags(true)}
+              onAddTag={handleAddTag}
+              renderTagWrapper={(tag, idx, children) => (
+                <Animated.View
+                  key={`${tag}-${idx}`}
+                  style={{
+                    transform: [
+                      {
+                        rotate: isEditingTags
+                          ? idx % 2 === 0
+                            ? rotationEven
+                            : rotationOdd
+                          : '0deg',
+                      },
+                    ],
                   }}
-                  onChangeText={(text) => {
-                    if (text.includes(' ') || text.includes(',')) {
-                      const parts = text.split(/[\s,]+/);
-                      const endsWithDelimiter = text.endsWith(' ') || text.endsWith(',');
-                      const tokens = endsWithDelimiter
-                        ? parts.filter(Boolean)
-                        : parts.slice(0, -1).filter(Boolean);
-                      const remainder = endsWithDelimiter ? '' : parts[parts.length - 1];
+                >
+                  {children}
+                </Animated.View>
+              )}
+            />
 
-                      tokens.forEach((t) => handleAddTag(t));
-                      setTagInput(remainder);
-                    } else {
-                      setTagInput(text);
-                    }
-                  }}
-                  placeholder={tags.length === 0 ? 'Add tags here' : ''}
-                  placeholderTextColor="#71717A"
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    if (tagInput.trim()) {
-                      handleAddTag(tagInput);
-                    }
-                  }}
-                  className="font-sans text-base text-zinc-200 flex-grow leading-tight"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            </Pressable>
-
-            {/* Box with Notes */}
-            <View className="flex-row items-center gap-2 mt-8">
-              <NotePencilIcon size={14} color="#A1A1AA" weight="bold" />
-              <Text className="font-sans-semibold text-sm text-zinc-400 tracking-wider uppercase">
-                Notes
-              </Text>
-            </View>
-
-            <Pressable
+            {/* Notes Section */}
+            <View
               onLayout={(e) => {
                 notesY.current = e.nativeEvent.layout.y;
               }}
-              onPress={() => {
-                if (isEditingTags) setIsEditingTags(false);
-                noteInputRef.current?.focus();
-              }}
-              className="w-full"
+              className="py-6 px-6 border-b border-zinc-800 gap-4"
             >
-              <TextInput
-                ref={noteInputRef}
-                value={note}
-                onFocus={() => {
-                  scrollToNotes();
+              <View className="flex-row items-center gap-2">
+                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Notes
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => {
                   if (isEditingTags) setIsEditingTags(false);
+                  noteInputRef.current?.focus();
                 }}
-                onChangeText={setNote}
-                onBlur={handleSaveNote}
-                placeholder="Add notes about this card..."
-                placeholderTextColor="#71717A"
-                multiline
-                textAlignVertical="top"
-                className="font-sans text-base text-zinc-200 leading-relaxed"
-              />
-            </Pressable>
+                className="w-full"
+              >
+                <TextInput
+                  ref={noteInputRef}
+                  value={note}
+                  onFocus={() => {
+                    scrollToNotes();
+                    if (isEditingTags) setIsEditingTags(false);
+                  }}
+                  onChangeText={setNote}
+                  onBlur={handleSaveNote}
+                  placeholder="Add notes about this card..."
+                  placeholderTextColor="#71717A"
+                  multiline
+                  textAlignVertical="top"
+                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[72px]"
+                  style={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                  underlineColorAndroid="transparent"
+                />
+              </Pressable>
+            </View>
+
+            {/* Info Section */}
+            <View className="py-6 px-6 gap-4">
+              <View className="flex-row items-center gap-2">
+                <InfoIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Info
+                </Text>
+              </View>
+
+              <View className="flex-row items-center gap-2.5">
+                <CalendarBlankIcon size={16} color="#A1A1AA" />
+                <Text className="font-sans text-base text-zinc-400">
+                  Added {formatDateAdded(item.createdAt)}
+                </Text>
+              </View>
+            </View>
           </Pressable>
         </ScrollView>
+
+        {/* Action buttons at the bottom */}
+        <View pointerEvents="box-none">
+          <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
+            {/* Delete button */}
+            <Pressable
+              onPress={handleDelete}
+              hitSlop={12}
+              className="flex-1 pt-6 pb-10 items-center justify-center border-r border-zinc-800 active:bg-zinc-900"
+              accessibilityRole="button"
+              accessibilityLabel="Delete"
+            >
+              <TrashSimpleIcon size={24} color="#EF4444" />
+            </Pressable>
+
+            {/* Download button (images only) */}
+            {isImage && (
+              <Pressable
+                onPress={handleDownload}
+                hitSlop={12}
+                className="flex-1 pt-6 pb-10 items-center justify-center border-r border-zinc-800 active:bg-zinc-900"
+                accessibilityRole="button"
+                accessibilityLabel="Download image"
+              >
+                <DownloadSimpleIcon size={24} color="#FFFFFF" />
+              </Pressable>
+            )}
+
+            {/* Copy button (images, notes, and quotes) */}
+            {(isImage || isNoteOrQuote) && (
+              <Pressable
+                onPress={handleCopy}
+                hitSlop={12}
+                className={`flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900 ${
+                  isImage ? 'border-r border-zinc-800' : ''
+                }`}
+                accessibilityRole="button"
+                accessibilityLabel="Copy"
+              >
+                <CopyIcon size={24} color="#FFFFFF" />
+              </Pressable>
+            )}
+
+            {/* Share button (links and images) */}
+            {(isLink || isImage) && (
+              <Pressable
+                onPress={handleShare}
+                hitSlop={12}
+                className={`flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900 ${
+                  isLink ? 'border-r border-zinc-800' : ''
+                }`}
+                accessibilityRole="button"
+                accessibilityLabel="Share"
+              >
+                <ExportIcon size={24} color="#FFFFFF" />
+              </Pressable>
+            )}
+
+            {/* Open link button (links only) */}
+            {isLink && (
+              <Pressable
+                onPress={handleOpenLink}
+                hitSlop={12}
+                className="flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900"
+                accessibilityRole="button"
+                accessibilityLabel="Open link"
+              >
+                <ArrowSquareOutIcon size={24} color="#FFFFFF" />
+              </Pressable>
+            )}
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );

@@ -12,6 +12,7 @@ import {
 
 export type TagsNoteBoxProps = {
   tags: string[];
+  autoTags?: string[];
   onTagsChange: (tags: string[] | ((prev: string[]) => string[])) => void;
   tagInput: string;
   onTagInputChange: (text: string) => void;
@@ -28,6 +29,7 @@ export type TagsNoteBoxProps = {
 
 export function TagsNoteBox({
   tags,
+  autoTags,
   onTagsChange,
   tagInput,
   onTagInputChange,
@@ -151,23 +153,34 @@ export function TagsNoteBox({
       {activeTab === 'tags' && (
         <View className="flex-1 w-full flex-row flex-wrap items-center justify-start min-h-[140px] gap-2 p-6 bg-zinc-900/70 rounded-3xl">
           {tags.length > 0 &&
-            tags.map((tag, idx) => (
-              <Pressable
-                key={`${tag}-${idx}`}
-                onPress={() => handleRemoveTag(idx)}
-                className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
-              >
-                <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
-                <XIcon size={14} color="#61A5FA" />
-              </Pressable>
-            ))}
+            tags.map((tag, idx) => {
+              const isAuto = autoTags?.includes(tag);
+              return (
+                <Pressable
+                  key={`${tag}-${idx}`}
+                  onPress={() => handleRemoveTag(idx)}
+                  className={`flex-row items-center gap-2 rounded-full px-3 py-1 active:opacity-70 ${
+                    isAuto ? 'bg-white' : 'bg-blue-500/15'
+                  }`}
+                >
+                  <Text
+                    className={`font-sans-medium text-base ${
+                      isAuto ? 'text-black' : 'text-blue-400'
+                    }`}
+                  >
+                    #{tag}
+                  </Text>
+                  <XIcon size={14} color={isAuto ? '#000000' : '#61A5FA'} />
+                </Pressable>
+              );
+            })}
 
           <TextInput
             ref={effectiveTagsRef}
             value={tagInput}
             onChangeText={handleTagInputChange}
             onKeyPress={handleTagInputKeyPress}
-            placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+            placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
             placeholderTextColor="#71717a"
             returnKeyType="done"
             onSubmitEditing={handleTagInputSubmit}

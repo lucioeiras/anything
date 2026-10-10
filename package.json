@@ -33,6 +33,7 @@
     "expo-system-ui": "~57.0.4",
     "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
+    "llama.rn": "^0.13.0-rc.7",
     "nativewind": "^4.2.7",
     "phosphor-react-native": "^3.0.6",
     "react": "19.2.3",
@@ -69,5 +70,8 @@
     "format": "prettier --write .",
     "prepare": "husky"
   },
-  "private": true
+  "private": true,
+  "trustedDependencies": [
+    "llama.rn"
+  ]
 }

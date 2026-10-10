@@ -65,7 +65,8 @@
           "savePhotosPermission": "The app needs access to save images to your camera roll."
         }
       ],
-      "expo-video"
+      "expo-video",
+      "llama.rn"
     ],
     "experiments": {
       "typedRoutes": true,
