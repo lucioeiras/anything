@@ -47,7 +47,6 @@ export const MovieCard = ({
   title,
   poster,
   releaseYear,
-  voteAverage,
   genres,
   director,
   runtime,
@@ -64,10 +63,6 @@ export const MovieCard = ({
   if (releaseYear) metaParts.push(releaseYear);
   if (runtime) metaParts.push(`${runtime} min`);
   if (!releaseYear && !runtime && genreText) metaParts.push(genreText);
-
-  const metaText = metaParts.join(' · ');
-  const formattedScore =
-    typeof voteAverage === 'number' && voteAverage > 0 ? voteAverage.toFixed(1) : undefined;
 
   return (
     <View className="w-full overflow-hidden">
