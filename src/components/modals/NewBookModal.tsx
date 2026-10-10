@@ -324,20 +324,20 @@ export function NewBookModal({ visible, onClose, onSaved }: NewBookModalProps) {
 
             {/* Book Preview Section */}
             {book && (
-              <View className="mx-8 my-4 p-5 rounded-2xl bg-zinc-900 border border-zinc-800 gap-4">
-                <View className="flex-row gap-4">
+              <View className="px-8 py-5 p-5 bg-zinc-950 border-b border-zinc-800">
+                <View className="flex-row gap-8">
                   <BookCover
                     cover={book.cover}
                     title={book.title}
                     aspectRatio={coverAspectRatio}
                     onAspectRatioChange={setCoverAspectRatio}
-                    className="w-24 shadow-md"
+                    className="w-20 shadow-md"
                     roundedCorners
                   />
 
-                  <View className="flex-1 justify-center gap-1.5">
+                  <View className="flex-1 justify-center gap-2">
                     <Text
-                      className="font-sans-medium text-lg text-white leading-snug"
+                      className="font-sans-medium text-xl text-white leading-snug"
                       numberOfLines={3}
                     >
                       {book.title}
@@ -345,7 +345,7 @@ export function NewBookModal({ visible, onClose, onSaved }: NewBookModalProps) {
 
                     {book.authors.length > 0 && (
                       <Text
-                        className="font-sans text-sm text-amber-400 leading-tight"
+                        className="font-sans text-base text-amber-400 leading-tight"
                         numberOfLines={2}
                       >
                         {book.authors.join(', ')}
@@ -354,17 +354,17 @@ export function NewBookModal({ visible, onClose, onSaved }: NewBookModalProps) {
 
                     <View className="flex-row flex-wrap items-center gap-2 mt-1">
                       {book.publishedDate && (
-                        <Text className="font-sans text-xs text-zinc-400">
+                        <Text className="font-sans text-sm text-zinc-300">
                           {book.publishedDate.split('-')[0]}
                         </Text>
                       )}
                       {book.pageCount && (
-                        <Text className="font-sans text-xs text-zinc-500">
+                        <Text className="font-sans text-sm text-zinc-400">
                           • {book.pageCount} pgs
                         </Text>
                       )}
                       {book.publisher && (
-                        <Text className="font-sans text-xs text-zinc-500" numberOfLines={1}>
+                        <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
                           • {book.publisher}
                         </Text>
                       )}
