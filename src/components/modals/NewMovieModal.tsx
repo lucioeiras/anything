@@ -1,5 +1,4 @@
 import { Image as ExpoImage } from 'expo-image';
-import * as WebBrowser from 'expo-web-browser';
 import {
   CheckIcon,
   FilmSlateIcon,
@@ -33,7 +32,6 @@ import {
   getTmdbKeyInfo,
   getTmdbMovieDetails,
   searchTmdbMovies,
-  setTmdbApiKey,
   type TmdbMovieDetails,
   type TmdbMovieResult,
 } from '@/lib/movies/tmdb';
@@ -52,10 +50,6 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
   const searchInputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
-
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [isSavingKey, setIsSavingKey] = useState(false);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TmdbMovieResult[]>([]);
@@ -107,7 +101,6 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
       getTmdbKeyInfo().then((info) => {
         if (!mounted) return;
         const exists = info.source !== 'none';
-        setHasApiKey(exists);
         if (exists) {
           setTimeout(() => {
             if (mounted) searchInputRef.current?.focus();
@@ -120,33 +113,6 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
       mounted = false;
     };
   }, [visible]);
-
-  const handleSaveApiKey = async () => {
-    const cleanKey = apiKeyInput.trim();
-    if (!cleanKey) {
-      Alert.alert('Empty Key', 'Please enter a valid TMDB API key.');
-      return;
-    }
-    try {
-      setIsSavingKey(true);
-      await setTmdbApiKey(cleanKey);
-      setHasApiKey(true);
-      setApiKeyInput('');
-      Alert.alert('Success', 'TMDB API key saved successfully!');
-    } catch {
-      Alert.alert('Error', 'Failed to save TMDB API key.');
-    } finally {
-      setIsSavingKey(false);
-    }
-  };
-
-  const handleOpenTmdbSite = async () => {
-    try {
-      await WebBrowser.openBrowserAsync('https://www.themoviedb.org/settings/api');
-    } catch {
-      // ignore
-    }
-  };
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
