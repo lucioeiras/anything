@@ -1,13 +1,10 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import {
-  ArrowSquareOutIcon,
   CheckIcon,
   FilmSlateIcon,
-  KeyIcon,
   MagnifyingGlassIcon,
   NotePencilIcon,
-  StarIcon,
   XIcon,
 } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -327,57 +324,9 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
               </Text>
             </View>
 
-            {/* Missing API Key Banner */}
-            {hasApiKey === false && (
-              <View className="mx-8 mb-6 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <KeyIcon size={18} color="#F59E0B" weight="duotone" />
-                  <Text className="font-sans-semibold text-base text-zinc-100">
-                    TMDB API Key required
-                  </Text>
-                </View>
-                <Text className="font-sans text-sm text-zinc-400 leading-relaxed mb-4">
-                  To search movies and fetch high-resolution posters, please provide your free TMDB
-                  API key.
-                </Text>
-                <View className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 flex-row items-center mb-3">
-                  <TextInput
-                    value={apiKeyInput}
-                    onChangeText={setApiKeyInput}
-                    placeholder="Paste your TMDB API key..."
-                    placeholderTextColor="#71717A"
-                    secureTextEntry
-                    className="flex-1 font-sans text-sm text-white"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                <View className="flex-row items-center gap-3">
-                  <Pressable
-                    onPress={handleSaveApiKey}
-                    disabled={isSavingKey}
-                    className="flex-1 py-2.5 px-4 rounded-lg bg-amber-500 active:opacity-80 items-center justify-center flex-row gap-2"
-                  >
-                    {isSavingKey ? (
-                      <ActivityIndicator size={16} color="#000000" />
-                    ) : (
-                      <Text className="font-sans-semibold text-sm text-zinc-950">Save Key</Text>
-                    )}
-                  </Pressable>
-                  <Pressable
-                    onPress={handleOpenTmdbSite}
-                    className="py-2.5 px-4 rounded-lg border border-zinc-800 active:bg-zinc-800/50 items-center justify-center flex-row gap-1.5"
-                  >
-                    <Text className="font-sans-medium text-sm text-zinc-300">Get key</Text>
-                    <ArrowSquareOutIcon size={14} color="#A1A1AA" />
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
             {/* Selected Movie Banner or Search Input */}
             {selectedMovie ? (
-              <View className="mx-8 p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex-row items-center gap-4">
+              <View className="px-8 py-6 border-t border-b border-zinc-800 flex-row items-center gap-6">
                 <View className="w-16 h-24 rounded-lg bg-zinc-800 overflow-hidden items-center justify-center">
                   {selectedMovie.poster_path ? (
                     <ExpoImage
@@ -389,22 +338,14 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
                     <FilmSlateIcon size={24} color="#71717A" />
                   )}
                 </View>
-                <View className="flex-1">
-                  <Text className="font-sans-semibold text-base text-white" numberOfLines={1}>
+                <View className="flex-1 gap-2">
+                  <Text className="font-sans-semibold text-lg text-white" numberOfLines={1}>
                     {selectedMovie.title}
                   </Text>
-                  <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
+                  <Text className="font-sans text-base text-zinc-400" numberOfLines={1}>
                     {getReleaseYear(selectedMovie.release_date) || '—'}
                     {selectedMovie.runtime ? ` • ${selectedMovie.runtime} min` : ''}
                   </Text>
-                  {selectedMovie.vote_average > 0 && (
-                    <View className="flex-row items-center gap-1 mt-1.5">
-                      <StarIcon size={12} color="#F59E0B" weight="fill" />
-                      <Text className="font-sans-semibold text-xs text-amber-400">
-                        {selectedMovie.vote_average.toFixed(1)}
-                      </Text>
-                    </View>
-                  )}
                 </View>
                 <Pressable
                   onPress={() => setSelectedMovie(null)}
@@ -468,7 +409,7 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
                     <Pressable
                       key={item.id}
                       onPress={() => handleSelectMovie(item)}
-                      className="flex-row items-center gap-4 px-8 py-3.5 border-b border-zinc-900 active:bg-zinc-900"
+                      className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-900 active:bg-zinc-900"
                     >
                       <View className="w-12 h-16 rounded-md bg-zinc-800 overflow-hidden items-center justify-center">
                         {item.poster_path ? (
@@ -482,29 +423,20 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
                         )}
                       </View>
 
-                      <View className="flex-1">
+                      <View className="flex-1 gap-1.5">
                         <Text
                           className="font-sans-medium text-base text-zinc-100"
                           numberOfLines={1}
                         >
                           {item.title}
                         </Text>
-                        <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
+                        <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
                           {getReleaseYear(item.release_date) || '—'}
                           {item.original_title && item.original_title !== item.title
                             ? ` • ${item.original_title}`
                             : ''}
                         </Text>
                       </View>
-
-                      {item.vote_average > 0 && (
-                        <View className="flex-row items-center gap-1">
-                          <StarIcon size={12} color="#F59E0B" weight="fill" />
-                          <Text className="font-sans-medium text-xs text-zinc-400">
-                            {item.vote_average.toFixed(1)}
-                          </Text>
-                        </View>
-                      )}
                     </Pressable>
                   ))}
 

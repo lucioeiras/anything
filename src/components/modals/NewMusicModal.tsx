@@ -326,7 +326,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                   <Pressable
                     key={item.trackId}
                     onPress={() => handleSelectTrack(item)}
-                    className="flex-row items-center gap-5 px-8 py-4 border-b border-zinc-900 active:bg-zinc-900"
+                    className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-900 active:bg-zinc-900"
                   >
                     <View className="w-12 h-12 rounded-md bg-zinc-800 overflow-hidden">
                       {item.cover ? (
@@ -342,11 +342,11 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                       )}
                     </View>
 
-                    <View className="flex-1">
+                    <View className="flex-1 gap-1">
                       <Text className="font-sans-medium text-base text-zinc-100" numberOfLines={1}>
                         {item.title}
                       </Text>
-                      <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
+                      <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
                         {item.artist}
                         {item.album ? ` • ${item.album}` : ''}
                       </Text>
