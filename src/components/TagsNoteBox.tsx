@@ -167,7 +167,7 @@ export function TagsNoteBox({
             value={tagInput}
             onChangeText={handleTagInputChange}
             onKeyPress={handleTagInputKeyPress}
-            placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+            placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
             placeholderTextColor="#71717a"
             returnKeyType="done"
             onSubmitEditing={handleTagInputSubmit}

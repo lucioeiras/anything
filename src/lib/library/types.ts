@@ -42,6 +42,7 @@ export type LinkItem = BaseItem & {
   siteTitle: string;
   description: string;
   favicon: ImageRef;
+  title?: string;
 };
 
 export type ArticleItem = BaseItem & {

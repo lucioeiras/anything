@@ -19,14 +19,12 @@ export const ImageCard = ({ url, title }: NoteProps) => {
         source={{ uri: url }}
         className="w-full"
         style={{
-          aspectRatio: Math.max(0.65, Math.min(1.778, aspectRatio)),
-          maxHeight: 260,
+          aspectRatio,
         }}
         contentFit="cover"
         onLoad={(e) => {
           if (e.source.width && e.source.height) {
-            const ratio = e.source.width / e.source.height;
-            setAspectRatio(Math.max(0.65, Math.min(1.778, ratio)));
+            setAspectRatio(e.source.width / e.source.height);
           }
         }}
       />

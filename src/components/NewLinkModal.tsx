@@ -1,5 +1,5 @@
 import { CheckIcon, LinkIcon, NotePencilIcon, TagIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,7 +18,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibrary } from '@/hooks/useLibrary';
+import { type ResolvedMetadata, resolveUrlMetadata } from '@/lib/library/metadata';
 import type { LinkUploadItem } from '@/lib/library/storage';
+import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewLinkModalProps = {
   visible: boolean;
@@ -27,7 +29,7 @@ type NewLinkModalProps = {
 };
 
 export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
-  const { addLinkItem } = useLibrary();
+  const { addLinkItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
@@ -38,6 +40,121 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [resolvedMetadata, setResolvedMetadata] = useState<ResolvedMetadata | null>(null);
+  const lastFetchedUrlRef = useRef<string>('');
+
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((t) => t.tag) : []),
+    [getTags, visible]
+  );
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    if (!newUrl.trim()) {
+      setResolvedMetadata(null);
+      lastFetchedUrlRef.current = '';
+      return;
+    }
+
+    let target = newUrl.trim();
+    if (!/^https?:\/\//i.test(target)) {
+      target = `https://${target}`;
+    }
+    try {
+      const parsed = new URL(target);
+      if (parsed.hostname.includes('.') && parsed.hostname.length >= 4) {
+        const instantTags = generateAutoTags({
+          url: target,
+          note: note.trim() || undefined,
+          existingTags,
+        });
+        if (instantTags.length > 0) {
+          setTags((prev) => {
+            const next = [...prev];
+            for (const t of instantTags) {
+              if (!next.includes(t)) {
+                next.push(t);
+              }
+            }
+            return next;
+          });
+        }
+      }
+    } catch {
+      // ignore parsing error while typing
+    }
+  };
+
+  const handleClearUrl = () => {
+    setUrl('');
+    setResolvedMetadata(null);
+    lastFetchedUrlRef.current = '';
+    inputRef.current?.focus();
+  };
+
+  useEffect(() => {
+    let targetUrl = url.trim();
+    if (!targetUrl) {
+      return;
+    }
+
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = `https://${targetUrl}`;
+    }
+
+    try {
+      const parsed = new URL(targetUrl);
+      if (!parsed.hostname.includes('.') || parsed.hostname.length < 4) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    if (targetUrl === lastFetchedUrlRef.current) return;
+
+    const timer = setTimeout(async () => {
+      lastFetchedUrlRef.current = targetUrl;
+      try {
+        const meta = await resolveUrlMetadata(targetUrl);
+        setResolvedMetadata(meta);
+
+        const title = 'title' in meta ? meta.title : 'siteTitle' in meta ? meta.siteTitle : '';
+        const text = 'text' in meta ? meta.text : 'description' in meta ? meta.description : '';
+        const origin = 'origin' in meta ? meta.origin : undefined;
+        const author = 'author' in meta ? meta.author : undefined;
+        const subreddit = 'subreddit' in meta ? meta.subreddit : undefined;
+
+        const auto = await generateAutoTagsAsync({
+          title,
+          text,
+          note: note.trim() || undefined,
+          url: meta.url,
+          origin,
+          author,
+          subreddit,
+          type: meta.type,
+          existingTags,
+        });
+
+        if (auto.length > 0) {
+          setTags((prev) => {
+            const next = [...prev];
+            for (const t of auto) {
+              if (!next.includes(t)) {
+                next.push(t);
+              }
+            }
+            return next;
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to pre-fetch metadata:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [url, existingTags, note]);
 
   useEffect(() => {
     if (visible) {
@@ -54,6 +171,8 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     setTags([]);
     setTagInput('');
     setNote('');
+    setResolvedMetadata(null);
+    lastFetchedUrlRef.current = '';
     onClose();
   };
 
@@ -76,11 +195,14 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       const item = await addLinkItem(targetUrl, {
         tags: finalTags.length > 0 ? finalTags : undefined,
         note: note.trim() || undefined,
+        preloadedMetadata: resolvedMetadata ?? undefined,
       });
       setUrl('');
       setTags([]);
       setTagInput('');
       setNote('');
+      setResolvedMetadata(null);
+      lastFetchedUrlRef.current = '';
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -167,7 +289,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
             showsVerticalScrollIndicator={false}
           >
             {/* Header */}
-            <View className="gap-3 p-8">
+            <View className="gap-3 p-8 pt-0">
               <Text className="font-sans-semibold text-2xl text-white">Add a new link</Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
                 You can add any link, but YouTube videos, Tweets, Reddit posts, and articles have
@@ -182,7 +304,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
               <TextInput
                 ref={inputRef}
                 value={url}
-                onChangeText={setUrl}
+                onChangeText={handleUrlChange}
                 placeholder="Type or paste your link here"
                 placeholderTextColor="#71717A"
                 autoCapitalize="none"
@@ -192,10 +314,23 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 onSubmitEditing={() => {
                   tagsInputRef.current?.focus();
                 }}
-                className="w-full font-sans text-xl text-white leading-tight"
+                className="flex-1 font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
+                clearButtonMode="never"
               />
+
+              {url.length > 0 && (
+                <Pressable
+                  onPress={handleClearUrl}
+                  hitSlop={10}
+                  className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear link"
+                >
+                  <XIcon size={12} color="#E4E4E7" weight="bold" />
+                </Pressable>
+              )}
             </View>
 
             {/* Tags section */}
@@ -227,7 +362,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                   value={tagInput}
                   onChangeText={handleTagInputChange}
                   onKeyPress={handleTagInputKeyPress}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+                  placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
                   placeholderTextColor="#71717A"
                   returnKeyType="done"
                   onSubmitEditing={handleTagInputSubmit}

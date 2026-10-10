@@ -55,7 +55,12 @@ export type LibraryContextValue = {
   ) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (
     url: string,
-    options?: { tags?: string[]; note?: string }
+    options?: {
+      tags?: string[];
+      note?: string;
+      title?: string;
+      preloadedMetadata?: import('@/lib/library/metadata').ResolvedMetadata;
+    }
   ) => Promise<LinkUploadItem>;
   deleteItem: (itemId: string) => Promise<void>;
   deleteItems: (itemIds: string[]) => Promise<DeletedItemBackup[]>;
@@ -243,7 +248,15 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addLinkItem = useCallback(
-    async (url: string, options?: { tags?: string[]; note?: string }) => {
+    async (
+      url: string,
+      options?: {
+        tags?: string[];
+        note?: string;
+        title?: string;
+        preloadedMetadata?: import('@/lib/library/metadata').ResolvedMetadata;
+      }
+    ) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);

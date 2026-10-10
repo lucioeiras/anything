@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
-import { resolveUrlMetadata } from './metadata';
+import { resolveUrlMetadata, type ResolvedMetadata } from './metadata';
 import {
   clearSourceCache,
   getAllCachedItems,
@@ -583,14 +583,19 @@ export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem |
 export async function addLinkItemToLibrary(
   source: LibrarySource,
   url: string,
-  options?: { tags?: string[]; note?: string }
+  options?: {
+    tags?: string[];
+    note?: string;
+    title?: string;
+    preloadedMetadata?: ResolvedMetadata;
+  }
 ): Promise<LinkUploadItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
     root.create({ intermediates: true, idempotent: true });
   }
 
-  const metadata = await resolveUrlMetadata(url);
+  const metadata = options?.preloadedMetadata ?? (await resolveUrlMetadata(url));
   const id = generateId();
   const now = new Date().toISOString();
 
@@ -671,6 +676,11 @@ export async function addLinkItemToLibrary(
   }
   if (options?.note) {
     item.note = options.note;
+  }
+  if (options?.title) {
+    if (item.type !== 'tweet') {
+      item.title = options.title;
+    }
   }
 
   const jsonFile = new File(root, `${id}.json`);

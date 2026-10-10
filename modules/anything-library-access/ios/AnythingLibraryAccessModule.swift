@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import Foundation
+import NaturalLanguage
 
 public class AnythingLibraryAccessModule: Module {
   public func definition() -> ModuleDefinition {
@@ -38,6 +39,34 @@ public class AnythingLibraryAccessModule: Module {
         print("AnythingLibraryAccess: Error resolving bookmark: \(error)")
         return nil
       }
+    }
+
+    Function("extractEntitiesAndTags") { (text: String) -> [String] in
+      guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        return []
+      }
+
+      var extracted = Set<String>()
+      let tagger = NLTagger(tagSchemes: [.nameType, .lexicalClass])
+      tagger.string = text
+
+      let options: NLTagger.Options = [.omitPunctuation, .omitWhitespace, .joinNames]
+
+      // 1. Named Entities (Organizations, Places, Personal Names)
+      let entityTags: Set<NLTag> = [.organizationName, .placeName, .personalName]
+      tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, tokenRange in
+        if let tag = tag, entityTags.contains(tag) {
+          let word = String(text[tokenRange])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+          if word.count >= 2 && word.count <= 35 {
+            extracted.insert(word)
+          }
+        }
+        return true
+      }
+
+      return Array(extracted)
     }
   }
 }

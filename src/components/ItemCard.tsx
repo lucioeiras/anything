@@ -47,6 +47,7 @@ export const ItemCard = memo(function ItemCard({
           <LinkCard
             favicon={item.favicon}
             siteTitle={item.siteTitle}
+            title={item.title}
             description={item.description}
             url={item.url}
           />

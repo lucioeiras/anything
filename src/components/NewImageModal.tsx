@@ -1,6 +1,6 @@
 import { Image as ExpoImage } from 'expo-image';
 import { CheckIcon, NotePencilIcon, TagIcon, TextTIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedImageAsset } from '@/lib/library/storage';
 import type { ImageItem } from '@/lib/library/types';
+import { generateAutoTags } from '@/lib/tags/autoTags';
 
 type NewImageModalProps = {
   visible: boolean;
@@ -41,17 +42,42 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
   const tagsInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
 
-  const { addImage } = useLibrary();
+  const { addImage, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((t) => t.tag) : []),
+    [getTags, visible]
+  );
+
   useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => {
-        titleInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
+    if (!visible) return;
+
+    const timer = setTimeout(() => {
+      if (imageAsset) {
+        const auto = generateAutoTags({
+          text: imageAsset.fileName || '',
+          type: 'image',
+          existingTags,
+        });
+        if (auto.length > 0) {
+          setTags((prev) => {
+            const next = [...prev];
+            for (const t of auto) {
+              if (!next.includes(t)) {
+                next.push(t);
+              }
+            }
+            return next;
+          });
+        }
+      }
+
+      titleInputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [visible, imageAsset, existingTags]);
 
   const handleClose = () => {
     if (saving) return;
@@ -173,7 +199,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
             showsVerticalScrollIndicator={false}
           >
             {/* Header */}
-            <View className="flex-row p-8 gap-8 items-center max-h-48 border-b border-zinc-800">
+            <View className="flex-row p-8 pt-0 gap-8 items-center max-h-48 border-b border-zinc-800">
               {imageAsset && (
                 <View
                   className="h-full overflow-hidden bg-zinc-900 border border-zinc-800"
@@ -252,7 +278,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
                   value={tagInput}
                   onChangeText={handleTagInputChange}
                   onKeyPress={handleTagInputKeyPress}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+                  placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
                   placeholderTextColor="#71717A"
                   returnKeyType="done"
                   onSubmitEditing={handleTagInputSubmit}

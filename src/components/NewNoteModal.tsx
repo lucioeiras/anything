@@ -6,7 +6,7 @@ import {
   TextTIcon,
   XIcon,
 } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibrary } from '@/hooks/useLibrary';
 import type { NoteItem, QuoteItem } from '@/lib/library/types';
+import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewNoteModalProps = {
   visible: boolean;
@@ -34,7 +35,7 @@ type NewNoteModalProps = {
 };
 
 export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
-  const { addTextItem } = useLibrary();
+  const { addTextItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
   const inputRef = useRef<TextInput>(null);
@@ -47,6 +48,11 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((t) => t.tag) : []),
+    [getTags, visible]
+  );
 
   useEffect(() => {
     if (visible) {
@@ -98,6 +104,45 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   };
 
   const handleSwitchToInfo = () => {
+    // 1. Instant baseline tags
+    const auto = generateAutoTags({
+      title: title.trim(),
+      text: text.trim(),
+      existingTags,
+    });
+    if (auto.length > 0) {
+      setTags((prev) => {
+        const next = [...prev];
+        for (const t of auto) {
+          if (!next.includes(t)) {
+            next.push(t);
+          }
+        }
+        return next;
+      });
+    }
+
+    // 2. On-device LLM semantic enrichment in background
+    generateAutoTagsAsync({
+      title: title.trim(),
+      text: text.trim(),
+      existingTags,
+    })
+      .then((aiTags) => {
+        if (aiTags.length > 0) {
+          setTags((prev) => {
+            const next = [...prev];
+            for (const t of aiTags) {
+              if (!next.includes(t)) {
+                next.push(t);
+              }
+            }
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
+
     setView('info');
     setTimeout(() => {
       titleInputRef.current?.focus();
@@ -263,7 +308,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                     value={tagInput}
                     onChangeText={handleTagInputChange}
                     onKeyPress={handleTagInputKeyPress}
-                    placeholder={tags.length === 0 ? 'Add tags here...' : ''}
+                    placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
                     placeholderTextColor="#71717A"
                     returnKeyType="done"
                     onSubmitEditing={handleTagInputSubmit}
