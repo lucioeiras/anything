@@ -5,9 +5,12 @@ import type { PdfProps } from 'react-native-pdf';
 
 type PdfPreviewProps = {
   uri: string;
+  width?: number;
+  height?: number;
+  fullReader?: boolean;
 };
 
-export function PdfPreview({ uri }: PdfPreviewProps) {
+export function PdfPreview({ uri, width = 80, height = 96, fullReader = false }: PdfPreviewProps) {
   const [Pdf, setPdf] = useState<ComponentType<PdfProps> | null>(null);
 
   useEffect(() => {
@@ -34,11 +37,11 @@ export function PdfPreview({ uri }: PdfPreviewProps) {
     <Pdf
       key={uri}
       source={{ uri, cache: false }}
-      singlePage
-      scrollEnabled={false}
-      enablePaging={false}
+      singlePage={!fullReader}
+      scrollEnabled={fullReader}
+      enablePaging={fullReader}
       fitPolicy={0}
-      style={{ width: 80, height: 96 }}
+      style={fullReader ? { flex: 1, width: '100%', height: '100%' } : { width, height }}
     />
   );
 }

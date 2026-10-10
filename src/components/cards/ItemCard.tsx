@@ -20,6 +20,7 @@ import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
   item: LibraryItem;
+  hideTitleAndAuthor?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
@@ -29,6 +30,7 @@ type ItemCardProps = {
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
 export const ItemCard = memo(function ItemCard({
   item,
+  hideTitleAndAuthor = false,
   isEditing = false,
   isSelected = false,
   onPress,
@@ -42,13 +44,15 @@ export const ItemCard = memo(function ItemCard({
   const renderCardContent = () => {
     switch (item.type) {
       case 'note':
-        return <NoteCard text={item.text} title={item.title} />;
+        return <NoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'quote':
-        return <QuoteCard text={item.text} title={item.title} />;
+        return <QuoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'image':
-        return <ImageCard url={item.image} title={item.title} />;
+        return <ImageCard url={item.image} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'pdf':
-        return <PdfCard url={item.pdf} title={item.title} />;
+        return (
+          <PdfCard url={item.pdf} title={item.title} hideTitleAndAuthor={hideTitleAndAuthor} />
+        );
       case 'link':
         return (
           <LinkCard
@@ -92,6 +96,7 @@ export const ItemCard = memo(function ItemCard({
           <BookCard
             title={item.title}
             authors={item.authors}
+            hideTitleAndAuthor={hideTitleAndAuthor}
             cover={item.cover}
             coverAspectRatio={item.coverAspectRatio}
             publisher={item.publisher}
@@ -100,11 +105,19 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'music':
-        return <MusicCard title={item.title} artist={item.artist} cover={item.cover} />;
+        return (
+          <MusicCard
+            title={item.title}
+            artist={item.artist}
+            cover={item.cover}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+          />
+        );
       case 'movie':
         return (
           <MovieCard
             title={item.title}
+            hideTitleAndAuthor={hideTitleAndAuthor}
             poster={item.poster}
             releaseYear={item.releaseYear}
             voteAverage={item.voteAverage}
@@ -114,7 +127,9 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'game':
-        return <GameCard title={item.title} cover={item.cover} />;
+        return (
+          <GameCard title={item.title} cover={item.cover} hideTitleAndAuthor={hideTitleAndAuthor} />
+        );
     }
   };
 

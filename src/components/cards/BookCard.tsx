@@ -5,6 +5,7 @@ import { BookCover } from '../effects/BookCover';
 
 type BookCardProps = {
   title: string;
+  hideTitleAndAuthor?: boolean;
   authors?: string[];
   cover?: string;
   coverAspectRatio?: number;
@@ -15,6 +16,7 @@ type BookCardProps = {
 
 export const BookCard = ({
   title,
+  hideTitleAndAuthor = false,
   authors,
   cover,
   coverAspectRatio,
@@ -45,17 +47,19 @@ export const BookCard = ({
         onAspectRatioChange={setAspectRatio}
       />
 
-      <View className="w-full gap-2 my-4 items-center">
-        <Text className="font-sans-medium text-base leading-[1.4] text-zinc-50" numberOfLines={3}>
-          {cleanTitle}
-        </Text>
-
-        {authorNames && (
-          <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={2}>
-            {authorNames}
+      {!hideTitleAndAuthor && (
+        <View className="w-full gap-2 my-4 items-center">
+          <Text className="font-sans-medium text-base leading-[1.4] text-zinc-50" numberOfLines={3}>
+            {cleanTitle}
           </Text>
-        )}
-      </View>
+
+          {authorNames && (
+            <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={2}>
+              {authorNames}
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 };

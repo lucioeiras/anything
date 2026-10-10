@@ -82,6 +82,17 @@ export function parseItem(raw: unknown): LibraryItem {
     if (Array.isArray(item.genres)) {
       item.genres = item.genres.map((g) => (typeof g === 'string' ? decodeHTML(g) : String(g)));
     }
+    if (Array.isArray(item.cast)) {
+      item.cast = item.cast
+        .filter((person): person is Record<string, unknown> => isObject(person))
+        .map((person) => ({
+          ...person,
+          name: typeof person.name === 'string' ? decodeHTML(person.name) : '',
+          ...(typeof person.character === 'string'
+            ? { character: decodeHTML(person.character) }
+            : {}),
+        }));
+    }
   }
   if (item.type === 'game') {
     if (typeof item.description === 'string') {

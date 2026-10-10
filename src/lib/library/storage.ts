@@ -625,6 +625,9 @@ export async function addPdfToLibrary(
     targetPdfFile.write(new Uint8Array(buffer));
   }
 
+  const fileSize =
+    typeof asset.fileSize === 'number' && asset.fileSize > 0 ? asset.fileSize : targetPdfFile.size;
+
   const now = new Date().toISOString();
   const trimmedTitle =
     options?.title?.trim() ||
@@ -638,6 +641,8 @@ export async function addPdfToLibrary(
     version: SCHEMA_VERSION,
     type: 'pdf',
     pdf: relativePdfPath,
+    ...(asset.fileName ? { originalFileName: asset.fileName } : {}),
+    ...(fileSize > 0 ? { fileSize } : {}),
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
     ...(trimmedNote ? { note: trimmedNote } : {}),
     ...(tags && tags.length > 0 ? { tags } : {}),
@@ -991,6 +996,7 @@ export type AddMovieOptions = {
   genres?: string[];
   director?: string;
   runtime?: number;
+  cast?: MovieItem['cast'];
 };
 
 export async function addMovieItemToLibrary(
@@ -1026,6 +1032,7 @@ export async function addMovieItemToLibrary(
     ...(movie.genres && movie.genres.length > 0 ? { genres: movie.genres } : {}),
     ...(movie.director ? { director: movie.director } : {}),
     ...(typeof movie.runtime === 'number' ? { runtime: movie.runtime } : {}),
+    ...(movie.cast && movie.cast.length > 0 ? { cast: movie.cast } : {}),
     ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
     ...(options?.note ? { note: options.note } : {}),

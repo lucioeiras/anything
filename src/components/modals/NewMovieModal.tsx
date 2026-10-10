@@ -211,6 +211,7 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
 
     setSaving(true);
     try {
+      const movieDetails = await getTmdbMovieDetails(selectedMovie.id);
       const finalTags = [...tags];
       const pending = tagInput.replace(/^#/, '').trim();
       if (pending && !finalTags.includes(pending)) {
@@ -218,26 +219,32 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
       }
       const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
-      const director = selectedMovie.credits?.crew?.find((c) => c.job === 'Director')?.name;
-      const genres = selectedMovie.genres?.map((g) => g.name);
-      const posterUrl = getPosterUrl(selectedMovie.poster_path, 'w500');
-      const backdropUrl = getBackdropUrl(selectedMovie.backdrop_path, 'w780');
-      const releaseYear = getReleaseYear(selectedMovie.release_date);
+      const director = movieDetails.credits?.crew?.find((c) => c.job === 'Director')?.name;
+      const genres = movieDetails.genres?.map((g) => g.name);
+      const posterUrl = getPosterUrl(movieDetails.poster_path, 'w500');
+      const backdropUrl = getBackdropUrl(movieDetails.backdrop_path, 'w780');
+      const releaseYear = getReleaseYear(movieDetails.release_date);
 
       const item = await addMovieItem(
         {
-          tmdbId: selectedMovie.id,
-          title: selectedMovie.title,
-          originalTitle: selectedMovie.original_title,
+          tmdbId: movieDetails.id,
+          title: movieDetails.title,
+          originalTitle: movieDetails.original_title,
           poster: posterUrl,
           backdrop: backdropUrl || undefined,
-          releaseDate: selectedMovie.release_date || undefined,
+          releaseDate: movieDetails.release_date || undefined,
           releaseYear: releaseYear || undefined,
-          overview: selectedMovie.overview || undefined,
-          voteAverage: selectedMovie.vote_average,
+          overview: movieDetails.overview || undefined,
+          voteAverage: movieDetails.vote_average,
           genres: genres && genres.length > 0 ? genres : undefined,
           director: director || undefined,
-          runtime: selectedMovie.runtime || undefined,
+          runtime: movieDetails.runtime || undefined,
+          cast: movieDetails.credits?.cast?.slice(0, 20).map((person) => ({
+            id: person.id,
+            name: person.name,
+            character: person.character || undefined,
+            profilePath: person.profile_path || undefined,
+          })),
         },
         {
           tags: finalTags.length > 0 ? finalTags : undefined,

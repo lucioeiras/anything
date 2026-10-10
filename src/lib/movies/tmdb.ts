@@ -27,7 +27,12 @@ export type TmdbMovieDetails = {
   genres?: { id: number; name: string }[];
   tagline?: string;
   credits?: {
-    cast?: { id: number; name: string; character?: string }[];
+    cast?: {
+      id: number;
+      name: string;
+      character?: string;
+      profile_path?: string | null;
+    }[];
     crew?: { id: number; name: string; job?: string; department?: string }[];
   };
 };
@@ -101,6 +106,13 @@ export function getBackdropUrl(
   path?: string | null,
   size: 'w780' | 'w1280' | 'original' = 'w780'
 ): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `https://image.tmdb.org/t/p/${size}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+/** Formats a TMDB profile image URL for a cast member. */
+export function getProfileUrl(path?: string | null, size = 'w185'): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   return `https://image.tmdb.org/t/p/${size}${path.startsWith('/') ? path : `/${path}`}`;

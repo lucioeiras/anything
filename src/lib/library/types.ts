@@ -42,6 +42,8 @@ export type ImageItem = BaseItem & {
 export type PdfItem = BaseItem & {
   type: 'pdf';
   pdf: PdfRef;
+  originalFileName?: string;
+  fileSize?: number;
   title?: string;
   note?: string;
 };
@@ -139,6 +141,12 @@ export type MovieItem = BaseItem & {
   genres?: string[];
   director?: string;
   runtime?: number;
+  cast?: {
+    id: number;
+    name: string;
+    character?: string;
+    profilePath?: string;
+  }[];
 };
 
 export type GameItem = BaseItem & {

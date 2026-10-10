@@ -221,11 +221,12 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
 
     setSaving(true);
     try {
-      const platformNames = (selectedGame.platforms || [])
+      const gameDetails = await getRawgGameDetails(selectedGame.id);
+      const platformNames = (gameDetails.platforms || [])
         .map((p) => p.platform?.name)
         .filter(Boolean);
-      const genreNames = (selectedGame.genres || []).map((g) => g.name).filter(Boolean);
-      const releaseYear = extractReleaseYear(selectedGame.released);
+      const genreNames = (gameDetails.genres || []).map((g) => g.name).filter(Boolean);
+      const releaseYear = extractReleaseYear(gameDetails.released);
 
       const finalTags = [...tags];
       const pending = tagInput.replace(/^#/, '').trim();
@@ -236,18 +237,20 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
 
       const item = await addGameItem(
         {
-          rawgId: selectedGame.id,
-          title: selectedGame.name,
-          cover: selectedGame.background_image || '',
+          rawgId: gameDetails.id,
+          title: gameDetails.name,
+          cover: gameDetails.background_image || selectedGame.background_image || '',
           platforms: platformNames.length > 0 ? platformNames : undefined,
           genres: genreNames.length > 0 ? genreNames : undefined,
-          released: selectedGame.released || undefined,
+          released: gameDetails.released || undefined,
           releaseYear: releaseYear || undefined,
-          rating: selectedGame.rating || undefined,
-          metacritic: selectedGame.metacritic ?? undefined,
-          description:
-            (selectedGame as any).description_raw || (selectedGame as any).description || undefined,
-          website: (selectedGame as any).website || undefined,
+          rating: gameDetails.rating || undefined,
+          metacritic: gameDetails.metacritic ?? undefined,
+          description: gameDetails.description_raw || gameDetails.description || undefined,
+          website: gameDetails.website || undefined,
+          developers: gameDetails.developers?.map((developer) => developer.name).filter(Boolean),
+          publishers: gameDetails.publishers?.map((publisher) => publisher.name).filter(Boolean),
+          esrbRating: gameDetails.esrb_rating?.name || undefined,
         },
         {
           tags: finalTags.length > 0 ? finalTags : undefined,

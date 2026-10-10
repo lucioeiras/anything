@@ -10,9 +10,10 @@ cssInterop(ExpoImage, { className: 'style' });
 type GameCardProps = {
   title: string;
   cover: string;
+  hideTitleAndAuthor?: boolean;
 };
 
-export const GameCard = ({ title, cover }: GameCardProps) => {
+export const GameCard = ({ title, cover, hideTitleAndAuthor = false }: GameCardProps) => {
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
 
   return (
@@ -37,14 +38,16 @@ export const GameCard = ({ title, cover }: GameCardProps) => {
         )}
       </View>
 
-      <View className="w-full p-3 gap-2">
-        <Text
-          className="font-sans-semibold text-base leading-snug text-zinc-50 text-center"
-          numberOfLines={2}
-        >
-          {decodeHTML(title)}
-        </Text>
-      </View>
+      {!hideTitleAndAuthor && (
+        <View className="w-full p-3 gap-2">
+          <Text
+            className="font-sans-semibold text-base leading-snug text-zinc-50 text-center"
+            numberOfLines={2}
+          >
+            {decodeHTML(title)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };

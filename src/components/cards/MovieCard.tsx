@@ -8,6 +8,7 @@ cssInterop(ExpoImage, { className: 'style' });
 
 type MovieCardProps = {
   title: string;
+  hideTitleAndAuthor?: boolean;
   poster: string;
   releaseYear?: string;
   voteAverage?: number;
@@ -45,6 +46,7 @@ const FilmPerforations = memo(function FilmPerforations({ height }: FilmPerforat
 
 export const MovieCard = ({
   title,
+  hideTitleAndAuthor = false,
   poster,
   releaseYear,
   genres,
@@ -92,20 +94,22 @@ export const MovieCard = ({
         <FilmPerforations height={posterHeight} />
       </View>
 
-      <View className="w-full p-3 gap-2 my-2 items-center">
-        <Text
-          className="flex-1 font-sans-medium text-base leading-[1.3] text-zinc-50"
-          numberOfLines={2}
-        >
-          {cleanTitle}
-        </Text>
-
-        {cleanDirector && (
-          <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={1}>
-            {cleanDirector}
+      {!hideTitleAndAuthor && (
+        <View className="w-full p-3 gap-2 my-2 items-center">
+          <Text
+            className="flex-1 font-sans-medium text-base leading-[1.3] text-zinc-50"
+            numberOfLines={2}
+          >
+            {cleanTitle}
           </Text>
-        )}
-      </View>
+
+          {cleanDirector && (
+            <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={1}>
+              {cleanDirector}
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 };

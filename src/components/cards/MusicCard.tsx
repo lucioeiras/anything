@@ -9,9 +9,10 @@ type MusicCardProps = {
   title: string;
   artist: string;
   cover: string;
+  hideTitleAndAuthor?: boolean;
 };
 
-export const MusicCard = ({ title, artist, cover }: MusicCardProps) => {
+export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: MusicCardProps) => {
   const [containerWidth, setContainerWidth] = useState(() =>
     Math.round((Dimensions.get('window').width - 32) / 2)
   );
@@ -76,19 +77,20 @@ export const MusicCard = ({ title, artist, cover }: MusicCardProps) => {
         </View>
       </View>
 
-      {/* Track Info */}
-      <View className="w-full gap-2 my-4">
-        <Text
-          className="font-sans-medium text-base leading-snug text-zinc-50 text-center"
-          numberOfLines={2}
-        >
-          {decodeHTML(title)}
-        </Text>
+      {!hideTitleAndAuthor && (
+        <View className="w-full gap-2 my-4">
+          <Text
+            className="font-sans-medium text-base leading-snug text-zinc-50 text-center"
+            numberOfLines={2}
+          >
+            {decodeHTML(title)}
+          </Text>
 
-        <Text className="font-sans text-xs text-zinc-400 text-center" numberOfLines={1}>
-          {decodeHTML(artist)}
-        </Text>
-      </View>
+          <Text className="font-sans text-xs text-zinc-400 text-center" numberOfLines={1}>
+            {decodeHTML(artist)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
