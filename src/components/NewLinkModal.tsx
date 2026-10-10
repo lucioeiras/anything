@@ -73,9 +73,10 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   }, []);
 
   const clearAutoTags = useCallback(() => {
-    setTags((prev) => prev.filter((t) => !autoTagsRef.current.includes(t)));
+    const tagsToRemove = [...autoTagsRef.current];
     autoTagsRef.current = [];
     setAutoTags([]);
+    setTags((prev) => prev.filter((t) => !tagsToRemove.includes(t)));
   }, []);
 
   const handleUrlChange = (newUrl: string) => {
@@ -95,6 +96,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       const parsed = new URL(target);
       if (parsed.hostname.includes('.') && parsed.hostname.length >= 4) {
         if (target !== lastFetchedUrlRef.current) {
+          clearAutoTags();
           const instantTags = generateAutoTags({
             url: target,
             note: note.trim() || undefined,
@@ -103,9 +105,11 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
           updateAutoTags(instantTags);
         }
       } else {
+        lastFetchedUrlRef.current = '';
         clearAutoTags();
       }
     } catch {
+      lastFetchedUrlRef.current = '';
       clearAutoTags();
     }
   };
@@ -143,6 +147,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       lastFetchedUrlRef.current = targetUrl;
       try {
         const meta = await resolveUrlMetadata(targetUrl);
+        if (lastFetchedUrlRef.current !== targetUrl) return;
         setResolvedMetadata(meta);
 
         const title = 'title' in meta ? meta.title : 'siteTitle' in meta ? meta.siteTitle : '';
@@ -162,6 +167,8 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
           type: meta.type,
           existingTags,
         });
+
+        if (lastFetchedUrlRef.current !== targetUrl) return;
 
         updateAutoTags(auto);
       } catch (e) {
