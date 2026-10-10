@@ -297,7 +297,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 )}
 
                 <Text
-                  className={`font-sans-bold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
                 >
                   Save link
                 </Text>

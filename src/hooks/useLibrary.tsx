@@ -48,7 +48,11 @@ export type LibraryContextValue = {
   pickAndOpenFolder: () => Promise<boolean>;
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
-  addTextItem: (text: string, title?: string) => Promise<NoteItem | QuoteItem>;
+  addTextItem: (
+    text: string,
+    title?: string,
+    options?: { tags?: string[] }
+  ) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (
     url: string,
     options?: { tags?: string[]; note?: string }
@@ -226,12 +230,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addTextItem = useCallback(
-    async (text: string, title?: string) => {
+    async (text: string, title?: string, options?: { tags?: string[] }) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);
       }
-      const item = await addTextItemToLibrary(targetSource, text, title);
+      const item = await addTextItemToLibrary(targetSource, text, title, options);
       await load(targetSource);
       return item;
     },

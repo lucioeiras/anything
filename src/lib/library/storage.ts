@@ -527,7 +527,8 @@ export async function addImageToLibrary(
 export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
-  title?: string
+  title?: string,
+  options?: { tags?: string[] }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -551,6 +552,7 @@ export async function addTextItemToLibrary(
     type: itemType,
     text: cleanText,
     ...(title ? { title } : {}),
+    ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
     createdAt: now,
     updatedAt: now,
   };
