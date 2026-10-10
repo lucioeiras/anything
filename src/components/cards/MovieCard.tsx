@@ -4,6 +4,10 @@ import { cssInterop } from 'nativewind';
 import { memo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { MediaProgressStatus } from '@/lib/library/types';
+
+import { ProgressStatus } from './ProgressStatus';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type MovieCardProps = {
@@ -15,6 +19,7 @@ type MovieCardProps = {
   genres?: string[];
   director?: string;
   runtime?: number;
+  progressStatus?: MediaProgressStatus;
 };
 
 type FilmPerforationsProps = {
@@ -52,6 +57,7 @@ export const MovieCard = ({
   genres,
   director,
   runtime,
+  progressStatus,
 }: MovieCardProps) => {
   const [aspectRatio, setAspectRatio] = useState(2 / 3);
   const [posterHeight, setPosterHeight] = useState(0);
@@ -102,6 +108,8 @@ export const MovieCard = ({
           >
             {cleanTitle}
           </Text>
+
+          <ProgressStatus type="movie" status={progressStatus} />
 
           {cleanDirector && (
             <Text

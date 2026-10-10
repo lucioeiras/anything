@@ -2,6 +2,9 @@ import { decodeHTML } from 'entities';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { BookCover } from '../effects/BookCover';
+import { ProgressStatus } from './ProgressStatus';
+
+import type { MediaProgressStatus } from '@/lib/library/types';
 
 type BookCardProps = {
   title: string;
@@ -12,6 +15,7 @@ type BookCardProps = {
   publisher?: string;
   publishedDate?: string;
   pageCount?: number;
+  progressStatus?: MediaProgressStatus;
 };
 
 export const BookCard = ({
@@ -23,6 +27,7 @@ export const BookCard = ({
   publisher,
   publishedDate,
   pageCount,
+  progressStatus,
 }: BookCardProps) => {
   const [aspectRatio, setAspectRatio] = useState<number>(coverAspectRatio ?? 2 / 3);
 
@@ -52,6 +57,8 @@ export const BookCard = ({
           <Text className="font-sans-medium text-sm leading-[1.4] text-zinc-50" numberOfLines={3}>
             {cleanTitle}
           </Text>
+
+          <ProgressStatus type="book" status={progressStatus} />
 
           {authorNames && (
             <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={2}>

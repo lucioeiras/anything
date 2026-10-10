@@ -63,6 +63,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ItemCard } from '@/components/cards/ItemCard';
+import { getProgressLabel } from '@/components/cards/ProgressStatus';
 import { VinylRecord } from '@/components/effects/VinylRecord';
 import { PdfPreview } from '@/components/PdfPreview';
 import { TagsBox } from '@/components/TagsBox';
@@ -99,43 +100,6 @@ function isTrackableItem(
     item.type === 'article' ||
     item.type === 'youtube'
   );
-}
-
-function getProgressLabel(type: TrackableItemType, status: MediaProgressStatus): string {
-  const labels = {
-    book: {
-      want: 'Want to read',
-      'in-progress': 'Reading',
-      completed: 'Read',
-      abandoned: 'Abandoned',
-    },
-    movie: {
-      want: 'Want to watch',
-      'in-progress': 'Watching',
-      completed: 'Watched',
-      abandoned: 'Abandoned',
-    },
-    game: {
-      want: 'Want to play',
-      'in-progress': 'Playing',
-      completed: 'Played',
-      abandoned: 'Abandoned',
-    },
-    article: {
-      want: 'Want to read',
-      'in-progress': 'Reading',
-      completed: 'Read',
-      abandoned: 'Abandoned',
-    },
-    youtube: {
-      want: 'Want to watch',
-      'in-progress': 'Watching',
-      completed: 'Watched',
-      abandoned: 'Abandoned',
-    },
-  } as const;
-
-  return labels[type][status];
 }
 
 function getAllowedProgressStatuses(type: TrackableItemType): readonly MediaProgressStatus[] {

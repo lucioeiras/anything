@@ -4,15 +4,25 @@ import { cssInterop } from 'nativewind';
 import { BookOpenIcon } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
+import type { ArticleItem } from '@/lib/library/types';
+
+import { ProgressStatus } from './ProgressStatus';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type ArticleCardProps = {
   articleTitle: string;
   thumbnail: string;
   origin: string;
+  progressStatus?: ArticleItem['progressStatus'];
 };
 
-export const ArticleCard = ({ articleTitle, thumbnail, origin }: ArticleCardProps) => {
+export const ArticleCard = ({
+  articleTitle,
+  thumbnail,
+  origin,
+  progressStatus,
+}: ArticleCardProps) => {
   return (
     <View className="w-full">
       <ExpoImage source={{ uri: thumbnail }} className="w-full h-40 rounded-t-xl" />
@@ -21,6 +31,8 @@ export const ArticleCard = ({ articleTitle, thumbnail, origin }: ArticleCardProp
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
           {decodeHTML(articleTitle)}
         </Text>
+
+        <ProgressStatus type="article" status={progressStatus} align="start" />
 
         <View className="flex-row items-center gap-2 mt-2">
           <BookOpenIcon size={14} color="#A1A1AA" weight="bold" />

@@ -65,10 +65,21 @@ export const ItemCard = memo(function ItemCard({
         );
       case 'article':
         return (
-          <ArticleCard articleTitle={item.title} thumbnail={item.thumbnail} origin={item.origin} />
+          <ArticleCard
+            articleTitle={item.title}
+            thumbnail={item.thumbnail}
+            origin={item.origin}
+            progressStatus={item.progressStatus}
+          />
         );
       case 'youtube':
-        return <YouTubeCard videoTitle={item.title} thumbnail={item.thumbnail} />;
+        return (
+          <YouTubeCard
+            videoTitle={item.title}
+            thumbnail={item.thumbnail}
+            progressStatus={item.progressStatus}
+          />
+        );
       case 'tweet':
         return (
           <TweetCard
@@ -102,6 +113,7 @@ export const ItemCard = memo(function ItemCard({
             publisher={item.publisher}
             publishedDate={item.publishedDate}
             pageCount={item.pageCount}
+            progressStatus={item.progressStatus}
           />
         );
       case 'music':
@@ -124,11 +136,17 @@ export const ItemCard = memo(function ItemCard({
             genres={item.genres}
             director={item.director}
             runtime={item.runtime}
+            progressStatus={item.progressStatus}
           />
         );
       case 'game':
         return (
-          <GameCard title={item.title} cover={item.cover} hideTitleAndAuthor={hideTitleAndAuthor} />
+          <GameCard
+            title={item.title}
+            cover={item.cover}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+            progressStatus={item.progressStatus}
+          />
         );
     }
   };
