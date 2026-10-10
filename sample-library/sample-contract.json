@@ -1,0 +1,12 @@
+{
+  "id": "sample-contract",
+  "version": 1,
+  "type": "pdf",
+  "pdf": "pdfs/sample-contract.pdf",
+  "title": "Sample Contract Document",
+  "note": "Example PDF card metadata showing ID match between folder file and json",
+  "tags": ["sample", "contract", "pdf"],
+  "autoTags": ["pdf", "document"],
+  "createdAt": "2026-10-10T10:00:00.000Z",
+  "updatedAt": "2026-10-10T10:00:00.000Z"
+}

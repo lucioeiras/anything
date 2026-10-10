@@ -8,17 +8,27 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as WebBrowser from 'expo-web-browser';
+import { useVideoPlayer } from 'expo-video';
 import {
   ArrowSquareOutIcon,
+  BookOpenIcon,
   CalendarBlankIcon,
+  ClockIcon,
   CopyIcon,
+  DiscIcon,
   DownloadSimpleIcon,
   ExportIcon,
+  FilmSlateIcon,
   InfoIcon,
+  MusicNotesIcon,
   NotePencilIcon,
+  PauseIcon,
+  PlayIcon,
+  StarIcon,
   TextTIcon,
   TrashSimpleIcon,
 } from 'phosphor-react-native';
+import { formatDuration, formatReleaseYear } from '@/lib/music/itunes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -42,10 +52,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ArticleCard } from '@/components/ArticleCard';
+import { BookCard } from '@/components/BookCard';
+import { GameCard } from '@/components/GameCard';
 import { LinkCard } from '@/components/LinkCard';
+import { MovieCard } from '@/components/MovieCard';
+import { PdfCard } from '@/components/PdfCard';
 import { RedditCard } from '@/components/RedditCard';
 import { TagsBox } from '@/components/TagsBox';
 import { TweetCard } from '@/components/TweetCard';
+import { VinylRecord } from '@/components/VinylRecord';
 import { YouTubeCard } from '@/components/YouTubeCard';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LibraryItem } from '@/lib/library/types';
@@ -76,6 +91,72 @@ function formatDateAdded(isoDate: string): string {
   }
 }
 
+function MusicPreviewPlayer({
+  previewUrl,
+  onPlayingChange,
+  playerRef,
+}: {
+  previewUrl: string;
+  onPlayingChange?: (isPlaying: boolean) => void;
+  playerRef?: React.MutableRefObject<{
+    play: () => void;
+    pause: () => void;
+    playing: boolean;
+  } | null>;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const player = useVideoPlayer(previewUrl, (p) => {
+    p.loop = false;
+  });
+
+  useEffect(() => {
+    if (playerRef) {
+      playerRef.current = player;
+    }
+    return () => {
+      if (playerRef) {
+        playerRef.current = null;
+      }
+    };
+  }, [player, playerRef]);
+
+  useEffect(() => {
+    const sub = player.addListener('playingChange', (event) => {
+      setIsPlaying(event.isPlaying);
+      onPlayingChange?.(event.isPlaying);
+    });
+    return () => {
+      sub.remove();
+      player.pause();
+      onPlayingChange?.(false);
+    };
+  }, [player, onPlayingChange]);
+
+  const togglePlay = () => {
+    if (player.playing) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={togglePlay}
+      className="flex-row items-center gap-2.5 px-5 py-2.5 rounded-full bg-rose-600/20 border border-rose-500/40 active:opacity-80 mt-3"
+    >
+      {isPlaying ? (
+        <PauseIcon size={16} color="#FB7185" weight="fill" />
+      ) : (
+        <PlayIcon size={16} color="#FB7185" weight="fill" />
+      )}
+      <Text className="font-sans-medium text-sm text-rose-200">
+        {isPlaying ? 'Pause preview' : 'Play 30s preview'}
+      </Text>
+    </Pressable>
+  );
+}
+
 type CardDetailContentProps = {
   item: LibraryItem;
   onDismiss: () => void;
@@ -103,6 +184,19 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [imageRatio, setImageRatio] = useState<number>(1);
+  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const musicPlayerRef = useRef<{ play: () => void; pause: () => void; playing: boolean } | null>(
+    null
+  );
+
+  const handleToggleMusic = useCallback(() => {
+    if (!musicPlayerRef.current) return;
+    if (musicPlayerRef.current.playing) {
+      musicPlayerRef.current.pause();
+    } else {
+      musicPlayerRef.current.play();
+    }
+  }, []);
 
   const tagInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
@@ -369,6 +463,37 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
           return;
         }
         await Share.share({ url: item.image, message: item.title });
+      } else if (item.type === 'pdf') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare && item.pdf.startsWith('file:')) {
+          await Sharing.shareAsync(item.pdf, {
+            mimeType: 'application/pdf',
+            dialogTitle: item.title || 'PDF Document',
+          });
+          return;
+        }
+        await Share.share({ url: item.pdf, message: item.title });
+      } else if (item.type === 'book') {
+        const authorStr = item.authors?.length ? ` by ${item.authors.join(', ')}` : '';
+        const isbnStr = item.isbn ? ` (ISBN: ${item.isbn})` : '';
+        const msg = `${item.title}${authorStr}${isbnStr}`;
+        await Share.share({ message: msg, url: item.url || item.cover });
+      } else if (item.type === 'music') {
+        const shareUrl = item.externalUrl || item.previewUrl;
+        await Share.share({
+          message: `${item.title} by ${item.artist}${shareUrl ? `\n${shareUrl}` : ''}`,
+          url: shareUrl,
+        });
+      } else if (item.type === 'movie') {
+        const dirStr = item.director ? ` (Directed by: ${item.director})` : '';
+        const yearStr = item.releaseYear ? ` [${item.releaseYear}]` : '';
+        const msg = `Movie: ${item.title}${yearStr}${dirStr}${item.overview ? `\n\n${item.overview}` : ''}`;
+        await Share.share({ message: msg, url: item.poster });
+      } else if (item.type === 'game') {
+        const platStr = item.platforms?.length ? ` (${item.platforms.join(', ')})` : '';
+        const yearStr = item.releaseYear ? ` [${item.releaseYear}]` : '';
+        const msg = `Game: ${item.title}${yearStr}${platStr}${item.website ? `\n${item.website}` : ''}${item.description ? `\n\n${item.description}` : ''}`;
+        await Share.share({ message: msg, url: item.website || item.cover });
       } else if (isLinkType(item.type) && 'url' in item) {
         await Share.share({ url: item.url, message: item.url });
       }
@@ -398,6 +523,34 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
         }
         await Clipboard.setStringAsync(item.image);
         showFeedback('Image link copied');
+      } else if (item.type === 'pdf') {
+        await Clipboard.setStringAsync(item.pdf);
+        showFeedback('PDF path copied');
+      } else if (item.type === 'book') {
+        const textToCopy = `${item.title}${
+          item.authors?.length ? `\nAuthor(s): ${item.authors.join(', ')}` : ''
+        }\nISBN: ${item.isbn}${item.description ? `\n\n${item.description}` : ''}`;
+        await Clipboard.setStringAsync(textToCopy);
+        showFeedback('Book details copied to clipboard');
+      } else if (item.type === 'music') {
+        await Clipboard.setStringAsync(`${item.artist} - ${item.title}`);
+        showFeedback('Track info copied to clipboard');
+      } else if (item.type === 'movie') {
+        const textToCopy = `${item.title}${item.releaseYear ? ` (${item.releaseYear})` : ''}${
+          item.director ? `\nDirector: ${item.director}` : ''
+        }${item.genres?.length ? `\nGenres: ${item.genres.join(', ')}` : ''}${
+          item.overview ? `\n\n${item.overview}` : ''
+        }`;
+        await Clipboard.setStringAsync(textToCopy);
+        showFeedback('Movie details copied to clipboard');
+      } else if (item.type === 'game') {
+        const textToCopy = `${item.title}${item.releaseYear ? ` (${item.releaseYear})` : ''}${
+          item.platforms?.length ? `\nPlatforms: ${item.platforms.join(', ')}` : ''
+        }${item.genres?.length ? `\nGenres: ${item.genres.join(', ')}` : ''}${
+          item.description ? `\n\n${item.description}` : ''
+        }`;
+        await Clipboard.setStringAsync(textToCopy);
+        showFeedback('Game details copied to clipboard');
       } else if (item.type === 'note' || item.type === 'quote') {
         await Clipboard.setStringAsync(editedText.trim() || item.text);
         showFeedback('Text copied to clipboard');
@@ -425,19 +578,51 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
     }
   };
 
-  const handleOpenLink = async () => {
-    if (!('url' in item)) return;
+  const handleOpenPdf = async () => {
+    if (item.type !== 'pdf') return;
     try {
-      if (await Linking.canOpenURL(item.url)) {
-        await WebBrowser.openBrowserAsync(item.url);
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare && item.pdf.startsWith('file:')) {
+        await Sharing.shareAsync(item.pdf, {
+          mimeType: 'application/pdf',
+          dialogTitle: item.title || 'PDF Document',
+        });
+        return;
+      }
+      if (await Linking.canOpenURL(item.pdf)) {
+        await Linking.openURL(item.pdf);
+      }
+    } catch (e) {
+      console.warn('Failed to open PDF', e);
+    }
+  };
+
+  const handleOpenLink = async () => {
+    const targetUrl =
+      'url' in item
+        ? item.url
+        : item.type === 'music'
+          ? item.externalUrl
+          : item.type === 'game'
+            ? item.website
+            : item.type === 'movie' && item.tmdbId
+              ? `https://www.themoviedb.org/movie/${item.tmdbId}`
+              : undefined;
+    if (!targetUrl) return;
+    try {
+      if (await Linking.canOpenURL(targetUrl)) {
+        await WebBrowser.openBrowserAsync(targetUrl);
       }
     } catch {
-      await Linking.openURL(item.url);
+      await Linking.openURL(targetUrl);
     }
   };
 
   const isLink = isLinkType(item.type);
   const isImage = item.type === 'image';
+  const isPdf = item.type === 'pdf';
+  const isMusic = item.type === 'music';
+  const isGame = item.type === 'game';
   const isNoteOrQuote = item.type === 'note' || item.type === 'quote';
 
   return (
@@ -543,6 +728,151 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                     image={item.image}
                   />
                 )}
+              </View>
+            )}
+
+            {/* If it's a book: show the book card */}
+            {item.type === 'book' && (
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
+                <BookCard
+                  title={title || item.title}
+                  authors={item.authors}
+                  cover={item.cover}
+                  coverAspectRatio={item.coverAspectRatio}
+                  publisher={item.publisher}
+                  publishedDate={item.publishedDate}
+                  pageCount={item.pageCount}
+                />
+              </View>
+            )}
+
+            {/* If it's a PDF: show the PDF card */}
+            {isPdf && (
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
+                <PdfCard url={item.pdf} title={title || item.title} />
+              </View>
+            )}
+
+            {/* If it's a music track: show the music presentation with vinyl record peek effect */}
+            {isMusic && (
+              <View className="w-full max-w-sm items-center gap-4">
+                {/* Vinyl Record & Sleeve Showcase (Disc emerging to the right) */}
+                <Pressable
+                  onPress={item.previewUrl ? handleToggleMusic : undefined}
+                  className="relative items-center justify-center my-2 active:opacity-90"
+                  style={{ width: 320, height: 230 }}
+                >
+                  {/* Vinyl Record (Layered behind jacket, emerging to the right) */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: 106,
+                      top: 15,
+                      zIndex: 1,
+                    }}
+                  >
+                    <VinylRecord size={200} coverUri={item.cover} isSpinning={isPlayingMusic} />
+                  </View>
+
+                  {/* Album Sleeve Jacket (Layered on top on the left) */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      width: 214,
+                      height: 214,
+                      left: 12,
+                      top: 8,
+                      zIndex: 2,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      backgroundColor: '#18181b',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 255, 255, 0.12)',
+                      shadowColor: '#000000',
+                      shadowOffset: { width: 6, height: 4 },
+                      shadowOpacity: 0.65,
+                      shadowRadius: 10,
+                      elevation: 8,
+                    }}
+                  >
+                    {item.cover ? (
+                      <ExpoImage
+                        source={{ uri: item.cover }}
+                        style={{ width: '100%', height: '100%', borderRadius: 9 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View className="w-full h-full items-center justify-center bg-zinc-800">
+                        <DiscIcon size={64} color="#71717A" weight="duotone" />
+                      </View>
+                    )}
+
+                    {/* Right edge sleeve slit opening indicator */}
+                    <View
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 3.5,
+                        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                      }}
+                    />
+                  </View>
+                </Pressable>
+
+                <View className="items-center gap-1 mt-1 px-4">
+                  <Text className="font-sans-semibold text-2xl text-white text-center leading-tight">
+                    {decodeHTML(title || item.title)}
+                  </Text>
+                  <Text className="font-sans text-base text-zinc-400 text-center mt-0.5">
+                    {decodeHTML(item.artist)}
+                  </Text>
+                  {item.album && (
+                    <Text className="font-sans text-xs text-zinc-500 text-center mt-0.5">
+                      {decodeHTML(item.album)}
+                      {item.releaseDate && ` • ${formatReleaseYear(item.releaseDate)}`}
+                    </Text>
+                  )}
+                </View>
+
+                {item.previewUrl && (
+                  <MusicPreviewPlayer
+                    previewUrl={item.previewUrl}
+                    onPlayingChange={setIsPlayingMusic}
+                    playerRef={musicPlayerRef}
+                  />
+                )}
+              </View>
+            )}
+
+            {/* If it's a movie: show the movie card */}
+            {item.type === 'movie' && (
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
+                <MovieCard
+                  title={title || item.title}
+                  poster={item.poster}
+                  releaseYear={item.releaseYear}
+                  voteAverage={item.voteAverage}
+                  genres={item.genres}
+                  director={item.director}
+                  runtime={item.runtime}
+                />
+              </View>
+            )}
+
+            {/* If it's a game: show the game card */}
+            {item.type === 'game' && (
+              <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
+                <GameCard
+                  title={title || item.title}
+                  cover={item.cover}
+                  platforms={item.platforms}
+                  genres={item.genres}
+                  releaseYear={item.releaseYear}
+                  rating={item.rating}
+                  metacritic={item.metacritic}
+                />
               </View>
             )}
 
@@ -673,6 +1003,21 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               )}
             />
 
+            {/* Movie Overview Section */}
+            {item.type === 'movie' && Boolean(item.overview) && (
+              <View className="py-6 px-6 border-b border-zinc-800 gap-3">
+                <View className="flex-row items-center gap-2">
+                  <FilmSlateIcon size={14} color="#E4E4E7" weight="bold" />
+                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                    Overview
+                  </Text>
+                </View>
+                <Text className="font-sans text-base text-zinc-300 leading-relaxed">
+                  {decodeHTML(item.overview || '')}
+                </Text>
+              </View>
+            )}
+
             {/* Notes Section */}
             <View
               onLayout={(e) => {
@@ -729,6 +1074,118 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                   Added {formatDateAdded(item.createdAt)}
                 </Text>
               </View>
+
+              {item.type === 'movie' && (
+                <>
+                  {Boolean(item.releaseDate) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <CalendarBlankIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Release Date: {item.releaseDate}
+                      </Text>
+                    </View>
+                  )}
+                  {Boolean(item.director) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <FilmSlateIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Director: {decodeHTML(item.director || '')}
+                      </Text>
+                    </View>
+                  )}
+                  {Boolean(item.runtime) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <ClockIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Runtime: {item.runtime} min
+                      </Text>
+                    </View>
+                  )}
+                  {typeof item.voteAverage === 'number' && item.voteAverage > 0 && (
+                    <View className="flex-row items-center gap-2.5">
+                      <StarIcon size={16} color="#F59E0B" weight="fill" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Rating: {item.voteAverage.toFixed(1)} / 10
+                      </Text>
+                    </View>
+                  )}
+                  {Boolean(item.genres && item.genres.length > 0) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <FilmSlateIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Genres: {item.genres?.map(decodeHTML).join(', ')}
+                      </Text>
+                    </View>
+                  )}
+                  {Boolean(item.originalTitle && item.originalTitle !== item.title) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <FilmSlateIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Original Title: {decodeHTML(item.originalTitle || '')}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {item.type === 'music' && (
+                <>
+                  {item.album && (
+                    <View className="flex-row items-center gap-2.5">
+                      <DiscIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Album: {decodeHTML(item.album)}
+                      </Text>
+                    </View>
+                  )}
+                  {item.genre && (
+                    <View className="flex-row items-center gap-2.5">
+                      <MusicNotesIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Genre: {decodeHTML(item.genre)}
+                      </Text>
+                    </View>
+                  )}
+                  {Boolean(item.durationMs) && (
+                    <View className="flex-row items-center gap-2.5">
+                      <ClockIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">
+                        Duration: {formatDuration(item.durationMs)}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {item.type === 'book' && (
+                <>
+                  <View className="flex-row items-center gap-2.5">
+                    <BookOpenIcon size={16} color="#A1A1AA" />
+                    <Text className="font-sans text-base text-zinc-400">ISBN: {item.isbn}</Text>
+                  </View>
+                  {item.authors && item.authors.length > 0 && (
+                    <View className="flex-row items-center gap-2.5">
+                      <Text className="font-sans text-base text-zinc-400">
+                        Author(s): {item.authors.join(', ')}
+                      </Text>
+                    </View>
+                  )}
+                  {item.publisher && (
+                    <View className="flex-row items-center gap-2.5">
+                      <Text className="font-sans text-base text-zinc-400">
+                        Publisher: {item.publisher}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pageCount && (
+                    <View className="flex-row items-center gap-2.5">
+                      <Text className="font-sans text-base text-zinc-400">
+                        Pages: {item.pageCount}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
           </Pressable>
         </ScrollView>
@@ -760,13 +1217,21 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               </Pressable>
             )}
 
-            {/* Copy button (images, notes, and quotes) */}
-            {(isImage || isNoteOrQuote) && (
+            {/* Copy button (images, notes, quotes, pdfs, movies, books, music, and games) */}
+            {(isImage ||
+              isNoteOrQuote ||
+              isPdf ||
+              isMusic ||
+              isGame ||
+              item.type === 'movie' ||
+              item.type === 'book') && (
               <Pressable
                 onPress={handleCopy}
                 hitSlop={12}
                 className={`flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900 ${
-                  isImage ? 'border-r border-zinc-800' : ''
+                  isImage || isPdf || isMusic || (isGame && Boolean(item.website))
+                    ? 'border-r border-zinc-800'
+                    : ''
                 }`}
                 accessibilityRole="button"
                 accessibilityLabel="Copy"
@@ -775,13 +1240,26 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               </Pressable>
             )}
 
-            {/* Share button (links and images) */}
-            {(isLink || isImage) && (
+            {/* Share button (links, images, pdfs, movies, books, music, and games) */}
+            {(isLink ||
+              isImage ||
+              isPdf ||
+              isMusic ||
+              isGame ||
+              item.type === 'movie' ||
+              item.type === 'book') && (
               <Pressable
                 onPress={handleShare}
                 hitSlop={12}
                 className={`flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900 ${
-                  isLink ? 'border-r border-zinc-800' : ''
+                  isLink ||
+                  isPdf ||
+                  (item.type === 'book' && Boolean(item.url)) ||
+                  (isMusic && Boolean(item.externalUrl)) ||
+                  (isGame && Boolean(item.website)) ||
+                  (item.type === 'movie' && Boolean(item.tmdbId))
+                    ? 'border-r border-zinc-800'
+                    : ''
                 }`}
                 accessibilityRole="button"
                 accessibilityLabel="Share"
@@ -790,14 +1268,31 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               </Pressable>
             )}
 
-            {/* Open link button (links only) */}
-            {isLink && (
+            {/* Open link button (links, books with url, music with externalUrl, games with website, or movies with tmdbId) */}
+            {(isLink ||
+              (item.type === 'book' && Boolean(item.url)) ||
+              (isMusic && Boolean(item.externalUrl)) ||
+              (isGame && Boolean(item.website)) ||
+              (item.type === 'movie' && Boolean(item.tmdbId))) && (
               <Pressable
                 onPress={handleOpenLink}
                 hitSlop={12}
                 className="flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900"
                 accessibilityRole="button"
                 accessibilityLabel="Open link"
+              >
+                <ArrowSquareOutIcon size={24} color="#FFFFFF" />
+              </Pressable>
+            )}
+
+            {/* Open PDF button (PDFs only) */}
+            {isPdf && (
+              <Pressable
+                onPress={handleOpenPdf}
+                hitSlop={12}
+                className="flex-1 pt-6 pb-10 items-center justify-center active:bg-zinc-900"
+                accessibilityRole="button"
+                accessibilityLabel="Open PDF"
               >
                 <ArrowSquareOutIcon size={24} color="#FFFFFF" />
               </Pressable>

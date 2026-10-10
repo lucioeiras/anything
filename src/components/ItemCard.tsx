@@ -5,9 +5,14 @@ import { Pressable, View } from 'react-native';
 import type { LibraryItem } from '@/lib/library/types';
 
 import { ArticleCard } from './ArticleCard';
+import { BookCard } from './BookCard';
+import { GameCard } from './GameCard';
 import { ImageCard } from './ImageCard';
 import { LinkCard } from './LinkCard';
+import { MovieCard } from './MovieCard';
+import { MusicCard } from './MusicCard';
 import { NoteCard } from './NoteCard';
+import { PdfCard } from './PdfCard';
 import { QuoteCard } from './QuoteCard';
 import { RedditCard } from './RedditCard';
 import { TweetCard } from './TweetCard';
@@ -42,6 +47,8 @@ export const ItemCard = memo(function ItemCard({
         return <QuoteCard text={item.text} title={item.title} />;
       case 'image':
         return <ImageCard url={item.image} title={item.title} />;
+      case 'pdf':
+        return <PdfCard url={item.pdf} title={item.title} />;
       case 'link':
         return (
           <LinkCard
@@ -78,6 +85,52 @@ export const ItemCard = memo(function ItemCard({
             postTitle={item.title}
             text={item.text}
             image={item.image}
+          />
+        );
+      case 'book':
+        return (
+          <BookCard
+            title={item.title}
+            authors={item.authors}
+            cover={item.cover}
+            coverAspectRatio={item.coverAspectRatio}
+            publisher={item.publisher}
+            publishedDate={item.publishedDate}
+            pageCount={item.pageCount}
+          />
+        );
+      case 'music':
+        return (
+          <MusicCard
+            title={item.title}
+            artist={item.artist}
+            album={item.album}
+            cover={item.cover}
+            genre={item.genre}
+          />
+        );
+      case 'movie':
+        return (
+          <MovieCard
+            title={item.title}
+            poster={item.poster}
+            releaseYear={item.releaseYear}
+            voteAverage={item.voteAverage}
+            genres={item.genres}
+            director={item.director}
+            runtime={item.runtime}
+          />
+        );
+      case 'game':
+        return (
+          <GameCard
+            title={item.title}
+            cover={item.cover}
+            platforms={item.platforms}
+            genres={item.genres}
+            releaseYear={item.releaseYear}
+            rating={item.rating}
+            metacritic={item.metacritic}
           />
         );
     }
