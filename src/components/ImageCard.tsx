@@ -17,7 +17,7 @@ export const ImageCard = ({ url, title }: NoteProps) => {
     <View className="w-full">
       <ExpoImage
         source={{ uri: url }}
-        className="w-full"
+        className="w-full rounded-xl"
         style={{
           aspectRatio,
         }}
@@ -31,7 +31,7 @@ export const ImageCard = ({ url, title }: NoteProps) => {
 
       {title && (
         <Text
-          className="font-sans-medium text-center text-xs text-zinc-500 leading-[1.6] py-3 px-3"
+          className="font-sans-medium text-center text-xs text-zinc-400 leading-[1.6] mt-3"
           numberOfLines={2}
         >
           {title}

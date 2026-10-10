@@ -15,16 +15,16 @@ type ArticleCardProps = {
 export const ArticleCard = ({ articleTitle, thumbnail, origin }: ArticleCardProps) => {
   return (
     <View className="w-full">
-      <ExpoImage source={{ uri: thumbnail }} className="w-full h-40" />
+      <ExpoImage source={{ uri: thumbnail }} className="w-full h-40 rounded-t-xl" />
 
-      <View className="w-full p-7 gap-4 bg-indigo-950/20">
+      <View className="w-full p-5 gap-3 bg-zinc-900/80 rounded-b-xl">
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
           {decodeHTML(articleTitle)}
         </Text>
 
-        <View className="flex-row items-center gap-1.5 mt-2">
-          <BookOpenIcon size={14} color="#615FFF" weight="bold" />
-          <Text className="font-sans-semibold text-sm text-indigo-500" numberOfLines={1}>
+        <View className="flex-row items-center gap-2 mt-2">
+          <BookOpenIcon size={14} color="#A1A1AA" weight="bold" />
+          <Text className="font-sans-semibold text-sm text-zinc-400" numberOfLines={1}>
             {decodeHTML(origin)}
           </Text>
         </View>
