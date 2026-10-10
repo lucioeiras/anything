@@ -1,5 +1,5 @@
 import { CheckIcon, LinkIcon, NotePencilIcon, TagIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -42,17 +42,38 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const [saving, setSaving] = useState(false);
   const [resolvedMetadata, setResolvedMetadata] = useState<ResolvedMetadata | null>(null);
   const lastFetchedUrlRef = useRef<string>('');
+  const autoTagsRef = useRef<string[]>([]);
 
   const existingTags = useMemo(
     () => (visible ? getTags().map((t) => t.tag) : []),
     [getTags, visible]
   );
 
+  const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    setTags((prev) => {
+      const manualTags = prev.filter((t) => !autoTagsRef.current.includes(t));
+      const merged = [...manualTags];
+      for (const t of newAutoTags) {
+        if (!merged.includes(t)) {
+          merged.push(t);
+        }
+      }
+      return merged;
+    });
+    autoTagsRef.current = newAutoTags;
+  }, []);
+
+  const clearAutoTags = useCallback(() => {
+    setTags((prev) => prev.filter((t) => !autoTagsRef.current.includes(t)));
+    autoTagsRef.current = [];
+  }, []);
+
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
     if (!newUrl.trim()) {
       setResolvedMetadata(null);
       lastFetchedUrlRef.current = '';
+      clearAutoTags();
       return;
     }
 
@@ -63,25 +84,19 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     try {
       const parsed = new URL(target);
       if (parsed.hostname.includes('.') && parsed.hostname.length >= 4) {
-        const instantTags = generateAutoTags({
-          url: target,
-          note: note.trim() || undefined,
-          existingTags,
-        });
-        if (instantTags.length > 0) {
-          setTags((prev) => {
-            const next = [...prev];
-            for (const t of instantTags) {
-              if (!next.includes(t)) {
-                next.push(t);
-              }
-            }
-            return next;
+        if (target !== lastFetchedUrlRef.current) {
+          const instantTags = generateAutoTags({
+            url: target,
+            note: note.trim() || undefined,
+            existingTags,
           });
+          updateAutoTags(instantTags);
         }
+      } else {
+        clearAutoTags();
       }
     } catch {
-      // ignore parsing error while typing
+      clearAutoTags();
     }
   };
 
@@ -89,6 +104,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     setUrl('');
     setResolvedMetadata(null);
     lastFetchedUrlRef.current = '';
+    clearAutoTags();
     inputRef.current?.focus();
   };
 
@@ -137,24 +153,14 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
           existingTags,
         });
 
-        if (auto.length > 0) {
-          setTags((prev) => {
-            const next = [...prev];
-            for (const t of auto) {
-              if (!next.includes(t)) {
-                next.push(t);
-              }
-            }
-            return next;
-          });
-        }
+        updateAutoTags(auto);
       } catch (e) {
         console.warn('Failed to pre-fetch metadata:', e);
       }
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [url, existingTags, note]);
+  }, [url, existingTags, note, updateAutoTags]);
 
   useEffect(() => {
     if (visible) {
@@ -169,6 +175,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     if (saving) return;
     setUrl('');
     setTags([]);
+    autoTagsRef.current = [];
     setTagInput('');
     setNote('');
     setResolvedMetadata(null);
@@ -199,6 +206,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       });
       setUrl('');
       setTags([]);
+      autoTagsRef.current = [];
       setTagInput('');
       setNote('');
       setResolvedMetadata(null);
@@ -242,7 +250,13 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
 
   const handleTagInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
     if (e.nativeEvent.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
+      setTags((prev) => {
+        const removed = prev[prev.length - 1];
+        if (removed) {
+          autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+        }
+        return prev.slice(0, -1);
+      });
     }
   };
 
@@ -259,7 +273,13 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   };
 
   const handleRemoveTag = (indexToRemove: number) => {
-    setTags((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setTags((prev) => {
+      const removed = prev[indexToRemove];
+      if (removed) {
+        autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+      }
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
   };
 
   const canSave = url.trim().length > 0 && !saving;
