@@ -1,5 +1,4 @@
 import { decodeHTML } from 'entities';
-import { BookOpenIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { BookCover } from './BookCover';
@@ -37,8 +36,6 @@ export const BookCard = ({
   if (pageCount) metaParts.push(`${pageCount} pgs`);
   if (!publishedYear && !pageCount && publisher) metaParts.push(decodeHTML(publisher));
 
-  const metaText = metaParts.join(' · ');
-
   return (
     <View className="w-full overflow-hidden">
       <BookCover
@@ -48,23 +45,16 @@ export const BookCard = ({
         onAspectRatioChange={setAspectRatio}
       />
 
-      <View className="w-full p-6 gap-2 bg-amber-950/15">
+      <View className="w-full gap-2 my-4 items-center">
         <Text className="font-sans-medium text-base leading-[1.4] text-zinc-50" numberOfLines={3}>
           {cleanTitle}
         </Text>
 
         {authorNames && (
-          <Text className="font-sans text-xs text-amber-400/90 leading-[1.4]" numberOfLines={2}>
+          <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={2}>
             {authorNames}
           </Text>
         )}
-
-        <View className="flex-row items-center gap-1.5 mt-2">
-          <BookOpenIcon size={13} color="#F59E0B" weight="bold" />
-          <Text className="font-sans-semibold text-xs text-amber-500/80" numberOfLines={1}>
-            {metaText || 'Book'}
-          </Text>
-        </View>
       </View>
     </View>
   );

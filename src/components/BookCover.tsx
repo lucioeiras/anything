@@ -30,7 +30,7 @@ export const BookCover = ({
 
   return (
     <View
-      className={`relative overflow-hidden bg-zinc-900 ${className || ''}`}
+      className={`relative overflow-hidden bg-zinc-900 rounded-sm ${className || ''}`}
       style={[{ aspectRatio: ratio }, style, roundedCorners ? styles.roundedBook : undefined]}
     >
       {/* Base Cover Artwork or Elegant Fallback */}

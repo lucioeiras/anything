@@ -77,7 +77,7 @@ export const MusicCard = ({ title, artist, cover }: MusicCardProps) => {
       </View>
 
       {/* Track Info */}
-      <View className="w-full px-1 gap-2 my-4">
+      <View className="w-full gap-2 my-4">
         <Text
           className="font-sans-medium text-base leading-snug text-zinc-50 text-center"
           numberOfLines={2}
