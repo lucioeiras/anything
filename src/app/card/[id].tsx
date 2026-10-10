@@ -1,3 +1,4 @@
+import { formatDuration, formatReleaseYear } from '@/lib/music/itunes';
 import { decodeHTML } from 'entities';
 import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
@@ -7,8 +8,8 @@ import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import * as WebBrowser from 'expo-web-browser';
 import { useVideoPlayer } from 'expo-video';
+import * as WebBrowser from 'expo-web-browser';
 import {
   ArrowSquareOutIcon,
   BookOpenIcon,
@@ -28,7 +29,6 @@ import {
   TextTIcon,
   TrashSimpleIcon,
 } from 'phosphor-react-native';
-import { formatDuration, formatReleaseYear } from '@/lib/music/itunes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -127,7 +127,6 @@ function MusicPreviewPlayer({
     });
     return () => {
       sub.remove();
-      player.pause();
       onPlayingChange?.(false);
     };
   }, [player, onPlayingChange]);
