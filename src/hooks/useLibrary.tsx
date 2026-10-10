@@ -103,6 +103,7 @@ export type LibraryContextValue = {
   ) => Promise<BookItem>;
   addMusicItem: (
     music: {
+      musicKind: 'song' | 'album';
       title: string;
       artist: string;
       album?: string;
@@ -389,6 +390,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const addMusicItem = useCallback(
     async (
       music: {
+        musicKind: 'song' | 'album';
         title: string;
         artist: string;
         album?: string;

@@ -130,6 +130,7 @@ export type BookItem = BaseItem & {
 
 export type MusicItem = BaseItem & {
   type: 'music';
+  musicKind?: 'song' | 'album';
   title: string;
   artist: string;
   album?: string;

@@ -1286,6 +1286,12 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
 
               {item.type === 'music' && (
                 <>
+                  {item.musicKind === 'album' && (
+                    <View className="flex-row items-center gap-2.5">
+                      <DiscIcon size={16} color="#A1A1AA" />
+                      <Text className="font-sans text-base text-zinc-400">Album</Text>
+                    </View>
+                  )}
                   {item.album && (
                     <View className="flex-row items-center gap-2.5">
                       <DiscIcon size={16} color="#A1A1AA" />

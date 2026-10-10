@@ -926,6 +926,7 @@ export async function addBookItemToLibrary(
 export async function addMusicItemToLibrary(
   source: LibrarySource,
   music: {
+    musicKind: 'song' | 'album';
     title: string;
     artist: string;
     album?: string;
@@ -954,6 +955,7 @@ export async function addMusicItemToLibrary(
     id,
     version: SCHEMA_VERSION,
     type: 'music',
+    musicKind: music.musicKind,
     title: music.title,
     artist: music.artist,
     cover: music.cover,
