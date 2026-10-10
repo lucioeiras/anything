@@ -1115,6 +1115,47 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 </View>
               )}
 
+            {/* Notes Section */}
+            <View
+              onLayout={(e) => {
+                notesY.current = e.nativeEvent.layout.y;
+              }}
+              className="py-6 px-6 border-b border-zinc-800 gap-4"
+            >
+              <View className="flex-row items-center gap-2">
+                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                  Notes
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => {
+                  if (isEditingTags) setIsEditingTags(false);
+                  noteInputRef.current?.focus();
+                }}
+                className="w-full"
+              >
+                <TextInput
+                  ref={noteInputRef}
+                  value={note}
+                  onFocus={() => {
+                    scrollToNotes();
+                    if (isEditingTags) setIsEditingTags(false);
+                  }}
+                  onChangeText={setNote}
+                  onBlur={handleSaveNote}
+                  placeholder="Add notes about this card..."
+                  placeholderTextColor="#71717A"
+                  multiline
+                  textAlignVertical="top"
+                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[72px]"
+                  style={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                  underlineColorAndroid="transparent"
+                />
+              </Pressable>
+            </View>
+
             {/* Movie Overview Section */}
             {item.type === 'movie' && Boolean(item.overview) && (
               <View className="py-6 px-6 border-b border-zinc-800 gap-3">
@@ -1202,47 +1243,6 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 ) : null}
               </View>
             )}
-
-            {/* Notes Section */}
-            <View
-              onLayout={(e) => {
-                notesY.current = e.nativeEvent.layout.y;
-              }}
-              className="py-6 px-6 border-b border-zinc-800 gap-4"
-            >
-              <View className="flex-row items-center gap-2">
-                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
-                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Notes
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={() => {
-                  if (isEditingTags) setIsEditingTags(false);
-                  noteInputRef.current?.focus();
-                }}
-                className="w-full"
-              >
-                <TextInput
-                  ref={noteInputRef}
-                  value={note}
-                  onFocus={() => {
-                    scrollToNotes();
-                    if (isEditingTags) setIsEditingTags(false);
-                  }}
-                  onChangeText={setNote}
-                  onBlur={handleSaveNote}
-                  placeholder="Add notes about this card..."
-                  placeholderTextColor="#71717A"
-                  multiline
-                  textAlignVertical="top"
-                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[72px]"
-                  style={{ borderWidth: 0, backgroundColor: 'transparent' }}
-                  underlineColorAndroid="transparent"
-                />
-              </Pressable>
-            </View>
 
             {/* Info Section */}
             <View className="py-6 px-6 gap-4">
