@@ -35,7 +35,7 @@ import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
-import { getLinkableTitle, isLinkableItem } from '@/lib/library/links';
+import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import type { LibraryItem } from '@/lib/library/types';
 
 type BoardGridContextType = {
@@ -328,14 +328,14 @@ export default function BoardScreen() {
     [isEditing, selectedCardIds, searchQuery, lastIndices, displayedItems.length, state]
   );
 
-  const linkTitles = useMemo(() => {
-    const titles = new Map<string, string>();
+  const linkableItems = useMemo(() => {
+    const linkedItems = new Map<string, LinkableItem>();
     if (state.status === 'ready') {
       for (const item of state.result.items) {
-        if (isLinkableItem(item)) titles.set(item.id, getLinkableTitle(item));
+        if (isLinkableItem(item)) linkedItems.set(item.id, item);
       }
     }
-    return titles;
+    return linkedItems;
   }, [state]);
 
   const renderItem = useCallback(
@@ -343,9 +343,9 @@ export default function BoardScreen() {
       <View style={styles.cardWrapper}>
         <ItemCard
           item={item}
-          linkedTitle={
+          linkedItem={
             (item.type === 'note' || item.type === 'quote') && item.linkedItemId
-              ? linkTitles.get(item.linkedItemId)
+              ? linkableItems.get(item.linkedItemId)
               : undefined
           }
           isEditing={isEditing}
@@ -355,7 +355,7 @@ export default function BoardScreen() {
         />
       </View>
     ),
-    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkTitles]
+    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems]
   );
 
   const renderHeader = useCallback(() => {

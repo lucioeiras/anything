@@ -7,8 +7,9 @@ import { getLinkableTitle, getLinkableTypeLabel, type LinkableItem } from '@/lib
 
 type Props = {
   item: LinkableItem;
-  onChange: () => void;
-  onRemove: () => void;
+  onChange?: () => void;
+  onRemove?: () => void;
+  compact?: boolean;
   containerClassName?: string;
 };
 
@@ -66,7 +67,13 @@ function getInitialAspectRatio(item: LinkableItem): number {
   }
 }
 
-export function LinkedContentPreview({ item, onChange, onRemove, containerClassName = '' }: Props) {
+export function LinkedContentPreview({
+  item,
+  onChange,
+  onRemove,
+  compact = false,
+  containerClassName = '',
+}: Props) {
   const image = getPreviewImage(item);
   const subtitle = getPreviewSubtitle(item);
   const initialRatio = getInitialAspectRatio(item);
@@ -75,11 +82,62 @@ export function LinkedContentPreview({ item, onChange, onRemove, containerClassN
     ratio: initialRatio,
   });
   const aspectRatio = loadedRatio.image === image ? loadedRatio.ratio : initialRatio;
-  const maxSize = item.type === 'link' ? 64 : item.type === 'music' ? 80 : 96;
+  const maxSize = compact ? 44 : item.type === 'link' ? 64 : item.type === 'music' ? 80 : 96;
   const imageSize = {
     width: aspectRatio >= 1 ? maxSize : maxSize * aspectRatio,
     height: aspectRatio >= 1 ? maxSize / aspectRatio : maxSize,
   };
+
+  const content = (
+    <>
+      <View
+        className="rounded-lg bg-zinc-800 overflow-hidden items-center justify-center"
+        style={imageSize}
+      >
+        {image ? (
+          <ExpoImage
+            source={{ uri: image }}
+            className="w-full h-full"
+            contentFit="contain"
+            onLoad={(event) => {
+              const { width, height } = event.source;
+              if (width > 0 && height > 0) {
+                const ratio = width / height;
+                setLoadedRatio((current) =>
+                  current.image === image && current.ratio === ratio ? current : { image, ratio }
+                );
+              }
+            }}
+          />
+        ) : (
+          <LinkIcon size={compact ? 16 : 24} color="#71717A" />
+        )}
+      </View>
+      <View className={`flex-1 ${compact ? 'gap-1.5' : 'gap-2'}`}>
+        <Text
+          className={`font-sans-medium text-zinc-400 ${compact ? 'text-[10px]' : 'text-xs'}`}
+          numberOfLines={1}
+        >
+          {getLinkableTypeLabel(item)}
+        </Text>
+        <Text
+          className={`font-sans-semibold text-white ${compact ? 'text-xs' : 'text-lg'}`}
+          numberOfLines={2}
+        >
+          {getLinkableTitle(item)}
+        </Text>
+        {subtitle && !compact ? (
+          <Text className="font-sans text-sm text-zinc-400" numberOfLines={2}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </>
+  );
+
+  if (compact) {
+    return <View className={`flex-row items-center gap-2 ${containerClassName}`}>{content}</View>;
+  }
 
   return (
     <View className={`flex-row items-center gap-4 ${containerClassName}`}>
@@ -89,53 +147,20 @@ export function LinkedContentPreview({ item, onChange, onRemove, containerClassN
         accessibilityLabel={`Change linked content: ${getLinkableTitle(item)}`}
         className="flex-1 flex-row items-center gap-6"
       >
-        <View
-          className="rounded-lg bg-zinc-800 overflow-hidden items-center justify-center"
-          style={imageSize}
-        >
-          {image ? (
-            <ExpoImage
-              source={{ uri: image }}
-              className="w-full h-full"
-              contentFit="contain"
-              onLoad={(event) => {
-                const { width, height } = event.source;
-                if (width > 0 && height > 0) {
-                  const ratio = width / height;
-                  setLoadedRatio((current) =>
-                    current.image === image && current.ratio === ratio ? current : { image, ratio }
-                  );
-                }
-              }}
-            />
-          ) : (
-            <LinkIcon size={24} color="#71717A" />
-          )}
-        </View>
+        {content}
+      </Pressable>
 
-        <View className="flex-1 gap-2">
-          <Text className="font-sans-medium text-xs text-blue-300" numberOfLines={1}>
-            {getLinkableTypeLabel(item)}
-          </Text>
-          <Text className="font-sans-semibold text-lg text-white" numberOfLines={2}>
-            {getLinkableTitle(item)}
-          </Text>
-          {subtitle ? (
-            <Text className="font-sans text-sm text-zinc-400" numberOfLines={2}>
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
-      <Pressable
-        onPress={onRemove}
-        hitSlop={10}
-        className="p-2 rounded-full bg-zinc-800 active:opacity-70"
-        accessibilityRole="button"
-        accessibilityLabel="Remove linked content"
-      >
-        <XIcon size={16} color="#E4E4E7" weight="bold" />
-      </Pressable>
+      {onRemove && (
+        <Pressable
+          onPress={onRemove}
+          hitSlop={10}
+          className="p-2 rounded-full bg-zinc-800 active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel="Remove linked content"
+        >
+          <XIcon size={16} color="#E4E4E7" weight="bold" />
+        </Pressable>
+      )}
     </View>
   );
 }

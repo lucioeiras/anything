@@ -2,6 +2,7 @@ import { CheckIcon } from 'phosphor-react-native';
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { getLinkableTitle, type LinkableItem } from '@/lib/library/links';
 import type { LibraryItem } from '@/lib/library/types';
 
 import { ArticleCard } from './ArticleCard';
@@ -20,7 +21,7 @@ import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
   item: LibraryItem;
-  linkedTitle?: string;
+  linkedItem?: LinkableItem;
   hideTitleAndAuthor?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
@@ -31,7 +32,7 @@ type ItemCardProps = {
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
 export const ItemCard = memo(function ItemCard({
   item,
-  linkedTitle,
+  linkedItem,
   hideTitleAndAuthor = false,
   isEditing = false,
   isSelected = false,
@@ -50,7 +51,7 @@ export const ItemCard = memo(function ItemCard({
           <NoteCard
             text={item.text}
             title={hideTitleAndAuthor ? undefined : item.title}
-            linkedTitle={linkedTitle}
+            linkedItem={linkedItem}
           />
         );
       case 'quote':
@@ -58,7 +59,7 @@ export const ItemCard = memo(function ItemCard({
           <QuoteCard
             text={item.text}
             title={hideTitleAndAuthor ? undefined : item.title}
-            linkedTitle={linkedTitle}
+            linkedTitle={linkedItem ? getLinkableTitle(linkedItem) : undefined}
           />
         );
       case 'image':

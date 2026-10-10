@@ -26,8 +26,8 @@ import {
   FilmSlateIcon,
   GameControllerIcon,
   InfoIcon,
-  LinkIcon,
   JoystickIcon,
+  LinkIcon,
   MusicNotesIcon,
   NotePencilIcon,
   PauseIcon,
@@ -64,10 +64,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ItemCard } from '@/components/cards/ItemCard';
-import { LinkedContentPicker } from '@/components/LinkedContentPicker';
-import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { getProgressLabel } from '@/components/cards/ProgressStatus';
 import { VinylRecord } from '@/components/effects/VinylRecord';
+import { LinkedContentPicker } from '@/components/LinkedContentPicker';
+import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { PdfPreview } from '@/components/PdfPreview';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -1032,30 +1032,36 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               )}
             />
 
+            {/* Link to content Section */}
             {isNoteOrQuote && (
-              <View className="py-6 px-6 border-b border-zinc-800 gap-3">
-                <View className="flex-row items-center gap-2">
-                  <LinkIcon size={15} color="#E4E4E7" />
-                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                    Linked content
-                  </Text>
-                </View>
+              <View className="py-6 px-6 border-b border-zinc-800 gap-5">
                 {linkedContent && isLinkableItem(linkedContent) ? (
-                  <LinkedContentPreview
-                    item={linkedContent}
-                    onChange={() => setIsLinkPickerOpen(true)}
-                    onRemove={() => handleUpdateLinkedItem(undefined)}
-                    containerClassName="rounded-xl bg-zinc-900 px-4 py-4"
-                  />
+                  <>
+                    <View className="flex-row items-center gap-2">
+                      <LinkIcon size={15} color="#E4E4E7" />
+                      <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                        Linked content
+                      </Text>
+                    </View>
+
+                    <LinkedContentPreview
+                      item={linkedContent}
+                      onChange={() =>
+                        router.push({ pathname: '/card/[id]', params: { id: linkedContent.id } })
+                      }
+                      onRemove={() => handleUpdateLinkedItem(undefined)}
+                    />
+                  </>
                 ) : (
-                  <View className="flex-row items-center rounded-xl bg-zinc-900 pr-3">
+                  <View className="flex-row items-center rounded-xl pr-3">
                     <Pressable
                       onPress={() => setIsLinkPickerOpen(true)}
                       accessibilityRole="button"
                       accessibilityLabel="Link to content"
-                      className="flex-1 px-4 py-4"
+                      className="flex-row items-center gap-4"
                     >
-                      <Text className="font-sans-medium text-base text-white">Link to content</Text>
+                      <LinkIcon size={20} color="#FFFFFF" />
+                      <Text className="font-sans-semibold text-lg text-white">Link to content</Text>
                     </Pressable>
                     {(item.type === 'note' || item.type === 'quote') && item.linkedItemId && (
                       <Pressable
@@ -1069,19 +1075,6 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                       </Pressable>
                     )}
                   </View>
-                )}
-                {linkedContent && isLinkableItem(linkedContent) && (
-                  <Pressable
-                    onPress={() =>
-                      router.push({ pathname: '/card/[id]', params: { id: linkedContent.id } })
-                    }
-                    accessibilityRole="button"
-                    className="self-start py-1"
-                  >
-                    <Text className="font-sans-medium text-sm text-blue-400">
-                      Open linked content
-                    </Text>
-                  </Pressable>
                 )}
               </View>
             )}
