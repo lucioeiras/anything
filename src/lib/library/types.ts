@@ -12,6 +12,10 @@
 
 export const SCHEMA_VERSION = 1 as const;
 
+/** Reading, watching, or playing progress for trackable library items. */
+export const MEDIA_PROGRESS_STATUSES = ['want', 'in-progress', 'completed', 'abandoned'] as const;
+export type MediaProgressStatus = (typeof MEDIA_PROGRESS_STATUSES)[number];
+
 /** Relative path inside the library (`images/foo.jpg`) or a remote/data URI. */
 export type ImageRef = string;
 
@@ -59,6 +63,7 @@ export type LinkItem = BaseItem & {
 
 export type ArticleItem = BaseItem & {
   type: 'article';
+  progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
   origin: string;
@@ -67,6 +72,7 @@ export type ArticleItem = BaseItem & {
 
 export type YouTubeItem = BaseItem & {
   type: 'youtube';
+  progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
   thumbnail: ImageRef;
@@ -102,6 +108,7 @@ export type RedditItem = BaseItem & {
 
 export type BookItem = BaseItem & {
   type: 'book';
+  progressStatus?: MediaProgressStatus;
   isbn: string;
   title: string;
   authors: string[];
@@ -129,6 +136,7 @@ export type MusicItem = BaseItem & {
 
 export type MovieItem = BaseItem & {
   type: 'movie';
+  progressStatus?: MediaProgressStatus;
   tmdbId: number;
   title: string;
   originalTitle?: string;
@@ -151,6 +159,7 @@ export type MovieItem = BaseItem & {
 
 export type GameItem = BaseItem & {
   type: 'game';
+  progressStatus?: MediaProgressStatus;
   rawgId?: number;
   title: string;
   cover: ImageRef;

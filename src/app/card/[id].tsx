@@ -67,7 +67,11 @@ import { PdfPreview } from '@/components/PdfPreview';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { cleanRawgDescription } from '@/lib/games/rawg';
-import type { LibraryItem } from '@/lib/library/types';
+import {
+  MEDIA_PROGRESS_STATUSES,
+  type LibraryItem,
+  type MediaProgressStatus,
+} from '@/lib/library/types';
 import { getProfileUrl } from '@/lib/movies/tmdb';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -80,6 +84,90 @@ function isLinkType(type: LibraryItem['type']): boolean {
     type === 'tweet' ||
     type === 'reddit'
   );
+}
+
+type TrackableItemType = 'book' | 'movie' | 'game' | 'article' | 'youtube';
+
+function isTrackableItem(
+  item: LibraryItem
+): item is Extract<LibraryItem, { type: TrackableItemType }> {
+  return (
+    item.type === 'book' ||
+    item.type === 'movie' ||
+    item.type === 'game' ||
+    item.type === 'article' ||
+    item.type === 'youtube'
+  );
+}
+
+function getProgressLabel(type: TrackableItemType, status: MediaProgressStatus): string {
+  const labels = {
+    book: {
+      want: 'Want to read',
+      'in-progress': 'Reading',
+      completed: 'Read',
+      abandoned: 'Abandoned',
+    },
+    movie: {
+      want: 'Want to watch',
+      'in-progress': 'Watching',
+      completed: 'Watched',
+      abandoned: 'Abandoned',
+    },
+    game: {
+      want: 'Want to play',
+      'in-progress': 'Playing',
+      completed: 'Played',
+      abandoned: 'Abandoned',
+    },
+    article: {
+      want: 'Want to read',
+      'in-progress': 'Reading',
+      completed: 'Read',
+      abandoned: 'Abandoned',
+    },
+    youtube: {
+      want: 'Want to watch',
+      'in-progress': 'Watching',
+      completed: 'Watched',
+      abandoned: 'Abandoned',
+    },
+  } as const;
+
+  return labels[type][status];
+}
+
+function getAllowedProgressStatuses(type: TrackableItemType): readonly MediaProgressStatus[] {
+  return type === 'article' || type === 'youtube'
+    ? MEDIA_PROGRESS_STATUSES.slice(0, -1)
+    : MEDIA_PROGRESS_STATUSES;
+}
+
+function getCurrentProgressStatus(
+  type: TrackableItemType,
+  status?: MediaProgressStatus
+): MediaProgressStatus {
+  return status && getAllowedProgressStatuses(type).includes(status) ? status : 'want';
+}
+
+function getNextProgressStatus(
+  type: TrackableItemType,
+  status: MediaProgressStatus
+): MediaProgressStatus {
+  const allowedStatuses = getAllowedProgressStatuses(type);
+  const currentIndex = allowedStatuses.indexOf(status);
+  return allowedStatuses[(currentIndex + 1) % allowedStatuses.length];
+}
+
+function getProgressTone(status: MediaProgressStatus): 'blue' | 'amber' | 'emerald' | 'zinc' {
+  const tones = {
+    want: 'blue',
+    'in-progress': 'amber',
+    completed: 'emerald',
+    abandoned: 'zinc',
+  } as const;
+
+  return tones[status];
 }
 
 function formatDateAdded(isoDate: string): string {
@@ -192,6 +280,9 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   const initialText = 'text' in item && typeof item.text === 'string' ? decodeHTML(item.text) : '';
   const [title, setTitle] = useState(initialTitle);
   const [tags, setTags] = useState<string[]>(item.tags || []);
+  const [progressStatus, setProgressStatus] = useState<MediaProgressStatus>(
+    isTrackableItem(item) ? getCurrentProgressStatus(item.type, item.progressStatus) : 'want'
+  );
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState(item.note || '');
   const [editedText, setEditedText] = useState(initialText);
@@ -418,6 +509,19 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
       });
     } catch (e) {
       console.warn('Failed to remove tag', e);
+    }
+  };
+
+  const handleProgressStatusPress = async () => {
+    if (!isTrackableItem(item)) return;
+
+    const nextStatus = getNextProgressStatus(item.type, progressStatus);
+    setProgressStatus(nextStatus);
+    try {
+      await updateItem(item.id, { progressStatus: nextStatus });
+    } catch (e) {
+      setProgressStatus(progressStatus);
+      console.warn('Failed to update progress status', e);
     }
   };
 
@@ -850,6 +954,68 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               />
             </View>
 
+            {/* Tags section */}
+            <TagsBox
+              tags={tags}
+              autoTags={item.autoTags}
+              priorityTag={
+                isTrackableItem(item)
+                  ? {
+                      label: getProgressLabel(item.type, progressStatus),
+                      tone: getProgressTone(progressStatus),
+                      icon: progressStatus,
+                      onPress: handleProgressStatusPress,
+                      accessibilityLabel: `${getProgressLabel(item.type, progressStatus)}. Tap to change progress status`,
+                    }
+                  : undefined
+              }
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagInputRef}
+              showRemoveIcon={isEditingTags}
+              onLayout={(e) => {
+                tagsY.current = e.nativeEvent.layout.y;
+              }}
+              onContainerPress={() => {
+                if (isEditingTags) {
+                  setIsEditingTags(false);
+                } else {
+                  tagInputRef.current?.focus();
+                }
+              }}
+              onInputFocus={() => {
+                scrollToTags();
+                if (isEditingTags) setIsEditingTags(false);
+              }}
+              onTagPress={(tag, idx) => {
+                if (isEditingTags) {
+                  handleRemoveTag(idx);
+                } else {
+                  onSelectTag(tag);
+                }
+              }}
+              onTagLongPress={() => setIsEditingTags(true)}
+              onAddTag={handleAddTag}
+              renderTagWrapper={(tag, idx, children) => (
+                <Animated.View
+                  key={`${tag}-${idx}`}
+                  style={{
+                    transform: [
+                      {
+                        rotate: isEditingTags
+                          ? idx % 2 === 0
+                            ? rotationEven
+                            : rotationOdd
+                          : '0deg',
+                      },
+                    ],
+                  }}
+                >
+                  {children}
+                </Animated.View>
+              )}
+            />
+
             {/* Movie Overview Section */}
             {item.type === 'movie' && Boolean(item.overview) && (
               <View className="py-6 px-6 border-b border-zinc-800 gap-3">
@@ -865,6 +1031,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               </View>
             )}
 
+            {/* Movie Cast Section */}
             {item.type === 'movie' && movieCast.length > 0 && (
               <View className="py-6 px-6 border-b border-zinc-800 gap-3">
                 <View className="flex-row items-center justify-between">
@@ -936,57 +1103,6 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 ) : null}
               </View>
             )}
-
-            {/* Tags section */}
-            <TagsBox
-              tags={tags}
-              autoTags={item.autoTags}
-              tagInput={tagInput}
-              onTagInputChange={setTagInput}
-              inputRef={tagInputRef}
-              showRemoveIcon={isEditingTags}
-              onLayout={(e) => {
-                tagsY.current = e.nativeEvent.layout.y;
-              }}
-              onContainerPress={() => {
-                if (isEditingTags) {
-                  setIsEditingTags(false);
-                } else {
-                  tagInputRef.current?.focus();
-                }
-              }}
-              onInputFocus={() => {
-                scrollToTags();
-                if (isEditingTags) setIsEditingTags(false);
-              }}
-              onTagPress={(tag, idx) => {
-                if (isEditingTags) {
-                  handleRemoveTag(idx);
-                } else {
-                  onSelectTag(tag);
-                }
-              }}
-              onTagLongPress={() => setIsEditingTags(true)}
-              onAddTag={handleAddTag}
-              renderTagWrapper={(tag, idx, children) => (
-                <Animated.View
-                  key={`${tag}-${idx}`}
-                  style={{
-                    transform: [
-                      {
-                        rotate: isEditingTags
-                          ? idx % 2 === 0
-                            ? rotationEven
-                            : rotationOdd
-                          : '0deg',
-                      },
-                    ],
-                  }}
-                >
-                  {children}
-                </Animated.View>
-              )}
-            />
 
             {/* Notes Section */}
             <View
