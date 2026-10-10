@@ -1293,6 +1293,20 @@ export function generateAutoTags(input: AutoTagInput): string[] {
     addCandidate('tweet', 60);
   } else if (type === 'reddit') {
     addCandidate('reddit', 60);
+  } else if (type === 'pdf') {
+    addCandidate('pdf', 60);
+    addCandidate('document', 60);
+  } else if (type === 'book') {
+    addCandidate('book', 60);
+    addCandidate('reading', 50);
+  } else if (type === 'music') {
+    addCandidate('music', 70);
+  } else if (type === 'movie') {
+    addCandidate('movie', 70);
+    addCandidate('cinema', 60);
+  } else if (type === 'game') {
+    addCandidate('games', 70);
+    addCandidate('gaming', 60);
   }
 
   // 5. iOS NLTagger Named Entities (Organizations, Locations, Personal Names)

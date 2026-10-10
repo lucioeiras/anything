@@ -12,13 +12,20 @@ import {
 } from './cache';
 import {
   IMAGES_DIR,
+  PDFS_DIR,
   SCHEMA_VERSION,
   type ArticleItem,
+  type BookItem,
+  type GameItem,
   type ImageItem,
   type ImageRef,
   type LibraryItem,
   type LinkItem,
+  type MovieItem,
+  type MusicItem,
   type NoteItem,
+  type PdfItem,
+  type PdfRef,
   type QuoteItem,
   type RedditItem,
   type TweetItem,
@@ -362,11 +369,20 @@ export function resolveImageRef(ref: ImageRef, root: Directory): string {
   return new File(root, relative).uri;
 }
 
+/** Turns `pdfs/foo.pdf` into an absolute `file://` URI; leaves URLs untouched. */
+export function resolvePdfRef(ref: PdfRef, root: Directory): string {
+  if (/^(https?:|data:|file:)/i.test(ref)) return ref;
+  const relative = ref.replace(/^\.?\//, '');
+  return new File(root, relative).uri;
+}
+
 export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
   const r = (ref: ImageRef) => resolveImageRef(ref, root);
   switch (item.type) {
     case 'image':
       return { ...item, image: r(item.image) };
+    case 'pdf':
+      return { ...item, pdf: resolvePdfRef(item.pdf, root) };
     case 'link':
       return { ...item, favicon: r(item.favicon) };
     case 'article':
@@ -390,6 +406,27 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
         subredditAvatar: r(item.subredditAvatar),
         image: item.image ? r(item.image) : undefined,
       };
+    case 'book':
+      return {
+        ...item,
+        cover: item.cover ? r(item.cover) : undefined,
+      };
+    case 'music':
+      return {
+        ...item,
+        cover: r(item.cover),
+      };
+    case 'movie':
+      return {
+        ...item,
+        poster: r(item.poster),
+        backdrop: item.backdrop ? r(item.backdrop) : undefined,
+      };
+    case 'game':
+      return {
+        ...item,
+        cover: r(item.cover),
+      };
     default:
       return item;
   }
@@ -397,6 +434,10 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
 
 export function getImagesDirectory(source: LibrarySource): Directory {
   return new Directory(getLibraryDirectory(source), IMAGES_DIR);
+}
+
+export function getPdfsDirectory(source: LibrarySource): Directory {
+  return new Directory(getLibraryDirectory(source), PDFS_DIR);
 }
 
 export function generateId(): string {
@@ -498,6 +539,105 @@ export async function addImageToLibrary(
     version: SCHEMA_VERSION,
     type: 'image',
     image: relativeImagePath,
+    ...(trimmedTitle ? { title: trimmedTitle } : {}),
+    ...(trimmedNote ? { note: trimmedNote } : {}),
+    ...(tags && tags.length > 0 ? { tags } : {}),
+    ...(autoTags && autoTags.length > 0 ? { autoTags } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  // Update SQLite cache immediately with modification time
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+
+  return item;
+}
+
+export type PickedPdfAsset = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
+};
+
+export type AddPdfOptions = {
+  title?: string;
+  note?: string;
+  tags?: string[];
+  autoTags?: string[];
+};
+
+/**
+ * Copies a picked PDF into the library's `pdfs/` folder and writes the
+ * corresponding `<id>.json` metadata file to the root of the library.
+ */
+export async function addPdfToLibrary(
+  source: LibrarySource,
+  asset: PickedPdfAsset,
+  options?: AddPdfOptions
+): Promise<PdfItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const pdfsDir = getPdfsDirectory(source);
+  if (!pdfsDir.exists) {
+    pdfsDir.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+
+  let ext = 'pdf';
+  if (asset.fileName && asset.fileName.includes('.')) {
+    const parts = asset.fileName.split('.');
+    const potentialExt = parts[parts.length - 1].toLowerCase();
+    if (potentialExt === 'pdf') {
+      ext = 'pdf';
+    }
+  }
+
+  const pdfFileName = `${id}.${ext}`;
+  const relativePdfPath = `${PDFS_DIR}/${pdfFileName}`;
+
+  const sourceFile = new File(asset.uri);
+  const targetPdfFile = new File(pdfsDir, pdfFileName);
+
+  try {
+    await sourceFile.copy(targetPdfFile, { overwrite: true });
+  } catch (copyError) {
+    console.warn('sourceFile.copy failed, using arrayBuffer copy fallback', copyError);
+    const buffer = await sourceFile.arrayBuffer();
+    if (!targetPdfFile.exists) {
+      targetPdfFile.create({ intermediates: true, overwrite: true });
+    }
+    targetPdfFile.write(new Uint8Array(buffer));
+  }
+
+  const now = new Date().toISOString();
+  const trimmedTitle =
+    options?.title?.trim() ||
+    (asset.fileName ? asset.fileName.replace(/\.pdf$/i, '').trim() : undefined);
+  const trimmedNote = options?.note?.trim();
+  const tags = options?.tags?.filter(Boolean);
+  const autoTags = options?.autoTags?.filter(Boolean);
+
+  const item: PdfItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'pdf',
+    pdf: relativePdfPath,
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
     ...(trimmedNote ? { note: trimmedNote } : {}),
     ...(tags && tags.length > 0 ? { tags } : {}),
@@ -708,7 +848,288 @@ export async function addLinkItemToLibrary(
   return item;
 }
 
+export async function addBookItemToLibrary(
+  source: LibrarySource,
+  book: {
+    isbn: string;
+    title: string;
+    authors: string[];
+    cover?: string;
+    coverAspectRatio?: number;
+    description?: string;
+    publisher?: string;
+    publishedDate?: string;
+    pageCount?: number;
+    url?: string;
+  },
+  options?: {
+    tags?: string[];
+    autoTags?: string[];
+    note?: string;
+  }
+): Promise<BookItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const item: BookItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'book',
+    isbn: book.isbn,
+    title: book.title,
+    authors: book.authors,
+    ...(book.cover ? { cover: book.cover } : {}),
+    ...(typeof book.coverAspectRatio === 'number'
+      ? { coverAspectRatio: book.coverAspectRatio }
+      : {}),
+    ...(book.description ? { description: book.description } : {}),
+    ...(book.publisher ? { publisher: book.publisher } : {}),
+    ...(book.publishedDate ? { publishedDate: book.publishedDate } : {}),
+    ...(book.pageCount ? { pageCount: book.pageCount } : {}),
+    ...(book.url ? { url: book.url } : {}),
+    ...(options?.tags?.length ? { tags: options.tags } : {}),
+    ...(options?.autoTags?.length ? { autoTags: options.autoTags } : {}),
+    ...(options?.note ? { note: options.note } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+
+  return item;
+}
+
+export async function addMusicItemToLibrary(
+  source: LibrarySource,
+  music: {
+    title: string;
+    artist: string;
+    album?: string;
+    cover: string;
+    previewUrl?: string;
+    externalUrl?: string;
+    durationMs?: number;
+    releaseDate?: string;
+    genre?: string;
+  },
+  options?: {
+    tags?: string[];
+    autoTags?: string[];
+    note?: string;
+  }
+): Promise<MusicItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const item: MusicItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'music',
+    title: music.title,
+    artist: music.artist,
+    cover: music.cover,
+    ...(music.album ? { album: music.album } : {}),
+    ...(music.previewUrl ? { previewUrl: music.previewUrl } : {}),
+    ...(music.externalUrl ? { externalUrl: music.externalUrl } : {}),
+    ...(music.durationMs ? { durationMs: music.durationMs } : {}),
+    ...(music.releaseDate ? { releaseDate: music.releaseDate } : {}),
+    ...(music.genre ? { genre: music.genre } : {}),
+    ...(options?.tags?.length ? { tags: options.tags } : {}),
+    ...(options?.autoTags?.length ? { autoTags: options.autoTags } : {}),
+    ...(options?.note ? { note: options.note } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+
+  return item;
+}
+
+export type AddMovieOptions = {
+  tmdbId: number;
+  title: string;
+  originalTitle?: string;
+  poster: string;
+  backdrop?: string;
+  releaseDate?: string;
+  releaseYear?: string;
+  overview?: string;
+  voteAverage?: number;
+  genres?: string[];
+  director?: string;
+  runtime?: number;
+};
+
+export async function addMovieItemToLibrary(
+  source: LibrarySource,
+  movie: AddMovieOptions,
+  options?: {
+    tags?: string[];
+    autoTags?: string[];
+    note?: string;
+  }
+): Promise<MovieItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const item: MovieItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'movie',
+    tmdbId: movie.tmdbId,
+    title: movie.title.trim(),
+    poster: movie.poster,
+    ...(movie.originalTitle ? { originalTitle: movie.originalTitle } : {}),
+    ...(movie.backdrop ? { backdrop: movie.backdrop } : {}),
+    ...(movie.releaseDate ? { releaseDate: movie.releaseDate } : {}),
+    ...(movie.releaseYear ? { releaseYear: movie.releaseYear } : {}),
+    ...(movie.overview ? { overview: movie.overview } : {}),
+    ...(typeof movie.voteAverage === 'number' ? { voteAverage: movie.voteAverage } : {}),
+    ...(movie.genres && movie.genres.length > 0 ? { genres: movie.genres } : {}),
+    ...(movie.director ? { director: movie.director } : {}),
+    ...(typeof movie.runtime === 'number' ? { runtime: movie.runtime } : {}),
+    ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
+    ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
+    ...(options?.note ? { note: options.note } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+
+  return item;
+}
+
+export type AddGameOptions = {
+  rawgId?: number;
+  title: string;
+  cover: string;
+  platforms?: string[];
+  genres?: string[];
+  released?: string;
+  releaseYear?: string;
+  rating?: number;
+  metacritic?: number;
+  description?: string;
+  developers?: string[];
+  publishers?: string[];
+  esrbRating?: string;
+  website?: string;
+};
+
+export async function addGameItemToLibrary(
+  source: LibrarySource,
+  game: AddGameOptions,
+  options?: {
+    tags?: string[];
+    autoTags?: string[];
+    note?: string;
+  }
+): Promise<GameItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) {
+    root.create({ intermediates: true, idempotent: true });
+  }
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const item: GameItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'game',
+    title: game.title.trim(),
+    cover: game.cover,
+    ...(typeof game.rawgId === 'number' ? { rawgId: game.rawgId } : {}),
+    ...(game.platforms && game.platforms.length > 0 ? { platforms: game.platforms } : {}),
+    ...(game.genres && game.genres.length > 0 ? { genres: game.genres } : {}),
+    ...(game.released ? { released: game.released } : {}),
+    ...(game.releaseYear ? { releaseYear: game.releaseYear } : {}),
+    ...(typeof game.rating === 'number' ? { rating: game.rating } : {}),
+    ...(typeof game.metacritic === 'number' ? { metacritic: game.metacritic } : {}),
+    ...(game.description ? { description: game.description } : {}),
+    ...(game.developers && game.developers.length > 0 ? { developers: game.developers } : {}),
+    ...(game.publishers && game.publishers.length > 0 ? { publishers: game.publishers } : {}),
+    ...(game.esrbRating ? { esrbRating: game.esrbRating } : {}),
+    ...(game.website ? { website: game.website } : {}),
+    ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
+    ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
+    ...(options?.note ? { note: options.note } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) {
+    jsonFile.create({ intermediates: true, overwrite: true });
+  }
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+
+  const mtime =
+    jsonFile.lastModified ??
+    (jsonFile as unknown as { modificationTime?: number }).modificationTime ??
+    Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+
+  return item;
+}
+
 export type DeletedImageBackup = {
+  fileName: string;
+  bytes: Uint8Array;
+};
+
+export type DeletedPdfBackup = {
   fileName: string;
   bytes: Uint8Array;
 };
@@ -717,6 +1138,7 @@ export type DeletedItemBackup = {
   id: string;
   jsonText: string;
   images?: DeletedImageBackup[];
+  pdfs?: DeletedPdfBackup[];
 };
 
 function extractImageRefsFromItem(item: unknown): string[] {
@@ -735,6 +1157,9 @@ function extractImageRefsFromItem(item: unknown): string[] {
   add(rec.thumbnail);
   add(rec.avatar);
   add(rec.subredditAvatar);
+  add(rec.cover);
+  add(rec.poster);
+  add(rec.backdrop);
 
   if (Array.isArray(rec.images)) {
     for (const img of rec.images) {
@@ -794,9 +1219,70 @@ function getItemImageFileNames(
   return result;
 }
 
+function extractPdfRefsFromItem(item: unknown): string[] {
+  if (!item || typeof item !== 'object') return [];
+  const rec = item as Record<string, unknown>;
+  const refs: string[] = [];
+
+  if (typeof rec.pdf === 'string' && rec.pdf.trim().length > 0) {
+    refs.push(rec.pdf.trim());
+  }
+
+  return refs;
+}
+
+function getItemPdfFileNames(
+  parsed: Record<string, unknown>,
+  availablePdfFiles: File[],
+  pdfsDirUri: string
+): Set<string> {
+  const result = new Set<string>();
+  const refs = extractPdfRefsFromItem(parsed);
+  const normalizedPdfsDir = pdfsDirUri.replace(/\/+$/, '');
+
+  for (const ref of refs) {
+    if (/^(https?:|data:)/i.test(ref)) continue;
+
+    const clean = ref.split('?')[0].split('#')[0];
+
+    // If it's a file URI inside pdfsDir
+    if (clean.startsWith('file:') && clean.startsWith(normalizedPdfsDir + '/')) {
+      const fileName = decodeURIComponent(clean.slice(normalizedPdfsDir.length + 1));
+      result.add(fileName);
+      continue;
+    }
+
+    // Relative path like "pdfs/xyz.pdf" or "./pdfs/xyz.pdf"
+    const relative = clean.replace(/^\.?\//, '');
+    if (relative.startsWith(`${PDFS_DIR}/`)) {
+      const fileName = decodeURIComponent(relative.slice(PDFS_DIR.length + 1));
+      result.add(fileName);
+      continue;
+    }
+
+    // Direct filename match in pdfsDir
+    const directMatch = availablePdfFiles.find((f) => f.name === relative || f.name === clean);
+    if (directMatch) {
+      result.add(directMatch.name);
+    }
+  }
+
+  // Check if any file in pdfsDir starts with `${parsed.id}.` (e.g. `<id>.pdf`)
+  if (typeof parsed.id === 'string' && parsed.id) {
+    const idPrefix = `${parsed.id}.`;
+    for (const f of availablePdfFiles) {
+      if (f.name.startsWith(idPrefix)) {
+        result.add(f.name);
+      }
+    }
+  }
+
+  return result;
+}
+
 /**
  * Deletes multiple cards from the library and returns backups of their JSON contents
- * (and any deleted image files) so they can be restored if needed.
+ * (and any deleted image/pdf files) so they can be restored if needed.
  */
 export async function deleteItemsFromLibrary(
   source: LibrarySource,
@@ -863,17 +1349,41 @@ export async function deleteItemsFromLibrary(
     }
   }
 
-  // Collect image file names retained by remaining items so we never delete an image used by another card
+  const pdfsDir = getPdfsDirectory(source);
+  const availablePdfFiles: File[] = [];
+  const pdfFileByName = new Map<string, File>();
+
+  if (pdfsDir.exists) {
+    try {
+      const pdfEntries = pdfsDir.list();
+      for (const entry of pdfEntries) {
+        if (entry instanceof File && !entry.name.startsWith('.')) {
+          availablePdfFiles.push(entry);
+          pdfFileByName.set(entry.name, entry);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to list pdfs directory:', e);
+    }
+  }
+
+  // Collect file names retained by remaining items so we never delete a file used by another card
   const retainedImageFileNames = new Set<string>();
+  const retainedPdfFileNames = new Set<string>();
   for (const item of toRetain) {
     const fileNames = getItemImageFileNames(item.parsed, availableImageFiles, imagesDir.uri);
     for (const name of fileNames) {
       retainedImageFileNames.add(name);
     }
+    const pdfNames = getItemPdfFileNames(item.parsed, availablePdfFiles, pdfsDir.uri);
+    for (const name of pdfNames) {
+      retainedPdfFileNames.add(name);
+    }
   }
 
-  // Track already deleted/backed-up image files to handle multiple cards referencing the same file
+  // Track already deleted/backed-up files to handle multiple cards referencing the same file
   const processedImages = new Set<string>();
+  const processedPdfs = new Set<string>();
 
   for (const item of toDelete) {
     const itemImageFileNames = getItemImageFileNames(
@@ -917,6 +1427,40 @@ export async function deleteItemsFromLibrary(
       }
     }
 
+    const itemPdfFileNames = getItemPdfFileNames(item.parsed, availablePdfFiles, pdfsDir.uri);
+    const itemPdfBackups: DeletedPdfBackup[] = [];
+
+    for (const fileName of itemPdfFileNames) {
+      if (retainedPdfFileNames.has(fileName)) {
+        continue;
+      }
+
+      const pdfFile = pdfFileByName.get(fileName);
+      if (pdfFile && pdfFile.exists) {
+        if (!processedPdfs.has(fileName)) {
+          try {
+            const bytes = await pdfFile.bytes();
+            itemPdfBackups.push({ fileName, bytes });
+          } catch {
+            try {
+              const buffer = await pdfFile.arrayBuffer();
+              itemPdfBackups.push({ fileName, bytes: new Uint8Array(buffer) });
+            } catch (e) {
+              console.warn(`Failed to read pdf ${fileName} for backup:`, e);
+            }
+          }
+
+          try {
+            pdfFile.delete();
+          } catch (e) {
+            console.warn(`Failed to delete pdf file ${fileName}:`, e);
+          }
+
+          processedPdfs.add(fileName);
+        }
+      }
+    }
+
     // Delete the card's JSON file
     try {
       item.file.delete();
@@ -928,6 +1472,7 @@ export async function deleteItemsFromLibrary(
       id: item.parsed.id as string,
       jsonText: item.text,
       ...(itemImageBackups.length > 0 ? { images: itemImageBackups } : {}),
+      ...(itemPdfBackups.length > 0 ? { pdfs: itemPdfBackups } : {}),
     });
   }
 
@@ -942,7 +1487,7 @@ export async function deleteItemsFromLibrary(
 
 /**
  * Restores previously deleted items to the library folder from their backup JSON
- * and restores any associated images.
+ * and restores any associated images and pdfs.
  */
 export async function restoreItemsToLibrary(
   source: LibrarySource,
@@ -952,6 +1497,7 @@ export async function restoreItemsToLibrary(
   if (!root.exists || backups.length === 0) return;
 
   const imagesDir = getImagesDirectory(source);
+  const pdfsDir = getPdfsDirectory(source);
 
   for (const backup of backups) {
     try {
@@ -989,6 +1535,23 @@ export async function restoreItemsToLibrary(
             restoredImageFile.write(img.bytes);
           } catch (imgErr) {
             console.error(`Failed to restore image ${img.fileName}:`, imgErr);
+          }
+        }
+      }
+
+      if (backup.pdfs && backup.pdfs.length > 0) {
+        if (!pdfsDir.exists) {
+          pdfsDir.create({ intermediates: true, idempotent: true });
+        }
+        for (const pdf of backup.pdfs) {
+          try {
+            const restoredPdfFile = new File(pdfsDir, pdf.fileName);
+            if (!restoredPdfFile.exists) {
+              restoredPdfFile.create({ intermediates: true, overwrite: true });
+            }
+            restoredPdfFile.write(pdf.bytes);
+          } catch (pdfErr) {
+            console.error(`Failed to restore pdf ${pdf.fileName}:`, pdfErr);
           }
         }
       }
@@ -1043,6 +1606,14 @@ export async function updateItemInLibrary(
     updatedRaw.image = rawItem.image;
   }
   if (
+    rawItem.pdf &&
+    typeof rawItem.pdf === 'string' &&
+    !rawItem.pdf.startsWith('file:') &&
+    !rawItem.pdf.startsWith('http')
+  ) {
+    updatedRaw.pdf = rawItem.pdf;
+  }
+  if (
     rawItem.thumbnail &&
     typeof rawItem.thumbnail === 'string' &&
     !rawItem.thumbnail.startsWith('file:') &&
@@ -1057,6 +1628,14 @@ export async function updateItemInLibrary(
     !rawItem.favicon.startsWith('http')
   ) {
     updatedRaw.favicon = rawItem.favicon;
+  }
+  if (
+    rawItem.cover &&
+    typeof rawItem.cover === 'string' &&
+    !rawItem.cover.startsWith('file:') &&
+    !rawItem.cover.startsWith('http')
+  ) {
+    updatedRaw.cover = rawItem.cover;
   }
 
   if ('tags' in updates) {
