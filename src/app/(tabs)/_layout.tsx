@@ -9,17 +9,14 @@ export default function TabLayout() {
       initialRouteName="board"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#3b82f6', // tailwind blue-500
-        tabBarInactiveTintColor: '#fff', // tailwind zinc-500
+        tabBarActiveTintColor: '#FFFFFF', // tailwind blue-500
+        tabBarInactiveTintColor: '#71717B', // tailwind zinc-500
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
+          backgroundColor: '#09090b',
+          borderTopWidth: 1,
+          borderTopColor: '#27272a',
           elevation: 0,
-          paddingHorizontal: 20,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontFamily: 'InstrumentSans_700Bold',

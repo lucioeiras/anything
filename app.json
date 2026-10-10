@@ -64,7 +64,8 @@
           "photosPermission": "The app needs access to save images to your camera roll.",
           "savePhotosPermission": "The app needs access to save images to your camera roll."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -59,6 +59,14 @@ export type YouTubeItem = BaseItem & {
   thumbnail: ImageRef;
 };
 
+export type TweetVideo = {
+  url: string;
+  thumbnail?: ImageRef;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
+};
+
 export type TweetItem = BaseItem & {
   type: 'tweet';
   url: string;
@@ -66,6 +74,7 @@ export type TweetItem = BaseItem & {
   avatar: ImageRef;
   text: string;
   images?: ImageRef[];
+  video?: TweetVideo;
 };
 
 export type RedditItem = BaseItem & {

@@ -1,3 +1,4 @@
+import { decodeHTML } from 'entities';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
 
 /**
@@ -23,11 +24,32 @@ export function parseItem(raw: unknown): LibraryItem {
     }
   }
 
-  return {
+  const item: Record<string, unknown> = {
     version: 1,
     updatedAt: createdAt,
     ...raw,
-  } as LibraryItem;
+  };
+
+  if (typeof item.title === 'string') {
+    item.title = decodeHTML(item.title);
+  }
+  if (typeof item.siteTitle === 'string') {
+    item.siteTitle = decodeHTML(item.siteTitle);
+  }
+  if (typeof item.description === 'string') {
+    item.description = decodeHTML(item.description);
+  }
+  if (typeof item.origin === 'string') {
+    item.origin = decodeHTML(item.origin);
+  }
+  if (typeof item.text === 'string') {
+    item.text = decodeHTML(item.text);
+  }
+  if (typeof item.note === 'string') {
+    item.note = decodeHTML(item.note);
+  }
+
+  return item as unknown as LibraryItem;
 }
 
 const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {

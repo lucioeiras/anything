@@ -373,7 +373,17 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
     case 'youtube':
       return { ...item, thumbnail: r(item.thumbnail) };
     case 'tweet':
-      return { ...item, avatar: r(item.avatar), images: item.images?.map(r) };
+      return {
+        ...item,
+        avatar: r(item.avatar),
+        images: item.images?.map(r),
+        video: item.video
+          ? {
+              ...item.video,
+              thumbnail: item.video.thumbnail ? r(item.video.thumbnail) : undefined,
+            }
+          : undefined,
+      };
     case 'reddit':
       return {
         ...item,
@@ -621,6 +631,7 @@ export async function addLinkItemToLibrary(
         avatar: metadata.avatar,
         text: metadata.text,
         ...(metadata.images?.length ? { images: metadata.images } : {}),
+        ...(metadata.video ? { video: metadata.video } : {}),
         createdAt: now,
         updatedAt: now,
       };

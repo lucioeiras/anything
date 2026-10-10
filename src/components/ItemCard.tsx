@@ -29,6 +29,11 @@ export const ItemCard = memo(function ItemCard({
   onPress,
   onLongPress,
 }: ItemCardProps) {
+  const isInteractiveTweet =
+    item.type === 'tweet' &&
+    ((item.images?.length ?? 0) > 1 || Boolean(item.video?.url)) &&
+    !isEditing;
+
   const renderCardContent = () => {
     switch (item.type) {
       case 'note':
@@ -59,6 +64,9 @@ export const ItemCard = memo(function ItemCard({
             author={item.author}
             text={item.text}
             images={item.images}
+            video={item.video}
+            onPress={isInteractiveTweet && onPress ? () => onPress(item) : undefined}
+            onLongPress={isInteractiveTweet && onLongPress ? () => onLongPress(item) : undefined}
           />
         );
       case 'reddit':
@@ -74,6 +82,47 @@ export const ItemCard = memo(function ItemCard({
     }
   };
 
+  const cardBody = (
+    <View
+      className="w-full relative"
+      style={
+        isSelected
+          ? {
+              shadowColor: '#3b82f6',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.4,
+              shadowRadius: 8,
+              elevation: 8,
+            }
+          : undefined
+      }
+    >
+      <View className="w-full overflow-hidden">{renderCardContent()}</View>
+
+      {isSelected && (
+        <View pointerEvents="none" className="absolute inset-0 border-[3px] border-blue-500 z-10" />
+      )}
+
+      {isEditing && (
+        <View className="absolute top-5 right-5 z-20">
+          <View
+            className={`w-6 h-6 rounded-full items-center justify-center ${
+              isSelected
+                ? 'bg-blue-500 border-2 border-blue-500'
+                : 'bg-zinc-900 border-2 border-white'
+            }`}
+          >
+            {isSelected && <CheckIcon size={12} color="#ffffff" weight="bold" />}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  if (isInteractiveTweet) {
+    return <View className="w-full">{cardBody}</View>;
+  }
+
   return (
     <Pressable
       onPress={onPress ? () => onPress(item) : undefined}
@@ -84,43 +133,7 @@ export const ItemCard = memo(function ItemCard({
       }
       className="w-full"
     >
-      <View
-        className="w-full relative"
-        style={
-          isSelected
-            ? {
-                shadowColor: '#3b82f6',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.4,
-                shadowRadius: 8,
-                elevation: 8,
-              }
-            : undefined
-        }
-      >
-        <View className="w-full rounded-2xl overflow-hidden">{renderCardContent()}</View>
-
-        {isSelected && (
-          <View
-            pointerEvents="none"
-            className="absolute inset-0 rounded-2xl border-[3px] border-blue-500 z-10"
-          />
-        )}
-
-        {isEditing && (
-          <View className="absolute top-5 right-5 z-20">
-            <View
-              className={`w-6 h-6 rounded-full items-center justify-center ${
-                isSelected
-                  ? 'bg-blue-500 border-2 border-blue-500'
-                  : 'bg-zinc-900 border-2 border-white'
-              }`}
-            >
-              {isSelected && <CheckIcon size={12} color="#ffffff" weight="bold" />}
-            </View>
-          </View>
-        )}
-      </View>
+      {cardBody}
     </Pressable>
   );
 });

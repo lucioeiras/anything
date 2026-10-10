@@ -2,10 +2,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import {
   BookIcon,
+  BookOpenIcon,
+  CheckSquareIcon,
   ImageSquareIcon,
+  LightbulbIcon,
   LinkIcon,
+  NoteIcon,
   NotePencilIcon,
-  PlusCircleIcon,
+  QuotesIcon,
+  RedditLogoIcon,
+  XLogoIcon,
+  YoutubeLogoIcon,
 } from 'phosphor-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
@@ -64,59 +71,64 @@ export default function AddElementScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-40"
+      className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-24"
       edges={['top']}
     >
-      <View className="h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900 mb-8">
-        <PlusCircleIcon size={32} color="#3b82f6" weight="duotone" />
+      <View className="flex-row items-center justify-center gap-3">
+        <NoteIcon size={20} color="#3b82f6" weight="duotone" />
+        <LightbulbIcon size={20} color="#3b82f6" weight="duotone" />
+        <CheckSquareIcon size={20} color="#3b82f6" weight="duotone" />
+        <QuotesIcon size={20} color="#3b82f6" weight="duotone" />
+        <ImageSquareIcon size={20} color="#3b82f6" weight="duotone" />
+        <LinkIcon size={20} color="#3b82f6" weight="duotone" />
+        <RedditLogoIcon size={20} color="#3b82f6" weight="duotone" />
+        <XLogoIcon size={20} color="#3b82f6" weight="duotone" />
+        <BookOpenIcon size={20} color="#3b82f6" weight="duotone" />
+        <YoutubeLogoIcon size={20} color="#3b82f6" weight="duotone" />
       </View>
 
-      <Text className="font-sans-medium text-2xl text-white text-center w-full">
-        Save <Text className="font-serif-italic text-2xl text-blue-500 text-center"> anything</Text>{' '}
-        you want
+      <Text className="font-sans-medium text-2xl text-white text-center w-full mt-6">
+        Save <Text className="text-2xl text-blue-500 text-center"> anything</Text> you want
       </Text>
       <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-80">
         You can add notes, to-do's, quotes, links, X posts and Reddit posts, articles, books or
         YouTube vídeos
       </Text>
 
-      <View className="mt-8 gap-4">
+      <View className="mt-12 gap-4">
         <View className="flex-row flex-wrap justify-center gap-4">
           <Pressable
             onPress={handleOpenNote}
-            className="p-6 max-w-80 justify-between h-40 w-40 bg-white rounded-xl active:opacity-80"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-white active:opacity-80"
           >
-            <NotePencilIcon size={24} color="#000" />
+            <NotePencilIcon size={24} color="#000" weight="duotone" />
             <Text className="font-sans-semibold text-lg text-zinc-950">Note, quote or to-do</Text>
           </Pressable>
 
           <Pressable
             onPress={handleOpenLink}
-            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl active:opacity-80"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
           >
-            <LinkIcon size={24} color="#fff" />
+            <LinkIcon size={24} color="#fff" weight="duotone" />
             <Text className="font-sans-semibold text-lg text-white">Link from anywhere</Text>
           </Pressable>
         </View>
 
         <View className="flex-row flex-wrap justify-center gap-4">
-          <Pressable
-            // onPress={changeFolder}
-            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl"
-          >
-            <BookIcon size={24} color="#fff" />
+          <Pressable className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900">
+            <BookIcon size={24} color="#fff" weight="duotone" />
             <Text className="font-sans-semibold text-lg text-white">Book for the library</Text>
           </Pressable>
 
           <Pressable
             onPress={handlePickImage}
             disabled={isPicking}
-            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-800 rounded-xl active:opacity-70"
+            className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70"
           >
             {isPicking ? (
               <ActivityIndicator size={24} color="#fff" />
             ) : (
-              <ImageSquareIcon size={24} color="#fff" />
+              <ImageSquareIcon size={24} color="#fff" weight="duotone" />
             )}
             <Text className="font-sans-semibold text-lg text-white">Image from gallery</Text>
           </Pressable>

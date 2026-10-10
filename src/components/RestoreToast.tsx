@@ -1,7 +1,6 @@
 import { ArrowCounterClockwiseIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 
 type RestoreToastProps = {
@@ -15,7 +14,6 @@ const STROKE_WIDTH = 3.5;
 const DURATION_MS = 5000;
 
 export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreToastProps) {
-  const insets = useSafeAreaInsets();
   const [layout, setLayout] = useState({ width: 0, height: 0 });
   const [progress, setProgress] = useState(1);
   const onDismissRef = useRef(onDismiss);
@@ -82,7 +80,7 @@ export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreTo
 
   return (
     <View
-      style={{ bottom: Math.max(insets.bottom + 64, 80) }}
+      style={{ bottom: 64 }}
       className="absolute left-4 right-4 z-40 items-center"
       pointerEvents="box-none"
     >

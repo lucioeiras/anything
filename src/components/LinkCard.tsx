@@ -1,3 +1,4 @@
+import { decodeHTML } from 'entities';
 import { Image as ExpoImage } from 'expo-image';
 import { cssInterop } from 'nativewind';
 import { LinkIcon } from 'phosphor-react-native';
@@ -30,16 +31,16 @@ export const LinkCard = ({ favicon, siteTitle, description, url }: LinkCardProps
   };
 
   return (
-    <View className="w-full bg-zinc-900 p-5 rounded-xl gap-4">
+    <View className="w-full p-7 gap-4">
       <ExpoImage source={{ uri: favicon }} className="w-8 h-8 rounded-full" />
 
       <View className="gap-2">
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
-          {siteTitle}
+          {decodeHTML(siteTitle)}
         </Text>
 
         <Text className="font-sans text-xs leading-[1.8] text-zinc-300" numberOfLines={4}>
-          {description}
+          {decodeHTML(description)}
         </Text>
       </View>
 

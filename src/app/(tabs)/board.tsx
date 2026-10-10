@@ -1,7 +1,16 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { PlusIcon, WarningIcon } from 'phosphor-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,16 +22,27 @@ import {
 } from 'react-native';
 
 import { CardSelectionBar } from '@/components/CardSelectionBar';
-import { FloatingSearchBar } from '@/components/FloatingSearchBar';
 import { ItemCard } from '@/components/ItemCard';
 import { NewImageModal } from '@/components/NewImageModal';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewNoteModal } from '@/components/NewNoteModal';
-import { ProgressiveBlur } from '@/components/ProgressiveBlur';
 import { RestoreToast } from '@/components/RestoreToast';
+import { SearchBar } from '@/components/SearchBar';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { DeletedItemBackup, PickedImageAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
+
+type BoardGridContextType = {
+  lastIndices: { col0: number; col1: number };
+  totalItems: number;
+  reportItemCol: (index: number, col: number) => void;
+};
+
+const BoardGridContext = createContext<BoardGridContextType>({
+  lastIndices: { col0: -1, col1: -1 },
+  totalItems: 0,
+  reportItemCol: () => {},
+});
 
 export default function BoardScreen() {
   const {
@@ -52,6 +72,11 @@ export default function BoardScreen() {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
+  const itemColsRef = useRef<Map<number, number>>(new Map());
+  const [lastIndices, setLastIndices] = useState<{ col0: number; col1: number }>({
+    col0: -1,
+    col1: -1,
+  });
   const lastOpenedNoteRef = useRef<string | null>(null);
   const lastOpenedLinkRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
@@ -180,9 +205,43 @@ export default function BoardScreen() {
     return searchItems({ searchQuery });
   }, [state, isSearching, searchQuery, searchItems]);
 
+  const reportItemCol = useCallback(
+    (index: number, col: number) => {
+      itemColsRef.current.set(index, col);
+      const total = displayedItems.length;
+      if (total === 0) return;
+
+      if (index >= total - 2) {
+        let col0 = -1;
+        let col1 = -1;
+        for (let i = total - 1; i >= 0; i--) {
+          const c = itemColsRef.current.get(i);
+          if (c === 0 && col0 === -1) col0 = i;
+          if (c === 1 && col1 === -1) col1 = i;
+          if (col0 !== -1 && col1 !== -1) break;
+        }
+
+        setLastIndices((prev) => {
+          if (prev.col0 === col0 && prev.col1 === col1) return prev;
+          return { col0, col1 };
+        });
+      }
+    },
+    [displayedItems.length]
+  );
+
+  const gridContextValue = useMemo(
+    () => ({
+      lastIndices,
+      totalItems: displayedItems.length,
+      reportItemCol,
+    }),
+    [lastIndices, displayedItems.length, reportItemCol]
+  );
+
   const extraData = useMemo(
-    () => ({ isEditing, selectedCardIds, searchQuery }),
-    [isEditing, selectedCardIds, searchQuery]
+    () => ({ isEditing, selectedCardIds, searchQuery, lastIndices }),
+    [isEditing, selectedCardIds, searchQuery, lastIndices]
   );
 
   const renderItem = useCallback(
@@ -277,34 +336,33 @@ export default function BoardScreen() {
       )}
 
       {state.status === 'ready' && (
-        <>
-          <FlashList<LibraryItem>
-            data={displayedItems}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            numColumns={2}
-            masonry
-            optimizeItemArrangement
-            extraData={extraData}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
-            }
-            ListHeaderComponent={renderHeader}
-            ListEmptyComponent={renderEmpty}
-          />
+        <View className="flex-1">
+          <View className="flex-1">
+            <BoardGridContext.Provider value={gridContextValue}>
+              <FlashList<LibraryItem>
+                data={displayedItems}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                numColumns={2}
+                masonry
+                optimizeItemArrangement
+                extraData={extraData}
+                CellRendererComponent={CellRenderer}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
+                }
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={renderEmpty}
+              />
+            </BoardGridContext.Provider>
+          </View>
 
-          {displayedItems.length > 0 && <ProgressiveBlur />}
-
-          <FloatingSearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            visible={!isEditing}
-          />
-        </>
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} visible={!isEditing} />
+        </View>
       )}
 
       <NewNoteModal visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
@@ -335,6 +393,47 @@ export default function BoardScreen() {
   );
 }
 
+type CellRendererProps = {
+  style?: {
+    left?: number;
+    [key: string]: any;
+  };
+  children?: React.ReactNode;
+  index?: number;
+  [key: string]: any;
+};
+
+const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
+  const { style, children, index, ...rest } = props;
+  const { lastIndices, totalItems, reportItemCol } = useContext(BoardGridContext);
+  const isLeftColumn = !style?.left || style.left < 1;
+
+  useEffect(() => {
+    if (typeof index === 'number') {
+      reportItemCol(index, isLeftColumn ? 0 : 1);
+    }
+  }, [index, isLeftColumn, reportItemCol]);
+
+  const isLast =
+    typeof index === 'number' &&
+    (totalItems <= 2 ||
+      index === totalItems - 1 ||
+      index === lastIndices.col0 ||
+      index === lastIndices.col1);
+
+  return (
+    <View
+      ref={ref}
+      {...rest}
+      style={[style, !isLast && styles.cell, isLeftColumn && styles.leftCell]}
+    >
+      {children}
+    </View>
+  );
+});
+
+CellRenderer.displayName = 'CellRenderer';
+
 function Centered({
   title,
   message,
@@ -359,14 +458,21 @@ function keyExtractor(item: LibraryItem): string {
 
 const styles = StyleSheet.create({
   contentContainer: {
-    paddingHorizontal: 4,
-    paddingTop: 80,
-    paddingBottom: 192,
+    paddingTop: 56,
+    paddingBottom: 0,
     flexGrow: 1,
   },
+  cell: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#27272A',
+  },
+  leftCell: {
+    borderRightWidth: 1,
+    borderRightColor: '#27272A',
+  },
   cardWrapper: {
-    paddingHorizontal: 8,
-    paddingBottom: 16,
+    width: '100%',
+    overflow: 'hidden',
   },
   headerWrapper: {
     paddingHorizontal: 8,
