@@ -240,8 +240,14 @@ export default function BoardScreen() {
   );
 
   const extraData = useMemo(
-    () => ({ isEditing, selectedCardIds, searchQuery, lastIndices }),
-    [isEditing, selectedCardIds, searchQuery, lastIndices]
+    () => ({
+      isEditing,
+      selectedCardIds,
+      searchQuery,
+      lastIndices,
+      totalItems: displayedItems.length,
+    }),
+    [isEditing, selectedCardIds, searchQuery, lastIndices, displayedItems.length]
   );
 
   const renderItem = useCallback(
@@ -414,9 +420,12 @@ const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
     }
   }, [index, isLeftColumn, reportItemCol]);
 
+  const hasMultipleItems = totalItems > 1;
+
   const isLast =
     typeof index === 'number' &&
-    (totalItems <= 2 ||
+    (!hasMultipleItems ||
+      totalItems <= 2 ||
       index === totalItems - 1 ||
       index === lastIndices.col0 ||
       index === lastIndices.col1);
@@ -425,7 +434,11 @@ const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
     <View
       ref={ref}
       {...rest}
-      style={[style, !isLast && styles.cell, isLeftColumn && styles.leftCell]}
+      style={[
+        style,
+        hasMultipleItems && !isLast && styles.cell,
+        hasMultipleItems && isLeftColumn && styles.leftCell,
+      ]}
     >
       {children}
     </View>
