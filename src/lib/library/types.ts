@@ -35,6 +35,12 @@ type BaseItem = {
   note?: string;
 };
 
+/** A personal review score from 0.5 to 7, in half-star increments. */
+export type MediaReview = {
+  rating: number;
+  comments?: string;
+};
+
 export type NoteItem = BaseItem & { type: 'note'; text: string; title?: string };
 export type QuoteItem = BaseItem & { type: 'quote'; text: string; title?: string };
 export type ImageItem = BaseItem & {
@@ -108,6 +114,7 @@ export type RedditItem = BaseItem & {
 
 export type BookItem = BaseItem & {
   type: 'book';
+  review?: MediaReview;
   progressStatus?: MediaProgressStatus;
   isbn: string;
   title: string;
@@ -136,6 +143,7 @@ export type MusicItem = BaseItem & {
 
 export type MovieItem = BaseItem & {
   type: 'movie';
+  review?: MediaReview;
   progressStatus?: MediaProgressStatus;
   tmdbId: number;
   title: string;
@@ -159,6 +167,7 @@ export type MovieItem = BaseItem & {
 
 export type GameItem = BaseItem & {
   type: 'game';
+  review?: MediaReview;
   progressStatus?: MediaProgressStatus;
   rawgId?: number;
   title: string;
