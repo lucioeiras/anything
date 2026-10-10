@@ -1,4 +1,13 @@
-import { HashIcon, TagIcon, XIcon } from 'phosphor-react-native';
+import {
+  ArrowsClockwiseIcon,
+  BookmarkSimpleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  HashIcon,
+  ProhibitIcon,
+  TagIcon,
+  XIcon,
+} from 'phosphor-react-native';
 import { useRef, useState } from 'react';
 import {
   type LayoutChangeEvent,
@@ -56,6 +65,14 @@ export type TagsBoxProps = {
   onLayout?: (e: LayoutChangeEvent) => void;
   /** Custom wrapper around each tag pill */
   renderTagWrapper?: (tag: string, index: number, children: React.ReactNode) => React.ReactNode;
+  /** A prominent, non-removable pill displayed before the regular tags. */
+  priorityTag?: {
+    label: string;
+    tone: 'blue' | 'amber' | 'emerald' | 'zinc';
+    icon: 'want' | 'in-progress' | 'completed' | 'abandoned';
+    onPress?: () => void;
+    accessibilityLabel?: string;
+  };
 };
 
 export function TagsBox({
@@ -81,6 +98,7 @@ export function TagsBox({
   onInputFocus,
   onLayout,
   renderTagWrapper,
+  priorityTag,
 }: TagsBoxProps) {
   const fallbackInputRef = useRef<TextInput>(null);
   const effectiveInputRef = inputRef ?? fallbackInputRef;
@@ -172,6 +190,19 @@ export function TagsBox({
 
   const baseContainerClass =
     containerClassName ?? className ?? 'py-6 px-8 border-b border-zinc-800 gap-4';
+  const priorityTagStyles = {
+    blue: { container: 'bg-blue-500/15', text: 'text-blue-300', icon: '#93C5FD' },
+    amber: { container: 'bg-amber-400/15', text: 'text-amber-200', icon: '#FCD34D' },
+    emerald: { container: 'bg-emerald-400/15', text: 'text-emerald-200', icon: '#6EE7B7' },
+    zinc: { container: 'bg-zinc-700/60', text: 'text-zinc-300', icon: '#A1A1AA' },
+  } as const;
+  const priorityTagIcons = {
+    want: BookmarkSimpleIcon,
+    'in-progress': ClockIcon,
+    completed: CheckCircleIcon,
+    abandoned: ProhibitIcon,
+  } as const;
+  const PriorityTagIcon = priorityTag ? priorityTagIcons[priorityTag.icon] : null;
 
   return (
     <View onLayout={onLayout} className={baseContainerClass}>
@@ -194,6 +225,27 @@ export function TagsBox({
         }}
         className="w-full flex-row flex-wrap gap-y-3 items-center gap-2 min-h-[28px]"
       >
+        {priorityTag && PriorityTagIcon ? (
+          <Pressable
+            onPress={priorityTag.onPress}
+            accessibilityRole={priorityTag.onPress ? 'button' : undefined}
+            accessibilityLabel={priorityTag.accessibilityLabel ?? priorityTag.label}
+            className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 active:opacity-70 ${priorityTagStyles[priorityTag.tone].container}`}
+          >
+            <PriorityTagIcon
+              size={14}
+              color={priorityTagStyles[priorityTag.tone].icon}
+              weight="bold"
+            />
+            <Text
+              className={`font-sans-medium text-base ${priorityTagStyles[priorityTag.tone].text}`}
+            >
+              {priorityTag.label}
+            </Text>
+            <ArrowsClockwiseIcon size={12} color={priorityTagStyles[priorityTag.tone].icon} />
+          </Pressable>
+        ) : null}
+
         {tags.map((tag, idx) => {
           const isAuto = autoTags?.includes(tag);
 
@@ -210,16 +262,16 @@ export function TagsBox({
               onLongPress={onTagLongPress ? () => onTagLongPress(tag, idx) : undefined}
               delayLongPress={250}
               className={`flex-row items-center gap-2 rounded-full px-3 py-1 active:opacity-70 ${
-                isAuto ? 'bg-white' : 'bg-blue-500/15'
+                isAuto ? 'bg-zinc-500/15' : 'bg-blue-500/15'
               }`}
             >
-              <HashIcon size={12} color={isAuto ? '#52525C' : '#60A5FA'} weight="bold" />
+              <HashIcon size={12} color={isAuto ? '#A1A1AA' : '#60A5FA'} weight="bold" />
               <Text
-                className={`font-sans-medium text-base ${isAuto ? 'text-black' : 'text-blue-400'}`}
+                className={`font-sans-medium text-base ${isAuto ? 'text-zinc-300' : 'text-blue-400'}`}
               >
                 {tag}
               </Text>
-              {showRemoveIcon && <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />}
+              {showRemoveIcon && <XIcon size={14} color={isAuto ? '#A1A1AA' : '#60A5FA'} />}
             </Pressable>
           );
 
