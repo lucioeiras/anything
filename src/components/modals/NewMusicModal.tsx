@@ -253,21 +253,21 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
 
             {/* Selected Track Banner or Search Input */}
             {selectedTrack ? (
-              <View className="mx-8 p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex-row items-center gap-4">
+              <View className="px-8 py-6 border-t border-b border-zinc-800 flex-row items-center gap-6">
                 <ExpoImage
                   source={{ uri: selectedTrack.cover }}
-                  className="w-16 h-16 rounded-lg bg-zinc-800"
+                  className="w-24 h-24 rounded-lg bg-zinc-800"
                   contentFit="cover"
                 />
-                <View className="flex-1">
-                  <Text className="font-sans-semibold text-base text-white" numberOfLines={1}>
+                <View className="flex-1 gap-2">
+                  <Text className="font-sans-semibold text-lg text-white" numberOfLines={1}>
                     {selectedTrack.title}
                   </Text>
-                  <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
+                  <Text className="font-sans text-base text-zinc-300" numberOfLines={1}>
                     {selectedTrack.artist}
                   </Text>
                   {selectedTrack.album && (
-                    <Text className="font-sans text-xs text-zinc-500 mt-0.5" numberOfLines={1}>
+                    <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
                       {selectedTrack.album}
                       {selectedTrack.releaseDate &&
                         ` • ${formatReleaseYear(selectedTrack.releaseDate)}`}
@@ -326,7 +326,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                   <Pressable
                     key={item.trackId}
                     onPress={() => handleSelectTrack(item)}
-                    className="flex-row items-center gap-4 px-8 py-3.5 border-b border-zinc-900 active:bg-zinc-900"
+                    className="flex-row items-center gap-5 px-8 py-4 border-b border-zinc-900 active:bg-zinc-900"
                   >
                     <View className="w-12 h-12 rounded-md bg-zinc-800 overflow-hidden">
                       {item.cover ? (
@@ -373,7 +373,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
 
             {/* Details Section when a track is selected */}
             {selectedTrack && (
-              <View className="mt-6">
+              <View>
                 {/* Tags section */}
                 <TagsBox
                   tags={tags}
