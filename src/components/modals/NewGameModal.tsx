@@ -5,7 +5,6 @@ import {
   GameControllerIcon,
   MagnifyingGlassIcon,
   NotePencilIcon,
-  StarIcon,
   XIcon,
 } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -110,8 +109,10 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
 
   const handleClose = () => {
     if (saving) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     setSearchQuery('');
     setResults([]);
+    setSearching(false);
     setSelectedGame(null);
     setErrorMessage(null);
     setTags([]);
@@ -137,9 +138,6 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
     try {
       const searchRes = await searchRawgGames(clean, 15);
       setResults(searchRes);
-      if (searchRes.length === 0) {
-        setErrorMessage(`No games found for "${clean}".`);
-      }
     } catch (e: any) {
       setResults([]);
       setErrorMessage(e instanceof Error ? e.message : 'Failed to search games.');
@@ -153,12 +151,15 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
     if (!text.trim()) {
       setResults([]);
       setErrorMessage(null);
+      setSearching(false);
       if (searchDebounceRef.current) {
         clearTimeout(searchDebounceRef.current);
       }
       return;
     }
 
+    setSearching(true);
+    setErrorMessage(null);
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current);
     }
@@ -172,6 +173,9 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
     setSearchQuery('');
     setResults([]);
     setErrorMessage(null);
+    setSearching(false);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    inputRef.current?.focus();
   };
 
   const handleSelectGame = async (game: RawgGameResult) => {
@@ -289,59 +293,83 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add a new game</Text>
+              <Text className="font-sans-semibold text-2xl text-white">Add game</Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search for any video game to automatically fetch its artwork, platforms, release
-                year, and ratings.
+                Search games from RAWG to add them to your library.
               </Text>
             </View>
 
-            {/* Game Search Input Section */}
-            <View className="flex-row items-center gap-3 py-5 px-8 border-t border-b border-zinc-800">
-              <GameControllerIcon size={22} color="#D4D4D8" />
+            {/* Selected Game Banner or Search Input */}
+            {selectedGame ? (
+              <View className="px-8 py-6 border-t border-b border-zinc-800 flex-row items-center gap-6">
+                <View className="w-24 h-16 rounded-lg bg-zinc-800 overflow-hidden items-center justify-center">
+                  {selectedGame.background_image ? (
+                    <ExpoImage
+                      source={{ uri: selectedGame.background_image }}
+                      className="w-full h-full"
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <GameControllerIcon size={24} color="#71717A" weight="duotone" />
+                  )}
+                </View>
+                <View className="flex-1 gap-2">
+                  <Text className="font-sans-semibold text-lg text-white" numberOfLines={2}>
+                    {decodeHTML(selectedGame.name)}
+                  </Text>
+                  <Text className="font-sans text-base text-zinc-400" numberOfLines={1}>
+                    {extractReleaseYear(selectedGame.released) || '—'}
+                    {selectedGame.metacritic ? ` • Metacritic ${selectedGame.metacritic}` : ''}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    setSelectedGame(null);
+                    clearAutoTags();
+                  }}
+                  hitSlop={10}
+                  className="p-2 rounded-full bg-zinc-800 active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Change game"
+                >
+                  <XIcon size={16} color="#E4E4E7" weight="bold" />
+                </Pressable>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-4 py-5 px-8 border-t border-b border-zinc-800">
+                <MagnifyingGlassIcon size={20} color="#D4D4D8" />
 
-              <TextInput
-                ref={inputRef}
-                value={searchQuery}
-                onChangeText={handleQueryChange}
-                placeholder="Game title (e.g. Witcher, Zelda, Elden Ring)"
-                placeholderTextColor="#71717A"
-                autoCapitalize="words"
-                autoCorrect={false}
-                returnKeyType="search"
-                onSubmitEditing={() => executeSearch(searchQuery)}
-                className="flex-1 font-sans text-xl text-white leading-tight"
-                style={styles.borderlessInput}
-                underlineColorAndroid="transparent"
-                clearButtonMode="never"
-              />
+                <TextInput
+                  ref={inputRef}
+                  value={searchQuery}
+                  onChangeText={handleQueryChange}
+                  placeholder="Search game title..."
+                  placeholderTextColor="#71717A"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                  onSubmitEditing={() => executeSearch(searchQuery)}
+                  className="flex-1 font-sans text-xl text-white leading-tight"
+                  style={styles.borderlessInput}
+                  underlineColorAndroid="transparent"
+                  clearButtonMode="never"
+                />
 
-              {searching ? (
-                <ActivityIndicator size={18} color="#10B981" />
-              ) : searchQuery.length > 0 ? (
-                <View className="flex-row items-center gap-2">
-                  <Pressable
-                    onPress={() => executeSearch(searchQuery)}
-                    hitSlop={8}
-                    className="p-1.5 rounded-full bg-emerald-500/20 items-center justify-center active:opacity-70"
-                    accessibilityRole="button"
-                    accessibilityLabel="Search game"
-                  >
-                    <MagnifyingGlassIcon size={16} color="#10B981" weight="bold" />
-                  </Pressable>
-
+                {searching ? (
+                  <ActivityIndicator size={16} color="#A1A1AA" />
+                ) : searchQuery.length > 0 ? (
                   <Pressable
                     onPress={handleClearSearch}
-                    hitSlop={8}
+                    hitSlop={10}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
-                </View>
-              ) : null}
-            </View>
+                ) : null}
+              </View>
+            )}
 
             {/* Error Message */}
             {errorMessage && (
@@ -353,11 +381,8 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
             )}
 
             {/* Search Results List */}
-            {!selectedGame && results.length > 0 && (
-              <View className="mx-8 my-4 gap-2.5">
-                <Text className="font-sans-medium text-xs uppercase tracking-wider text-zinc-400">
-                  {results.length} {results.length === 1 ? 'game found' : 'games found'}
-                </Text>
+            {!selectedGame && (
+              <View className="w-full">
                 {results.map((item) => {
                   const year = extractReleaseYear(item.released);
                   const platforms = (item.platforms || [])
@@ -369,196 +394,92 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
                     <Pressable
                       key={item.id}
                       onPress={() => handleSelectGame(item)}
-                      className="flex-row items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800/90"
+                      className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-800 active:bg-zinc-900"
                     >
-                      {item.background_image ? (
-                        <ExpoImage
-                          source={{ uri: item.background_image }}
-                          className="w-16 h-16 rounded-xl bg-zinc-950"
-                          contentFit="cover"
-                          transition={150}
-                        />
-                      ) : (
-                        <View className="w-16 h-16 rounded-xl bg-zinc-950 items-center justify-center border border-zinc-800">
+                      <View className="w-24 h-16 rounded-md bg-zinc-800 overflow-hidden items-center justify-center">
+                        {item.background_image ? (
+                          <ExpoImage
+                            source={{ uri: item.background_image }}
+                            className="w-full h-full"
+                            contentFit="cover"
+                          />
+                        ) : (
                           <GameControllerIcon size={24} color="#71717A" weight="duotone" />
-                        </View>
-                      )}
+                        )}
+                      </View>
 
-                      <View className="flex-1 gap-1">
+                      <View className="flex-1 gap-1.5">
                         <Text
-                          className="font-sans-semibold text-base text-white leading-tight"
+                          className="font-sans-medium text-base text-zinc-100"
                           numberOfLines={1}
                         >
                           {decodeHTML(item.name)}
                         </Text>
-
-                        <View className="flex-row items-center gap-2">
-                          {year ? (
-                            <Text className="font-sans text-xs text-zinc-400">{year}</Text>
-                          ) : null}
-
-                          {item.metacritic ? (
-                            <View className="px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-500/40">
-                              <Text className="font-sans-bold text-[10px] text-emerald-400">
-                                {item.metacritic}
-                              </Text>
-                            </View>
-                          ) : item.rating > 0 ? (
-                            <View className="flex-row items-center gap-1">
-                              <StarIcon size={11} color="#FBBF24" weight="fill" />
-                              <Text className="font-sans text-xs text-amber-300">
-                                {item.rating.toFixed(1)}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
-
-                        {platforms.length > 0 && (
-                          <View className="flex-row items-center gap-1 mt-0.5">
-                            {platforms.map((plat) => (
-                              <View
-                                key={plat}
-                                className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/40"
-                              >
-                                <Text
-                                  className="font-sans text-[10px] text-zinc-400"
-                                  numberOfLines={1}
-                                >
-                                  {plat}
-                                </Text>
-                              </View>
-                            ))}
-                          </View>
-                        )}
+                        <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
+                          {year || '—'}
+                          {platforms.length > 0 ? ` • ${platforms.join(', ')}` : ''}
+                        </Text>
                       </View>
                     </Pressable>
                   );
                 })}
-              </View>
-            )}
 
-            {/* Selected Game Preview Section */}
-            {selectedGame && (
-              <View className="mx-8 my-4 p-5 rounded-2xl bg-zinc-900 border border-zinc-800 gap-4">
-                <View className="flex-row gap-4">
-                  {selectedGame.background_image ? (
-                    <ExpoImage
-                      source={{ uri: selectedGame.background_image }}
-                      className="w-24 h-32 rounded-lg bg-zinc-950"
-                      contentFit="cover"
-                      transition={200}
-                    />
-                  ) : (
-                    <View className="w-24 h-32 rounded-lg bg-emerald-950/40 items-center justify-center border border-emerald-900/40">
-                      <GameControllerIcon size={32} color="#10B981" weight="duotone" />
+                {results.length === 0 &&
+                  searchQuery.trim().length > 1 &&
+                  !searching &&
+                  !errorMessage && (
+                    <View className="py-12 items-center justify-center">
+                      <GameControllerIcon size={32} color="#52525B" weight="duotone" />
+                      <Text className="font-sans text-sm text-zinc-500 mt-3">
+                        No games found for "{searchQuery}"
+                      </Text>
                     </View>
                   )}
-
-                  <View className="flex-1 justify-center gap-1.5">
-                    <Text
-                      className="font-sans-medium text-lg text-white leading-snug"
-                      numberOfLines={2}
-                    >
-                      {decodeHTML(selectedGame.name)}
-                    </Text>
-
-                    <View className="flex-row flex-wrap items-center gap-2">
-                      {extractReleaseYear(selectedGame.released) ? (
-                        <Text className="font-sans text-xs text-zinc-400">
-                          {extractReleaseYear(selectedGame.released)}
-                        </Text>
-                      ) : null}
-
-                      {selectedGame.metacritic ? (
-                        <View className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40">
-                          <Text className="font-sans-bold text-[10px] text-emerald-400">
-                            Metacritic {selectedGame.metacritic}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-
-                    {(selectedGame.platforms || []).length > 0 && (
-                      <View className="flex-row flex-wrap gap-1 mt-1">
-                        {(selectedGame.platforms || []).slice(0, 4).map((p) => (
-                          <View
-                            key={p.platform?.id}
-                            className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/50"
-                          >
-                            <Text className="font-sans text-[10px] text-zinc-400">
-                              {p.platform?.name}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {'description' in selectedGame && selectedGame.description ? (
-                  <Text
-                    className="font-sans text-xs text-zinc-400 leading-relaxed"
-                    numberOfLines={4}
-                  >
-                    {selectedGame.description}
-                  </Text>
-                ) : null}
-
-                <Pressable
-                  onPress={() => {
-                    setSelectedGame(null);
-                    clearAutoTags();
-                  }}
-                  className="self-start pt-1 active:opacity-70"
-                >
-                  <Text className="font-sans-medium text-xs text-blue-400 underline">
-                    Choose a different game
-                  </Text>
-                </Pressable>
               </View>
             )}
 
-            {/* Tags section */}
-            <TagsBox
-              tags={tags}
-              autoTags={autoTags}
-              onTagsChange={setTags}
-              onAutoTagsChange={setAutoTags}
-              tagInput={tagInput}
-              onTagInputChange={setTagInput}
-              inputRef={tagsInputRef}
-              onSubmitEditing={() => {
-                noteInputRef.current?.focus();
-              }}
-              onRemoveTag={(removed) => {
-                autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
-              }}
-            />
-
-            {/* Notes section */}
-            <View className="flex-1 py-6 px-8 gap-4">
-              <View className="flex-row items-center gap-2">
-                <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
-                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
-                </Text>
-              </View>
-
-              <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
-                <TextInput
-                  ref={noteInputRef}
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Add a personal note about this game..."
-                  placeholderTextColor="#71717A"
-                  multiline
-                  textAlignVertical="top"
-                  className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[96px]"
-                  style={styles.borderlessInput}
-                  underlineColorAndroid="transparent"
+            {/* Details Section when a game is selected */}
+            {selectedGame && (
+              <View>
+                <TagsBox
+                  tags={tags}
+                  autoTags={autoTags}
+                  onTagsChange={setTags}
+                  onAutoTagsChange={setAutoTags}
+                  tagInput={tagInput}
+                  onTagInputChange={setTagInput}
+                  inputRef={tagsInputRef}
+                  onSubmitEditing={() => noteInputRef.current?.focus()}
+                  onRemoveTag={(removed) => {
+                    autoTagsRef.current = autoTagsRef.current.filter((tag) => tag !== removed);
+                  }}
                 />
-              </Pressable>
-            </View>
+
+                <View className="py-6 px-8 gap-4 border-t border-zinc-800">
+                  <View className="flex-row items-center gap-2">
+                    <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                    <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                      Note
+                    </Text>
+                  </View>
+
+                  <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
+                    <TextInput
+                      ref={noteInputRef}
+                      value={note}
+                      onChangeText={setNote}
+                      placeholder="Add personal thoughts or notes about this game..."
+                      placeholderTextColor="#71717A"
+                      multiline
+                      textAlignVertical="top"
+                      className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[96px]"
+                      style={styles.borderlessInput}
+                      underlineColorAndroid="transparent"
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            )}
           </ScrollView>
 
           {/* Action buttons at the bottom */}
@@ -582,20 +503,19 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
                 hitSlop={12}
                 className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
                 accessibilityRole="button"
-                accessibilityLabel="Add to library"
+                accessibilityLabel="Save game"
               >
                 {saving ? (
-                  <ActivityIndicator size={24} color="#FFFFFF" />
+                  <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
                 ) : (
-                  <>
-                    <CheckIcon size={24} color={canSave ? '#FFFFFF' : '#71717A'} weight="bold" />
-                    <Text
-                      className={`font-sans-bold text-xl ${canSave ? 'text-white' : 'text-zinc-500'}`}
-                    >
-                      Add to library
-                    </Text>
-                  </>
+                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
                 )}
+
+                <Text
+                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                >
+                  Save game
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -608,14 +528,16 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
     backgroundColor: '#09090B',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingVertical: 20,
+    paddingBottom: 40,
   },
   borderlessInput: {
-    paddingTop: 0,
-    paddingBottom: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
 });

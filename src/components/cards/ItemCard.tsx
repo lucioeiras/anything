@@ -114,17 +114,7 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'game':
-        return (
-          <GameCard
-            title={item.title}
-            cover={item.cover}
-            platforms={item.platforms}
-            genres={item.genres}
-            releaseYear={item.releaseYear}
-            rating={item.rating}
-            metacritic={item.metacritic}
-          />
-        );
+        return <GameCard title={item.title} cover={item.cover} />;
     }
   };
 

@@ -863,15 +863,7 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
             {/* If it's a game: show the game card */}
             {item.type === 'game' && (
               <View className="w-full max-w-sm overflow-hidden bg-zinc-950 border border-zinc-800">
-                <GameCard
-                  title={title || item.title}
-                  cover={item.cover}
-                  platforms={item.platforms}
-                  genres={item.genres}
-                  releaseYear={item.releaseYear}
-                  rating={item.rating}
-                  metacritic={item.metacritic}
-                />
+                <GameCard title={title || item.title} cover={item.cover} />
               </View>
             )}
 
