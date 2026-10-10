@@ -195,7 +195,6 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 className="w-full font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
-                multiline
               />
             </View>
 
