@@ -1,22 +1,22 @@
 import { Image as ExpoImage } from 'expo-image';
-import { CheckIcon, NotePencilIcon, TagIcon, TextTIcon, XIcon } from 'phosphor-react-native';
+import { CheckIcon, NotePencilIcon, TextTIcon, XIcon } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedImageAsset } from '@/lib/library/storage';
@@ -176,69 +176,6 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
     }
   };
 
-  const handleTagInputChange = (textValue: string) => {
-    if (textValue.includes(' ') || textValue.includes(',')) {
-      const parts = textValue.split(/[\s,]+/);
-      const endsWithDelimiter = textValue.endsWith(' ') || textValue.endsWith(',');
-      const tokensToAdd = endsWithDelimiter
-        ? parts.filter(Boolean)
-        : parts.slice(0, -1).filter(Boolean);
-      const remainder = endsWithDelimiter ? '' : parts[parts.length - 1];
-
-      if (tokensToAdd.length > 0) {
-        setTags((prev) => {
-          const next = [...prev];
-          for (const token of tokensToAdd) {
-            const clean = token.replace(/^#/, '').trim();
-            if (clean && !next.includes(clean)) {
-              next.push(clean);
-            }
-          }
-          return next;
-        });
-      }
-      setTagInput(remainder);
-    } else {
-      setTagInput(textValue);
-    }
-  };
-
-  const handleTagInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => {
-        const removed = prev[prev.length - 1];
-        if (removed) {
-          autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
-          setAutoTags((a) => a.filter((t) => t !== removed));
-        }
-        return prev.slice(0, -1);
-      });
-    }
-  };
-
-  const handleTagInputSubmit = () => {
-    const clean = tagInput.replace(/^#/, '').trim();
-    if (clean) {
-      if (!tags.includes(clean)) {
-        setTags((prev) => [...prev, clean]);
-      }
-      setTagInput('');
-    } else {
-      noteInputRef.current?.focus();
-    }
-  };
-
-  const handleRemoveTag = (indexToRemove: number) => {
-    setTags((prev) => {
-      const removed = prev[indexToRemove];
-      if (removed) {
-        autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
-        setAutoTags((a) => a.filter((t) => t !== removed));
-      }
-      return prev.filter((_, idx) => idx !== indexToRemove);
-    });
-  };
-
   if (!imageAsset && !visible) {
     return null;
   }
@@ -321,57 +258,21 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
             </View>
 
             {/* Tags section */}
-            <View className="py-6 px-8 border-b border-zinc-800 gap-4">
-              <View className="flex-row items-center gap-2">
-                <TagIcon size={14} color="#E4E4E7" weight="bold" />
-                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Tags{tags.length > 0 ? ` (${tags.length})` : ''}
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={() => tagsInputRef.current?.focus()}
-                className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
-              >
-                {tags.map((tag, idx) => {
-                  const isAuto = autoTags.includes(tag);
-                  return (
-                    <Pressable
-                      key={`${tag}-${idx}`}
-                      onPress={() => handleRemoveTag(idx)}
-                      className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 active:opacity-70 ${
-                        isAuto ? 'bg-white' : 'bg-blue-500/15'
-                      }`}
-                    >
-                      <Text
-                        className={`font-sans-medium text-base ${
-                          isAuto ? 'text-black' : 'text-blue-400'
-                        }`}
-                      >
-                        #{tag}
-                      </Text>
-                      <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />
-                    </Pressable>
-                  );
-                })}
-
-                <TextInput
-                  ref={tagsInputRef}
-                  value={tagInput}
-                  onChangeText={handleTagInputChange}
-                  onKeyPress={handleTagInputKeyPress}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
-                  placeholderTextColor="#71717A"
-                  returnKeyType="done"
-                  onSubmitEditing={handleTagInputSubmit}
-                  className="font-sans text-lg leading-tight text-zinc-200 flex-grow min-w-[120px]"
-                  style={styles.borderlessInput}
-                  underlineColorAndroid="transparent"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </Pressable>
-            </View>
+            <TagsBox
+              tags={tags}
+              autoTags={autoTags}
+              onTagsChange={setTags}
+              onAutoTagsChange={setAutoTags}
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagsInputRef}
+              onSubmitEditing={() => {
+                noteInputRef.current?.focus();
+              }}
+              onRemoveTag={(removed) => {
+                autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+              }}
+            />
 
             {/* Notes section */}
             <View className="flex-1 py-6 px-8 gap-4">

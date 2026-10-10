@@ -14,13 +14,10 @@ import {
   CopyIcon,
   DownloadSimpleIcon,
   ExportIcon,
-  HashIcon,
   InfoIcon,
   NotePencilIcon,
-  TagIcon,
   TextTIcon,
   TrashSimpleIcon,
-  XIcon,
 } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -47,6 +44,7 @@ import QuoteOpen from '@/../assets/quote-open.svg';
 import { ArticleCard } from '@/components/ArticleCard';
 import { LinkCard } from '@/components/LinkCard';
 import { RedditCard } from '@/components/RedditCard';
+import { TagsBox } from '@/components/TagsBox';
 import { TweetCard } from '@/components/TweetCard';
 import { YouTubeCard } from '@/components/YouTubeCard';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -624,115 +622,56 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               />
             </View>
 
-            {/* Tags Section */}
-            <View
+            {/* Tags section */}
+            <TagsBox
+              tags={tags}
+              autoTags={item.autoTags}
+              tagInput={tagInput}
+              onTagInputChange={setTagInput}
+              inputRef={tagInputRef}
+              showRemoveIcon={isEditingTags}
               onLayout={(e) => {
                 tagsY.current = e.nativeEvent.layout.y;
               }}
-              className="py-6 px-6 border-b border-zinc-800 gap-4"
-            >
-              <View className="flex-row items-center gap-2">
-                <TagIcon size={14} color="#E4E4E7" weight="bold" />
-                <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Tags{tags.length > 0 ? ` (${tags.length})` : ''}
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={() => {
-                  if (isEditingTags) {
-                    setIsEditingTags(false);
-                  } else {
-                    tagInputRef.current?.focus();
-                  }
-                }}
-                className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
-              >
-                {tags.map((tag, idx) => {
-                  const isAuto = item.autoTags?.includes(tag);
-                  return (
-                    <Animated.View
-                      key={`${tag}-${idx}`}
-                      style={{
-                        transform: [
-                          {
-                            rotate: isEditingTags
-                              ? idx % 2 === 0
-                                ? rotationEven
-                                : rotationOdd
-                              : '0deg',
-                          },
-                        ],
-                      }}
-                    >
-                      <Pressable
-                        onLongPress={() => setIsEditingTags(true)}
-                        delayLongPress={250}
-                        onPress={() => {
-                          if (isEditingTags) {
-                            handleRemoveTag(idx);
-                          } else {
-                            onSelectTag(tag);
-                          }
-                        }}
-                        className={`flex-row items-center gap-2 rounded-full px-3.5 py-2 active:opacity-70 ${
-                          isAuto ? 'bg-white' : 'bg-blue-500/15'
-                        }`}
-                      >
-                        <HashIcon size={12} color={isAuto ? '#000000' : '#60A5FA'} weight="bold" />
-                        <Text
-                          className={`font-sans-semibold text-base ${
-                            isAuto ? 'text-black' : 'text-blue-400'
-                          }`}
-                        >
-                          {tag}
-                        </Text>
-                        {isEditingTags && (
-                          <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />
-                        )}
-                      </Pressable>
-                    </Animated.View>
-                  );
-                })}
-
-                <TextInput
-                  ref={tagInputRef}
-                  value={tagInput}
-                  onFocus={() => {
-                    scrollToTags();
-                    if (isEditingTags) setIsEditingTags(false);
+              onContainerPress={() => {
+                if (isEditingTags) {
+                  setIsEditingTags(false);
+                } else {
+                  tagInputRef.current?.focus();
+                }
+              }}
+              onInputFocus={() => {
+                scrollToTags();
+                if (isEditingTags) setIsEditingTags(false);
+              }}
+              onTagPress={(tag, idx) => {
+                if (isEditingTags) {
+                  handleRemoveTag(idx);
+                } else {
+                  onSelectTag(tag);
+                }
+              }}
+              onTagLongPress={() => setIsEditingTags(true)}
+              onAddTag={handleAddTag}
+              renderTagWrapper={(tag, idx, children) => (
+                <Animated.View
+                  key={`${tag}-${idx}`}
+                  style={{
+                    transform: [
+                      {
+                        rotate: isEditingTags
+                          ? idx % 2 === 0
+                            ? rotationEven
+                            : rotationOdd
+                          : '0deg',
+                      },
+                    ],
                   }}
-                  onChangeText={(text) => {
-                    if (text.includes(' ') || text.includes(',')) {
-                      const parts = text.split(/[\s,]+/);
-                      const endsWithDelimiter = text.endsWith(' ') || text.endsWith(',');
-                      const tokens = endsWithDelimiter
-                        ? parts.filter(Boolean)
-                        : parts.slice(0, -1).filter(Boolean);
-                      const remainder = endsWithDelimiter ? '' : parts[parts.length - 1];
-
-                      tokens.forEach((t) => handleAddTag(t));
-                      setTagInput(remainder);
-                    } else {
-                      setTagInput(text);
-                    }
-                  }}
-                  placeholder={tags.length === 0 ? 'Add tags here...' : '+ Add more'}
-                  placeholderTextColor="#71717A"
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    if (tagInput.trim()) {
-                      handleAddTag(tagInput);
-                    }
-                  }}
-                  className="font-sans text-base text-zinc-200 flex-grow leading-tight min-w-[120px]"
-                  style={{ borderWidth: 0, backgroundColor: 'transparent' }}
-                  underlineColorAndroid="transparent"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </Pressable>
-            </View>
+                >
+                  {children}
+                </Animated.View>
+              )}
+            />
 
             {/* Notes Section */}
             <View
