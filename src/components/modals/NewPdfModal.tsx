@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TagsBox } from '@/components/TagsBox';
+import { PdfPreview } from '@/components/PdfPreview';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedPdfAsset } from '@/lib/library/storage';
 import type { PdfItem } from '@/lib/library/types';
@@ -206,16 +207,20 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onSaved }: NewPdfModal
           >
             {/* Header */}
             <View className="flex-row p-8 pt-0 gap-8 items-center max-h-48 border-b border-zinc-800">
-              <View className="w-20 h-24 bg-zinc-900 border border-zinc-800 rounded-sm shadow-md items-center justify-center relative">
-                <FilePdfIcon size={36} color="#ef4444" weight="duotone" />
-                <View className="absolute bottom-1.5 bg-red-500/20 px-1.5 py-0.5 rounded-[2px]">
-                  <Text className="text-[9px] font-sans-bold text-red-400 tracking-wider">PDF</Text>
-                </View>
+              <View className="w-20 h-24 bg-white border border-zinc-800 rounded-sm shadow-md overflow-hidden items-center justify-center">
+                {pdfAsset?.uri ? (
+                  <PdfPreview uri={pdfAsset.uri} />
+                ) : (
+                  <FilePdfIcon size={36} color="#ef4444" weight="duotone" />
+                )}
               </View>
 
               <View className="flex-1 gap-2">
                 <Text className="font-sans-semibold text-2xl text-white">Add a new PDF</Text>
-                <Text className="font-sans text-sm text-zinc-400 leading-relaxed" numberOfLines={2}>
+                <Text
+                  className="font-sans text-base text-zinc-400 leading-relaxed"
+                  numberOfLines={2}
+                >
                   {pdfAsset?.fileName || 'PDF Document'}
                 </Text>
               </View>
