@@ -1,6 +1,6 @@
 import { Image as ExpoImage } from 'expo-image';
 import { CheckIcon, NotePencilIcon, TagIcon, TextTIcon, XIcon } from 'phosphor-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,7 +21,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedImageAsset } from '@/lib/library/storage';
 import type { ImageItem } from '@/lib/library/types';
-import { generateAutoTags } from '@/lib/tags/autoTags';
+import { generateAutoTagsAsync, isGibberishOrMachineId } from '@/lib/tags/autoTags';
+
+function getCleanImageTitle(fileName?: string | null): string {
+  if (!fileName) return '';
+  const nameWithoutExt = fileName.replace(/\.[a-zA-Z0-9]{2,5}$/, '').trim();
+  if (isGibberishOrMachineId(nameWithoutExt)) return '';
+  return nameWithoutExt.replace(/[-_]+/g, ' ').trim();
+}
 
 type NewImageModalProps = {
   visible: boolean;
@@ -52,36 +59,76 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
     [getTags, visible]
   );
 
+  const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    const prevAutoTags = autoTagsRef.current;
+    const combinedAutoTags = [...prevAutoTags];
+    for (const t of newAutoTags) {
+      if (!combinedAutoTags.includes(t)) {
+        combinedAutoTags.push(t);
+      }
+    }
+    autoTagsRef.current = combinedAutoTags;
+    setAutoTags(combinedAutoTags);
+
+    setTags((prev) => {
+      const manualTags = prev.filter((t) => !prevAutoTags.includes(t));
+      const merged = [...manualTags];
+      for (const t of combinedAutoTags) {
+        if (!merged.includes(t)) {
+          merged.push(t);
+        }
+      }
+      return merged;
+    });
+  }, []);
+
+  const clearAutoTags = useCallback(() => {
+    setTags((prev) => prev.filter((t) => !autoTagsRef.current.includes(t)));
+    autoTagsRef.current = [];
+    setAutoTags([]);
+  }, []);
+
   useEffect(() => {
     if (!visible) return;
 
     const timer = setTimeout(() => {
-      if (imageAsset) {
-        const auto = generateAutoTags({
-          text: imageAsset.fileName || '',
-          type: 'image',
-          existingTags,
-        });
-        if (auto.length > 0) {
-          autoTagsRef.current = auto;
-          setAutoTags(auto);
-          setTags((prev) => {
-            const next = [...prev];
-            for (const t of auto) {
-              if (!next.includes(t)) {
-                next.push(t);
-              }
-            }
-            return next;
-          });
-        }
-      }
-
       titleInputRef.current?.focus();
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [visible, imageAsset, existingTags]);
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const cleanTitle = title.trim();
+    const cleanNote = note.trim();
+    const fallbackTitle = getCleanImageTitle(imageAsset?.fileName);
+
+    const textToAnalyze = cleanTitle || cleanNote || fallbackTitle;
+    if (!textToAnalyze) {
+      clearAutoTags();
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const auto = await generateAutoTagsAsync({
+          title: cleanTitle || fallbackTitle,
+          note: cleanNote,
+          type: 'image',
+          existingTags,
+        });
+        if (auto.length > 0) {
+          updateAutoTags(auto);
+        }
+      } catch (e) {
+        console.warn('Failed to generate image tags:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [visible, title, note, imageAsset, existingTags, updateAutoTags, clearAutoTags]);
 
   const handleClose = () => {
     if (saving) return;

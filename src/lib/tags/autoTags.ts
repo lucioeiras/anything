@@ -1086,6 +1086,66 @@ function getNativeEntities(text: string): string[] {
   return [];
 }
 
+const FILE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'gif',
+  'heic',
+  'svg',
+  'bmp',
+  'tiff',
+  'ico',
+  'mp4',
+  'mov',
+  'avi',
+  'mkv',
+  'mp3',
+  'wav',
+  'pdf',
+  'json',
+  'txt',
+  'zip',
+]);
+
+/**
+ * Detects whether a string is a machine identifier, UUID piece, hex hash, or camera filename.
+ */
+export function isGibberishOrMachineId(word: string): boolean {
+  const clean = word.toLowerCase().replace(/^#+/, '').trim();
+  if (!clean || clean.length < 2) return true;
+
+  // File extension
+  if (FILE_EXTENSIONS.has(clean)) return true;
+
+  // Pure digits or starts with pure digits
+  if (/^\d+$/.test(clean)) return true;
+
+  // Camera / screenshot prefixes like img123, dsc0045, pxl2023, screenshot, photo1
+  if (/^(img|dsc|pxl|screenshot|screen|photo|pic|image)[-_0-9]*$/i.test(clean)) return true;
+
+  // Hexadecimal strings (e.g. 5a3e, 4b02, c18e6624, 61019d2bd546)
+  if (clean.length >= 4 && /^[0-9a-f]+$/i.test(clean) && /\d/.test(clean) && /[a-f]/i.test(clean)) {
+    return true;
+  }
+
+  // UUID patterns or chunks
+  if (/^[0-9a-f]{4,}-[0-9a-f]{4,}/i.test(clean)) return true;
+
+  // Mixed alphanumeric with high digit ratio (e.g. ab12cd34)
+  const digits = clean.match(/\d/g)?.length || 0;
+  if (digits >= 2 && digits / clean.length >= 0.35) return true;
+
+  // No vowels for words > 2 chars, unless known tech acronym (css, npm, sql, xml, php, etc.)
+  const vowels = clean.match(/[aeiouyáéíóúâêîôûãõàèìòù]/i);
+  if (!vowels && clean.length > 2 && !['css', 'npm', 'sql', 'xml', 'php', 'rss'].includes(clean)) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Fallback extraction: extracts prominent topic nouns/proper names from title or text
  * strictly when no other concepts were found, ensuring tags are never completely empty.
@@ -1099,7 +1159,7 @@ function extractFallbackTopics(text: string): string[] {
   for (const w of words) {
     const clean = w.toLowerCase();
     if (STOP_WORDS.has(clean)) continue;
-    if (/^\d+$/.test(clean)) continue;
+    if (isGibberishOrMachineId(clean)) continue;
     if (seen.has(clean)) continue;
     seen.add(clean);
     candidates.push(clean);
@@ -1141,6 +1201,7 @@ export function generateAutoTags(input: AutoTagInput): string[] {
     const norm = normalizeTag(rawTag);
     if (!norm || norm.length < 2 || norm.length > 30) return;
     if (STOP_WORDS.has(norm)) return;
+    if (isGibberishOrMachineId(norm)) return;
 
     // Check if it matches an existing user tag
     const matched = matchExistingTag(rawTag, existingTags);
