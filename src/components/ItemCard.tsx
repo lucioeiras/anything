@@ -100,15 +100,7 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'music':
-        return (
-          <MusicCard
-            title={item.title}
-            artist={item.artist}
-            album={item.album}
-            cover={item.cover}
-            genre={item.genre}
-          />
-        );
+        return <MusicCard title={item.title} artist={item.artist} cover={item.cover} />;
       case 'movie':
         return (
           <MovieCard

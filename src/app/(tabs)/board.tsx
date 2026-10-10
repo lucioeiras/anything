@@ -499,7 +499,7 @@ type CellRendererProps = {
 
 const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
   const { style, children, index, ...rest } = props;
-  const { lastIndices, totalItems, reportItemCol } = useContext(BoardGridContext);
+  const { reportItemCol } = useContext(BoardGridContext);
   const isLeftColumn = !style?.left || style.left < 1;
 
   useEffect(() => {
@@ -508,26 +508,8 @@ const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
     }
   }, [index, isLeftColumn, reportItemCol]);
 
-  const hasMultipleItems = totalItems > 1;
-
-  const isLast =
-    typeof index === 'number' &&
-    (!hasMultipleItems ||
-      totalItems <= 2 ||
-      index === totalItems - 1 ||
-      index === lastIndices.col0 ||
-      index === lastIndices.col1);
-
   return (
-    <View
-      ref={ref}
-      {...rest}
-      style={[
-        style,
-        hasMultipleItems && !isLast && styles.cell,
-        hasMultipleItems && isLeftColumn && styles.leftCell,
-      ]}
-    >
+    <View ref={ref} {...rest} style={[style]}>
       {children}
     </View>
   );
@@ -559,21 +541,16 @@ function keyExtractor(item: LibraryItem): string {
 
 const styles = StyleSheet.create({
   contentContainer: {
-    paddingTop: 56,
+    paddingHorizontal: 4,
+    paddingTop: 64,
     paddingBottom: 0,
     flexGrow: 1,
-  },
-  cell: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#27272A',
-  },
-  leftCell: {
-    borderRightWidth: 1,
-    borderRightColor: '#27272A',
   },
   cardWrapper: {
     width: '100%',
     overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingBottom: 16,
   },
   headerWrapper: {
     paddingHorizontal: 8,

@@ -1,6 +1,6 @@
 import { decodeHTML } from 'entities';
 import { Image as ExpoImage } from 'expo-image';
-import { DiscIcon, MusicNotesIcon } from 'phosphor-react-native';
+import { DiscIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { VinylRecord } from './VinylRecord';
@@ -8,24 +8,21 @@ import { VinylRecord } from './VinylRecord';
 type MusicCardProps = {
   title: string;
   artist: string;
-  album?: string;
   cover: string;
-  genre?: string;
 };
 
-export const MusicCard = ({ title, artist, album, cover, genre }: MusicCardProps) => {
+export const MusicCard = ({ title, artist, cover }: MusicCardProps) => {
   const [containerWidth, setContainerWidth] = useState(() =>
     Math.round((Dimensions.get('window').width - 32) / 2)
   );
 
-  const sleeveSize = Math.max(100, Math.round(containerWidth * 0.74));
+  const sleeveSize = Math.max(100, Math.round(containerWidth * 0.78));
   const discSize = Math.max(90, Math.round(sleeveSize * 0.94));
-  const containerHeight = sleeveSize + 20;
-  const discLeft = Math.max(sleeveSize * 0.4, containerWidth - discSize - 6);
-  const discTop = 10 + Math.round((sleeveSize - discSize) / 2);
+  const discLeft = Math.max(0, containerWidth - discSize - 12);
+  const discTop = Math.round((sleeveSize - discSize) / 2);
 
   return (
-    <View className="w-full">
+    <View className="w-full items-center">
       {/* Vinyl Peek Container (Album jacket on left, vinyl sliding out to the right) */}
       <View
         onLayout={(e) => {
@@ -34,7 +31,7 @@ export const MusicCard = ({ title, artist, album, cover, genre }: MusicCardProps
             setContainerWidth(w);
           }
         }}
-        style={[styles.showcaseContainer, { height: containerHeight }]}
+        style={[styles.showcaseContainer, { height: sleeveSize }]}
       >
         {/* Vinyl Record (Layered behind jacket, emerging to the right) */}
         <View
@@ -57,7 +54,7 @@ export const MusicCard = ({ title, artist, album, cover, genre }: MusicCardProps
               width: sleeveSize,
               height: sleeveSize,
               left: 8,
-              top: 10,
+              top: 0,
             },
           ]}
         >
@@ -80,24 +77,17 @@ export const MusicCard = ({ title, artist, album, cover, genre }: MusicCardProps
       </View>
 
       {/* Track Info */}
-      <View className="w-full p-4 gap-1.5 bg-pink-950/15 border-t border-rose-950/20">
-        <Text className="font-sans-medium text-base leading-snug text-zinc-50" numberOfLines={2}>
+      <View className="w-full px-1 gap-2 my-4">
+        <Text
+          className="font-sans-medium text-base leading-snug text-zinc-50 text-center"
+          numberOfLines={2}
+        >
           {decodeHTML(title)}
         </Text>
 
-        <Text className="font-sans text-xs text-zinc-400" numberOfLines={1}>
+        <Text className="font-sans text-xs text-zinc-400 text-center" numberOfLines={1}>
           {decodeHTML(artist)}
         </Text>
-
-        <View className="flex-row items-center gap-1.5 mt-1">
-          <MusicNotesIcon size={12} color="#F43F5E" weight="bold" />
-          <Text
-            className="font-sans-semibold text-[11px] text-rose-400 uppercase tracking-wider"
-            numberOfLines={1}
-          >
-            {genre ? decodeHTML(genre) : album ? decodeHTML(album) : 'Music'}
-          </Text>
-        </View>
       </View>
     </View>
   );
