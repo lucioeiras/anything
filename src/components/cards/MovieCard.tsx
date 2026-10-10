@@ -97,7 +97,7 @@ export const MovieCard = ({
       {!hideTitleAndAuthor && (
         <View className="w-full gap-1.5 my-3 items-center">
           <Text
-            className="flex-1 font-sans-medium text-base leading-[1.3] text-zinc-50 text-center"
+            className="flex-1 font-sans-medium text-sm leading-[1.3] text-zinc-50 text-center"
             numberOfLines={2}
           >
             {cleanTitle}

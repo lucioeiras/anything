@@ -39,9 +39,9 @@ export const GameCard = ({ title, cover, hideTitleAndAuthor = false }: GameCardP
       </View>
 
       {!hideTitleAndAuthor && (
-        <View className="w-full p-3 gap-2">
+        <View className="w-full my-3 gap-2">
           <Text
-            className="font-sans-semibold text-base leading-snug text-zinc-50 text-center"
+            className="font-sans-semibold text-sm leading-snug text-zinc-50 text-center"
             numberOfLines={2}
           >
             {decodeHTML(title)}

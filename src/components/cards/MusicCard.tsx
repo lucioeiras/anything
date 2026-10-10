@@ -78,9 +78,9 @@ export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: 
       </View>
 
       {!hideTitleAndAuthor && (
-        <View className="w-full gap-2 my-4">
+        <View className="w-full gap-1.5 my-3">
           <Text
-            className="font-sans-medium text-base leading-snug text-zinc-50 text-center"
+            className="font-sans-medium text-sm leading-snug text-zinc-50 text-center"
             numberOfLines={2}
           >
             {decodeHTML(title)}

@@ -1,7 +1,6 @@
 import { decodeHTML } from 'entities';
 import { FilePdfIcon } from 'phosphor-react-native';
-import { memo } from 'react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { PdfPreview } from '@/components/PdfPreview';
@@ -51,12 +50,12 @@ export const PdfCard = memo(function PdfCard({
       </View>
 
       {!hideTitleAndAuthor && (
-        <View className="w-full items-center my-3 px-2">
+        <View className="w-full items-center my-3 px-5">
           <View className="flex-row items-center justify-center gap-2">
-            <FilePdfIcon size={16} color="#f87171" weight="duotone" />
+            <FilePdfIcon size={14} color="#f87171" weight="duotone" />
             <Text
-              className="font-sans-medium text-base leading-[1.4] text-zinc-50 text-center"
-              numberOfLines={2}
+              className="font-sans-medium text-sm leading-[1.4] text-zinc-50 text-center"
+              numberOfLines={1}
             >
               {displayTitle}
             </Text>

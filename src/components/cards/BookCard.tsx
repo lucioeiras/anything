@@ -48,8 +48,8 @@ export const BookCard = ({
       />
 
       {!hideTitleAndAuthor && (
-        <View className="w-full gap-2 my-4 items-center">
-          <Text className="font-sans-medium text-base leading-[1.4] text-zinc-50" numberOfLines={3}>
+        <View className="w-full gap-1.5 my-3 items-center">
+          <Text className="font-sans-medium text-sm leading-[1.4] text-zinc-50" numberOfLines={3}>
             {cleanTitle}
           </Text>
 
