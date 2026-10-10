@@ -3,7 +3,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { DiscIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { VinylRecord } from './VinylRecord';
+import { VinylRecord } from '../effects/VinylRecord';
 
 type MusicCardProps = {
   title: string;

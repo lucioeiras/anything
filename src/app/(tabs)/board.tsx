@@ -21,18 +21,18 @@ import {
   View,
 } from 'react-native';
 
-import { CardSelectionBar } from '@/components/CardSelectionBar';
-import { ItemCard } from '@/components/ItemCard';
-import { NewBookModal } from '@/components/NewBookModal';
-import { NewGameModal } from '@/components/NewGameModal';
-import { NewImageModal } from '@/components/NewImageModal';
-import { NewLinkModal } from '@/components/NewLinkModal';
-import { NewMovieModal } from '@/components/NewMovieModal';
-import { NewMusicModal } from '@/components/NewMusicModal';
-import { NewNoteModal } from '@/components/NewNoteModal';
-import { NewPdfModal } from '@/components/NewPdfModal';
-import { RestoreToast } from '@/components/RestoreToast';
-import { SearchBar } from '@/components/SearchBar';
+import { ItemCard } from '@/components/cards/ItemCard';
+import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
+import { RestoreToast } from '@/components/menus/RestoreToast';
+import { SearchBar } from '@/components/menus/SearchBar';
+import { NewBookModal } from '@/components/modals/NewBookModal';
+import { NewGameModal } from '@/components/modals/NewGameModal';
+import { NewImageModal } from '@/components/modals/NewImageModal';
+import { NewLinkModal } from '@/components/modals/NewLinkModal';
+import { NewMovieModal } from '@/components/modals/NewMovieModal';
+import { NewMusicModal } from '@/components/modals/NewMusicModal';
+import { NewNoteModal } from '@/components/modals/NewNoteModal';
+import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';

@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BookCover } from '@/components/BookCover';
+import { BookCover } from '@/components/effects/BookCover';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { fetchBookByIsbn, normalizeIsbn, type BookMetadata } from '@/lib/books/isbn';

@@ -51,17 +51,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
-import { ArticleCard } from '@/components/ArticleCard';
-import { BookCard } from '@/components/BookCard';
-import { GameCard } from '@/components/GameCard';
-import { LinkCard } from '@/components/LinkCard';
-import { MovieCard } from '@/components/MovieCard';
-import { PdfCard } from '@/components/PdfCard';
-import { RedditCard } from '@/components/RedditCard';
+import { ArticleCard } from '@/components/cards/ArticleCard';
+import { BookCard } from '@/components/cards/BookCard';
+import { GameCard } from '@/components/cards/GameCard';
+import { LinkCard } from '@/components/cards/LinkCard';
+import { MovieCard } from '@/components/cards/MovieCard';
+import { PdfCard } from '@/components/cards/PdfCard';
+import { RedditCard } from '@/components/cards/RedditCard';
+import { TweetCard } from '@/components/cards/TweetCard';
+import { YouTubeCard } from '@/components/cards/YouTubeCard';
+import { VinylRecord } from '@/components/effects/VinylRecord';
 import { TagsBox } from '@/components/TagsBox';
-import { TweetCard } from '@/components/TweetCard';
-import { VinylRecord } from '@/components/VinylRecord';
-import { YouTubeCard } from '@/components/YouTubeCard';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LibraryItem } from '@/lib/library/types';
 

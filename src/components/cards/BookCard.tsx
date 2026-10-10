@@ -1,7 +1,7 @@
 import { decodeHTML } from 'entities';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import { BookCover } from './BookCover';
+import { BookCover } from '../effects/BookCover';
 
 type BookCardProps = {
   title: string;
