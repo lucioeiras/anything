@@ -106,7 +106,6 @@ export const ItemCard = memo(function ItemCard({
         return (
           <BookCard
             title={item.title}
-            authors={item.authors}
             hideTitleAndAuthor={hideTitleAndAuthor}
             cover={item.cover}
             coverAspectRatio={item.coverAspectRatio}
@@ -134,7 +133,6 @@ export const ItemCard = memo(function ItemCard({
             releaseYear={item.releaseYear}
             voteAverage={item.voteAverage}
             genres={item.genres}
-            director={item.director}
             runtime={item.runtime}
             progressStatus={item.progressStatus}
           />

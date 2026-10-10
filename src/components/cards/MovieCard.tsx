@@ -17,7 +17,6 @@ type MovieCardProps = {
   releaseYear?: string;
   voteAverage?: number;
   genres?: string[];
-  director?: string;
   runtime?: number;
   progressStatus?: MediaProgressStatus;
 };
@@ -55,7 +54,6 @@ export const MovieCard = ({
   poster,
   releaseYear,
   genres,
-  director,
   runtime,
   progressStatus,
 }: MovieCardProps) => {
@@ -63,7 +61,6 @@ export const MovieCard = ({
   const [posterHeight, setPosterHeight] = useState(0);
 
   const cleanTitle = title ? decodeHTML(title) : 'Untitled Movie';
-  const cleanDirector = director ? decodeHTML(director) : undefined;
   const genreText =
     genres && genres.length > 0 ? genres.slice(0, 2).map(decodeHTML).join(', ') : undefined;
 
@@ -110,15 +107,6 @@ export const MovieCard = ({
           </Text>
 
           <ProgressStatus type="movie" status={progressStatus} />
-
-          {cleanDirector && (
-            <Text
-              className="font-sans text-xs text-zinc-400 leading-[1.4] text-center"
-              numberOfLines={1}
-            >
-              {cleanDirector}
-            </Text>
-          )}
         </View>
       )}
     </View>

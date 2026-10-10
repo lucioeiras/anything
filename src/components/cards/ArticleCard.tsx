@@ -1,7 +1,6 @@
 import { decodeHTML } from 'entities';
 import { Image as ExpoImage } from 'expo-image';
 import { cssInterop } from 'nativewind';
-import { BookOpenIcon } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
 import type { ArticleItem } from '@/lib/library/types';
@@ -35,7 +34,6 @@ export const ArticleCard = ({
         <ProgressStatus type="article" status={progressStatus} align="start" />
 
         <View className="flex-row items-center gap-2 mt-2">
-          <BookOpenIcon size={14} color="#A1A1AA" weight="bold" />
           <Text className="font-sans-semibold text-sm text-zinc-400" numberOfLines={1}>
             {decodeHTML(origin)}
           </Text>

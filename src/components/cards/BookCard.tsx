@@ -9,7 +9,6 @@ import type { MediaProgressStatus } from '@/lib/library/types';
 type BookCardProps = {
   title: string;
   hideTitleAndAuthor?: boolean;
-  authors?: string[];
   cover?: string;
   coverAspectRatio?: number;
   publisher?: string;
@@ -21,7 +20,6 @@ type BookCardProps = {
 export const BookCard = ({
   title,
   hideTitleAndAuthor = false,
-  authors,
   cover,
   coverAspectRatio,
   publisher,
@@ -32,8 +30,6 @@ export const BookCard = ({
   const [aspectRatio, setAspectRatio] = useState<number>(coverAspectRatio ?? 2 / 3);
 
   const cleanTitle = title ? decodeHTML(title) : 'Untitled Book';
-  const authorNames =
-    authors && authors.length > 0 ? authors.map((a) => decodeHTML(a)).join(', ') : undefined;
 
   // Extract year from publishedDate (e.g., '2008-08-01' -> '2008')
   const publishedYear = publishedDate ? publishedDate.split('-')[0] : undefined;
@@ -59,12 +55,6 @@ export const BookCard = ({
           </Text>
 
           <ProgressStatus type="book" status={progressStatus} />
-
-          {authorNames && (
-            <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={2}>
-              {authorNames}
-            </Text>
-          )}
         </View>
       )}
     </View>
