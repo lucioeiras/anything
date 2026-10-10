@@ -51,12 +51,13 @@ export type LibraryContextValue = {
   addTextItem: (
     text: string,
     title?: string,
-    options?: { tags?: string[] }
+    options?: { tags?: string[]; autoTags?: string[] }
   ) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (
     url: string,
     options?: {
       tags?: string[];
+      autoTags?: string[];
       note?: string;
       title?: string;
       preloadedMetadata?: import('@/lib/library/metadata').ResolvedMetadata;
@@ -235,7 +236,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addTextItem = useCallback(
-    async (text: string, title?: string, options?: { tags?: string[] }) => {
+    async (text: string, title?: string, options?: { tags?: string[]; autoTags?: string[] }) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);
@@ -252,6 +253,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       url: string,
       options?: {
         tags?: string[];
+        autoTags?: string[];
         note?: string;
         title?: string;
         preloadedMetadata?: import('@/lib/library/metadata').ResolvedMetadata;

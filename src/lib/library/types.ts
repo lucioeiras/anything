@@ -24,6 +24,7 @@ type BaseItem = {
   createdAt: string;
   updatedAt: string;
   tags?: string[];
+  autoTags?: string[];
   note?: string;
 };
 

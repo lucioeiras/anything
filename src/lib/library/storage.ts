@@ -416,6 +416,7 @@ export type AddImageOptions = {
   title?: string;
   note?: string;
   tags?: string[];
+  autoTags?: string[];
 };
 
 /**
@@ -490,6 +491,7 @@ export async function addImageToLibrary(
   const trimmedTitle = options?.title?.trim();
   const trimmedNote = options?.note?.trim();
   const tags = options?.tags?.filter(Boolean);
+  const autoTags = options?.autoTags?.filter(Boolean);
 
   const item: ImageItem = {
     id,
@@ -499,6 +501,7 @@ export async function addImageToLibrary(
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
     ...(trimmedNote ? { note: trimmedNote } : {}),
     ...(tags && tags.length > 0 ? { tags } : {}),
+    ...(autoTags && autoTags.length > 0 ? { autoTags } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -528,7 +531,7 @@ export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
   title?: string,
-  options?: { tags?: string[] }
+  options?: { tags?: string[]; autoTags?: string[] }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -553,6 +556,7 @@ export async function addTextItemToLibrary(
     text: cleanText,
     ...(title ? { title } : {}),
     ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
+    ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -585,6 +589,7 @@ export async function addLinkItemToLibrary(
   url: string,
   options?: {
     tags?: string[];
+    autoTags?: string[];
     note?: string;
     title?: string;
     preloadedMetadata?: ResolvedMetadata;
@@ -673,6 +678,9 @@ export async function addLinkItemToLibrary(
 
   if (options?.tags?.length) {
     item.tags = options.tags;
+  }
+  if (options?.autoTags?.length) {
+    item.autoTags = options.autoTags;
   }
   if (options?.note) {
     item.note = options.note;
@@ -1051,8 +1059,20 @@ export async function updateItemInLibrary(
     updatedRaw.favicon = rawItem.favicon;
   }
 
-  if (updates.tags) {
-    updatedRaw.tags = updates.tags.filter(Boolean);
+  if ('tags' in updates) {
+    if (updates.tags && updates.tags.length > 0) {
+      updatedRaw.tags = updates.tags.filter(Boolean);
+    } else {
+      delete updatedRaw.tags;
+    }
+  }
+
+  if ('autoTags' in updates) {
+    if (updates.autoTags && updates.autoTags.length > 0) {
+      updatedRaw.autoTags = updates.autoTags.filter(Boolean);
+    } else {
+      delete updatedRaw.autoTags;
+    }
   }
 
   const jsonText = JSON.stringify(updatedRaw, null, 2);

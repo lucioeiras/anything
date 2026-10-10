@@ -48,6 +48,8 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [autoTags, setAutoTags] = useState<string[]>([]);
+  const autoTagsRef = useRef<string[]>([]);
 
   const existingTags = useMemo(
     () => (visible ? getTags().map((t) => t.tag) : []),
@@ -68,6 +70,8 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
     setText('');
     setTitle('');
     setTags([]);
+    setAutoTags([]);
+    autoTagsRef.current = [];
     setTagInput('');
     setView('editor');
     onClose();
@@ -84,13 +88,17 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       if (pending && !finalTags.includes(pending)) {
         finalTags.push(pending);
       }
+      const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
       const item = await addTextItem(trimmed, title.trim() || undefined, {
         tags: finalTags.length > 0 ? finalTags : undefined,
+        autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
       });
       setText('');
       setTitle('');
       setTags([]);
+      setAutoTags([]);
+      autoTagsRef.current = [];
       setTagInput('');
       setView('editor');
       onSaved?.(item);
@@ -120,6 +128,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
         }
         return next;
       });
+      const nextAuto = [...new Set([...autoTagsRef.current, ...auto])];
+      autoTagsRef.current = nextAuto;
+      setAutoTags(nextAuto);
     }
 
     // 2. On-device LLM semantic enrichment in background
@@ -139,6 +150,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
             }
             return next;
           });
+          const nextAiAuto = [...new Set([...autoTagsRef.current, ...aiTags])];
+          autoTagsRef.current = nextAiAuto;
+          setAutoTags(nextAiAuto);
         }
       })
       .catch(() => {});
@@ -185,7 +199,14 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
 
   const handleTagInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
     if (e.nativeEvent.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
+      setTags((prev) => {
+        const removed = prev[prev.length - 1];
+        if (removed) {
+          autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+          setAutoTags((a) => a.filter((t) => t !== removed));
+        }
+        return prev.slice(0, -1);
+      });
     }
   };
 
@@ -202,7 +223,14 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   };
 
   const handleRemoveTag = (indexToRemove: number) => {
-    setTags((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setTags((prev) => {
+      const removed = prev[indexToRemove];
+      if (removed) {
+        autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+        setAutoTags((a) => a.filter((t) => t !== removed));
+      }
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
   };
 
   const canSave = text.trim().length > 0 && !saving;
@@ -292,16 +320,27 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                   onPress={() => tagsInputRef.current?.focus()}
                   className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
                 >
-                  {tags.map((tag, idx) => (
-                    <Pressable
-                      key={`${tag}-${idx}`}
-                      onPress={() => handleRemoveTag(idx)}
-                      className="flex-row items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
-                    >
-                      <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
-                      <XIcon size={14} color="#60A5FA" />
-                    </Pressable>
-                  ))}
+                  {tags.map((tag, idx) => {
+                    const isAuto = autoTags.includes(tag);
+                    return (
+                      <Pressable
+                        key={`${tag}-${idx}`}
+                        onPress={() => handleRemoveTag(idx)}
+                        className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 active:opacity-70 ${
+                          isAuto ? 'bg-white' : 'bg-blue-500/15'
+                        }`}
+                      >
+                        <Text
+                          className={`font-sans-medium text-base ${
+                            isAuto ? 'text-black' : 'text-blue-400'
+                          }`}
+                        >
+                          #{tag}
+                        </Text>
+                        <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />
+                      </Pressable>
+                    );
+                  })}
 
                   <TextInput
                     ref={tagsInputRef}

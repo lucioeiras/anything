@@ -298,13 +298,18 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
   };
 
   const handleRemoveTag = async (indexToRemove: number) => {
+    const removedTag = tags[indexToRemove];
     const updatedTags = tags.filter((_, idx) => idx !== indexToRemove);
     setTags(updatedTags);
     if (updatedTags.length === 0) {
       setIsEditingTags(false);
     }
+    const updatedAutoTags = item.autoTags?.filter((t) => t !== removedTag);
     try {
-      await updateItem(item.id, { tags: updatedTags.length > 0 ? updatedTags : undefined });
+      await updateItem(item.id, {
+        tags: updatedTags.length > 0 ? updatedTags : undefined,
+        autoTags: updatedAutoTags && updatedAutoTags.length > 0 ? updatedAutoTags : undefined,
+      });
     } catch (e) {
       console.warn('Failed to remove tag', e);
     }
@@ -643,39 +648,52 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                 }}
                 className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
               >
-                {tags.map((tag, idx) => (
-                  <Animated.View
-                    key={`${tag}-${idx}`}
-                    style={{
-                      transform: [
-                        {
-                          rotate: isEditingTags
-                            ? idx % 2 === 0
-                              ? rotationEven
-                              : rotationOdd
-                            : '0deg',
-                        },
-                      ],
-                    }}
-                  >
-                    <Pressable
-                      onLongPress={() => setIsEditingTags(true)}
-                      delayLongPress={250}
-                      onPress={() => {
-                        if (isEditingTags) {
-                          handleRemoveTag(idx);
-                        } else {
-                          onSelectTag(tag);
-                        }
+                {tags.map((tag, idx) => {
+                  const isAuto = item.autoTags?.includes(tag);
+                  return (
+                    <Animated.View
+                      key={`${tag}-${idx}`}
+                      style={{
+                        transform: [
+                          {
+                            rotate: isEditingTags
+                              ? idx % 2 === 0
+                                ? rotationEven
+                                : rotationOdd
+                              : '0deg',
+                          },
+                        ],
                       }}
-                      className="flex-row items-center gap-2 rounded-full bg-blue-500/15 px-3.5 py-2 active:opacity-70"
                     >
-                      <HashIcon size={12} color="#60A5FA" weight="bold" />
-                      <Text className="font-sans-semibold text-base text-blue-400">{tag}</Text>
-                      {isEditingTags && <XIcon size={14} color="#60A5FA" />}
-                    </Pressable>
-                  </Animated.View>
-                ))}
+                      <Pressable
+                        onLongPress={() => setIsEditingTags(true)}
+                        delayLongPress={250}
+                        onPress={() => {
+                          if (isEditingTags) {
+                            handleRemoveTag(idx);
+                          } else {
+                            onSelectTag(tag);
+                          }
+                        }}
+                        className={`flex-row items-center gap-2 rounded-full px-3.5 py-2 active:opacity-70 ${
+                          isAuto ? 'bg-white' : 'bg-blue-500/15'
+                        }`}
+                      >
+                        <HashIcon size={12} color={isAuto ? '#000000' : '#60A5FA'} weight="bold" />
+                        <Text
+                          className={`font-sans-semibold text-base ${
+                            isAuto ? 'text-black' : 'text-blue-400'
+                          }`}
+                        >
+                          {tag}
+                        </Text>
+                        {isEditingTags && (
+                          <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />
+                        )}
+                      </Pressable>
+                    </Animated.View>
+                  );
+                })}
 
                 <TextInput
                   ref={tagInputRef}

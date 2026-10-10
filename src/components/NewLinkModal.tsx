@@ -42,6 +42,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const [saving, setSaving] = useState(false);
   const [resolvedMetadata, setResolvedMetadata] = useState<ResolvedMetadata | null>(null);
   const lastFetchedUrlRef = useRef<string>('');
+  const [autoTags, setAutoTags] = useState<string[]>([]);
   const autoTagsRef = useRef<string[]>([]);
 
   const existingTags = useMemo(
@@ -50,22 +51,32 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   );
 
   const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    const prevAutoTags = autoTagsRef.current;
+    const combinedAutoTags = [...prevAutoTags];
+    for (const t of newAutoTags) {
+      if (!combinedAutoTags.includes(t)) {
+        combinedAutoTags.push(t);
+      }
+    }
+    autoTagsRef.current = combinedAutoTags;
+    setAutoTags(combinedAutoTags);
+
     setTags((prev) => {
-      const manualTags = prev.filter((t) => !autoTagsRef.current.includes(t));
+      const manualTags = prev.filter((t) => !prevAutoTags.includes(t));
       const merged = [...manualTags];
-      for (const t of newAutoTags) {
+      for (const t of combinedAutoTags) {
         if (!merged.includes(t)) {
           merged.push(t);
         }
       }
       return merged;
     });
-    autoTagsRef.current = newAutoTags;
   }, []);
 
   const clearAutoTags = useCallback(() => {
     setTags((prev) => prev.filter((t) => !autoTagsRef.current.includes(t)));
     autoTagsRef.current = [];
+    setAutoTags([]);
   }, []);
 
   const handleUrlChange = (newUrl: string) => {
@@ -175,6 +186,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
     if (saving) return;
     setUrl('');
     setTags([]);
+    setAutoTags([]);
     autoTagsRef.current = [];
     setTagInput('');
     setNote('');
@@ -198,14 +210,17 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       if (pending && !finalTags.includes(pending)) {
         finalTags.push(pending);
       }
+      const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
       const item = await addLinkItem(targetUrl, {
         tags: finalTags.length > 0 ? finalTags : undefined,
+        autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
         note: note.trim() || undefined,
         preloadedMetadata: resolvedMetadata ?? undefined,
       });
       setUrl('');
       setTags([]);
+      setAutoTags([]);
       autoTagsRef.current = [];
       setTagInput('');
       setNote('');
@@ -254,6 +269,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
         const removed = prev[prev.length - 1];
         if (removed) {
           autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+          setAutoTags((a) => a.filter((t) => t !== removed));
         }
         return prev.slice(0, -1);
       });
@@ -277,6 +293,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       const removed = prev[indexToRemove];
       if (removed) {
         autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
+        setAutoTags((a) => a.filter((t) => t !== removed));
       }
       return prev.filter((_, idx) => idx !== indexToRemove);
     });
@@ -366,16 +383,27 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 onPress={() => tagsInputRef.current?.focus()}
                 className="w-full flex-row flex-wrap items-center gap-2 min-h-[28px]"
               >
-                {tags.map((tag, idx) => (
-                  <Pressable
-                    key={`${tag}-${idx}`}
-                    onPress={() => handleRemoveTag(idx)}
-                    className="flex-row items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 active:opacity-70"
-                  >
-                    <Text className="font-sans-medium text-base text-blue-400">#{tag}</Text>
-                    <XIcon size={14} color="#60A5FA" />
-                  </Pressable>
-                ))}
+                {tags.map((tag, idx) => {
+                  const isAuto = autoTags.includes(tag);
+                  return (
+                    <Pressable
+                      key={`${tag}-${idx}`}
+                      onPress={() => handleRemoveTag(idx)}
+                      className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 active:opacity-70 ${
+                        isAuto ? 'bg-white' : 'bg-blue-500/15'
+                      }`}
+                    >
+                      <Text
+                        className={`font-sans-medium text-base ${
+                          isAuto ? 'text-black' : 'text-blue-400'
+                        }`}
+                      >
+                        #{tag}
+                      </Text>
+                      <XIcon size={14} color={isAuto ? '#000000' : '#60A5FA'} />
+                    </Pressable>
+                  );
+                })}
 
                 <TextInput
                   ref={tagsInputRef}
