@@ -3,21 +3,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import {
   BookIcon,
-  BookOpenIcon,
-  CheckSquareIcon,
   FilePdfIcon,
   FilmSlateIcon,
   GameControllerIcon,
   ImageSquareIcon,
-  LightbulbIcon,
   LinkIcon,
   MusicNotesIcon,
-  NoteIcon,
   NotePencilIcon,
-  QuotesIcon,
-  RedditLogoIcon,
-  XLogoIcon,
-  YoutubeLogoIcon,
 } from 'phosphor-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -136,10 +128,7 @@ export default function AddElementScreen() {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-zinc-950 items-center justify-center p-6 pb-24"
-      edges={['top']}
-    >
+    <SafeAreaView className="flex-1 bg-zinc-950 items-center justify-center" edges={['top']}>
       <ScrollView
         contentContainerStyle={{
           alignItems: 'center',
@@ -150,36 +139,19 @@ export default function AddElementScreen() {
         showsVerticalScrollIndicator={false}
         className="w-full"
       >
-        <View className="flex-row items-center justify-center gap-3">
-          <NoteIcon size={20} color="#3b82f6" weight="duotone" />
-          <LightbulbIcon size={20} color="#3b82f6" weight="duotone" />
-          <CheckSquareIcon size={20} color="#3b82f6" weight="duotone" />
-          <QuotesIcon size={20} color="#3b82f6" weight="duotone" />
-          <ImageSquareIcon size={20} color="#3b82f6" weight="duotone" />
-          <FilePdfIcon size={20} color="#3b82f6" weight="duotone" />
-          <MusicNotesIcon size={20} color="#3b82f6" weight="duotone" />
-          <FilmSlateIcon size={20} color="#f59e0b" weight="duotone" />
-          <GameControllerIcon size={20} color="#10b981" weight="duotone" />
-          <LinkIcon size={20} color="#3b82f6" weight="duotone" />
-          <RedditLogoIcon size={20} color="#3b82f6" weight="duotone" />
-          <XLogoIcon size={20} color="#3b82f6" weight="duotone" />
-          <BookOpenIcon size={20} color="#3b82f6" weight="duotone" />
-          <YoutubeLogoIcon size={20} color="#3b82f6" weight="duotone" />
-        </View>
-
-        <Text className="font-sans-medium text-2xl text-white text-center w-full mt-6">
+        <Text className="font-sans-medium text-2xl text-white text-center w-full">
           Save <Text className="text-2xl text-blue-500 text-center"> anything</Text> you want
         </Text>
-        <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-80">
+        <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-96">
           You can add notes, to-do's, quotes, links, movies, games, PDFs, songs, X posts and Reddit
           posts, articles, books or YouTube videos
         </Text>
 
-        <View className="mt-12 gap-4">
+        <View className="mt-10 gap-4">
           <View className="flex-row flex-wrap justify-center gap-4">
             <Pressable
               onPress={handleOpenNote}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-white active:opacity-80"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-white active:opacity-80 rounded-xl"
             >
               <NotePencilIcon size={24} color="#000" weight="duotone" />
               <Text className="font-sans-semibold text-lg text-zinc-950">Note, quote or to-do</Text>
@@ -187,7 +159,7 @@ export default function AddElementScreen() {
 
             <Pressable
               onPress={handleOpenLink}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <LinkIcon size={24} color="#fff" weight="duotone" />
               <Text className="font-sans-semibold text-lg text-white">Link from anywhere</Text>
@@ -196,17 +168,22 @@ export default function AddElementScreen() {
 
           <View className="flex-row flex-wrap justify-center gap-4">
             <Pressable
-              onPress={handleOpenBook}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
+              onPress={handlePickPdf}
+              disabled={isPickingPdf}
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
-              <BookIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Book for the library</Text>
+              {isPickingPdf ? (
+                <ActivityIndicator size={24} color="#fff" />
+              ) : (
+                <FilePdfIcon size={24} color="#fff" weight="duotone" />
+              )}
+              <Text className="font-sans-semibold text-lg text-white">PDF document</Text>
             </Pressable>
 
             <Pressable
               onPress={handlePickImage}
               disabled={isPicking}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
               {isPicking ? (
                 <ActivityIndicator size={24} color="#fff" />
@@ -219,42 +196,37 @@ export default function AddElementScreen() {
 
           <View className="flex-row flex-wrap justify-center gap-4">
             <Pressable
-              onPress={handlePickPdf}
-              disabled={isPickingPdf}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70"
+              onPress={handleOpenBook}
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
-              {isPickingPdf ? (
-                <ActivityIndicator size={24} color="#fff" />
-              ) : (
-                <FilePdfIcon size={24} color="#fff" weight="duotone" />
-              )}
-              <Text className="font-sans-semibold text-lg text-white">PDF document</Text>
+              <BookIcon size={24} color="#fff" weight="duotone" />
+              <Text className="font-sans-semibold text-lg text-white">Book for the library</Text>
             </Pressable>
 
             <Pressable
               onPress={handleOpenMusic}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <MusicNotesIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Music or song</Text>
+              <Text className="font-sans-semibold text-lg text-white">A good song or album</Text>
             </Pressable>
           </View>
 
           <View className="flex-row flex-wrap justify-center gap-4">
             <Pressable
               onPress={handleOpenMovie}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
-              <FilmSlateIcon size={24} color="#f59e0b" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Movie from TMDB</Text>
+              <FilmSlateIcon size={24} color="#FFFFFF" weight="duotone" />
+              <Text className="font-sans-semibold text-lg text-white">An amazing movie</Text>
             </Pressable>
 
             <Pressable
               onPress={handleOpenGame}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80"
+              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
-              <GameControllerIcon size={24} color="#10b981" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Game from RAWG</Text>
+              <GameControllerIcon size={24} color="#FFFFFF" weight="duotone" />
+              <Text className="font-sans-semibold text-lg text-white">A wonderful game</Text>
             </Pressable>
           </View>
         </View>
