@@ -57,7 +57,7 @@ Join our community of developers creating universal apps.
 
 ## Library storage (iCloud / on-device / picked folder)
 
-Items are `*.json` files; local images live in `images/` and are referenced by relative path. The library can live in:
+Items are `*.json` files; local images live in `images/` and local PDFs live in `pdfs/`, referenced by relative path. The library can live in:
 
 | Location                                  | Notes                                                                                                                     |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |

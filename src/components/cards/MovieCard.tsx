@@ -1,0 +1,138 @@
+import { decodeHTML } from 'entities';
+import { Image as ExpoImage } from 'expo-image';
+import { cssInterop } from 'nativewind';
+import { memo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+cssInterop(ExpoImage, { className: 'style' });
+
+type MovieCardProps = {
+  title: string;
+  hideTitleAndAuthor?: boolean;
+  poster: string;
+  releaseYear?: string;
+  voteAverage?: number;
+  genres?: string[];
+  director?: string;
+  runtime?: number;
+};
+
+type FilmPerforationsProps = {
+  height: number;
+};
+
+const FilmPerforations = memo(function FilmPerforations({ height }: FilmPerforationsProps) {
+  const effectiveHeight = height > 0 ? height : 240;
+  const paddingY = 8;
+  const usableHeight = Math.max(0, effectiveHeight - paddingY * 2);
+  const pitch = 20;
+  const count = Math.max(2, Math.floor(usableHeight / pitch));
+
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.perforationsOverlay]}>
+      <View style={{ height: usableHeight }} className="justify-between items-center">
+        {Array.from({ length: count }).map((_, i) => (
+          <View key={`left-${i}`} style={styles.sprocketHole} />
+        ))}
+      </View>
+      <View style={{ height: usableHeight }} className="justify-between items-center">
+        {Array.from({ length: count }).map((_, i) => (
+          <View key={`right-${i}`} style={styles.sprocketHole} />
+        ))}
+      </View>
+    </View>
+  );
+});
+
+export const MovieCard = ({
+  title,
+  hideTitleAndAuthor = false,
+  poster,
+  releaseYear,
+  genres,
+  director,
+  runtime,
+}: MovieCardProps) => {
+  const [aspectRatio, setAspectRatio] = useState(2 / 3);
+  const [posterHeight, setPosterHeight] = useState(0);
+
+  const cleanTitle = title ? decodeHTML(title) : 'Untitled Movie';
+  const cleanDirector = director ? decodeHTML(director) : undefined;
+  const genreText =
+    genres && genres.length > 0 ? genres.slice(0, 2).map(decodeHTML).join(', ') : undefined;
+
+  const metaParts: string[] = [];
+  if (releaseYear) metaParts.push(releaseYear);
+  if (runtime) metaParts.push(`${runtime} min`);
+  if (!releaseYear && !runtime && genreText) metaParts.push(genreText);
+
+  return (
+    <View className="w-full overflow-hidden">
+      <View
+        className="w-full relative overflow-hidden"
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0) {
+            setPosterHeight(h);
+          }
+        }}
+      >
+        <ExpoImage
+          source={{ uri: poster }}
+          className="w-full bg-zinc-900 rounded-md"
+          style={{ aspectRatio }}
+          contentFit="cover"
+          transition={200}
+          onLoad={(e) => {
+            if (e.source.width && e.source.height) {
+              setAspectRatio(e.source.width / e.source.height);
+            }
+          }}
+        />
+
+        {/* Film Strip Sprocket Perforations */}
+        <FilmPerforations height={posterHeight} />
+      </View>
+
+      {!hideTitleAndAuthor && (
+        <View className="w-full p-3 gap-2 my-2 items-center">
+          <Text
+            className="flex-1 font-sans-medium text-base leading-[1.3] text-zinc-50"
+            numberOfLines={2}
+          >
+            {cleanTitle}
+          </Text>
+
+          {cleanDirector && (
+            <Text className="font-sans text-xs text-zinc-400 leading-[1.4]" numberOfLines={1}>
+              {cleanDirector}
+            </Text>
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  perforationsOverlay: {
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  sprocketHole: {
+    width: 6,
+    height: 8.5,
+    borderRadius: 2,
+    backgroundColor: '#09090B',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+});

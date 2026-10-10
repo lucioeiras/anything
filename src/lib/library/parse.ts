@@ -48,6 +48,75 @@ export function parseItem(raw: unknown): LibraryItem {
   if (typeof item.note === 'string') {
     item.note = decodeHTML(item.note);
   }
+  if (item.type === 'book') {
+    if (Array.isArray(item.authors)) {
+      item.authors = item.authors.map((a) => (typeof a === 'string' ? decodeHTML(a) : String(a)));
+    } else {
+      item.authors = [];
+    }
+    if (typeof item.publisher === 'string') {
+      item.publisher = decodeHTML(item.publisher);
+    }
+  }
+  if (item.type === 'music') {
+    if (typeof item.artist === 'string') {
+      item.artist = decodeHTML(item.artist);
+    }
+    if (typeof item.album === 'string') {
+      item.album = decodeHTML(item.album);
+    }
+    if (typeof item.genre === 'string') {
+      item.genre = decodeHTML(item.genre);
+    }
+  }
+  if (item.type === 'movie') {
+    if (typeof item.originalTitle === 'string') {
+      item.originalTitle = decodeHTML(item.originalTitle);
+    }
+    if (typeof item.overview === 'string') {
+      item.overview = decodeHTML(item.overview);
+    }
+    if (typeof item.director === 'string') {
+      item.director = decodeHTML(item.director);
+    }
+    if (Array.isArray(item.genres)) {
+      item.genres = item.genres.map((g) => (typeof g === 'string' ? decodeHTML(g) : String(g)));
+    }
+    if (Array.isArray(item.cast)) {
+      item.cast = item.cast
+        .filter((person): person is Record<string, unknown> => isObject(person))
+        .map((person) => ({
+          ...person,
+          name: typeof person.name === 'string' ? decodeHTML(person.name) : '',
+          ...(typeof person.character === 'string'
+            ? { character: decodeHTML(person.character) }
+            : {}),
+        }));
+    }
+  }
+  if (item.type === 'game') {
+    if (typeof item.description === 'string') {
+      item.description = decodeHTML(item.description);
+    }
+    if (Array.isArray(item.platforms)) {
+      item.platforms = item.platforms.map((p) =>
+        typeof p === 'string' ? decodeHTML(p) : String(p)
+      );
+    }
+    if (Array.isArray(item.genres)) {
+      item.genres = item.genres.map((g) => (typeof g === 'string' ? decodeHTML(g) : String(g)));
+    }
+    if (Array.isArray(item.developers)) {
+      item.developers = item.developers.map((d) =>
+        typeof d === 'string' ? decodeHTML(d) : String(d)
+      );
+    }
+    if (Array.isArray(item.publishers)) {
+      item.publishers = item.publishers.map((p) =>
+        typeof p === 'string' ? decodeHTML(p) : String(p)
+      );
+    }
+  }
 
   return item as unknown as LibraryItem;
 }
@@ -56,11 +125,16 @@ const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {
   note: ['text'],
   quote: ['text'],
   image: ['image'],
+  pdf: ['pdf'],
   link: ['url', 'siteTitle', 'favicon'],
   article: ['url', 'title', 'thumbnail'],
   youtube: ['url', 'title', 'thumbnail'],
   tweet: ['author', 'avatar', 'text'],
   reddit: ['subreddit', 'subredditAvatar', 'title'],
+  book: ['isbn', 'title'],
+  music: ['title', 'artist', 'cover'],
+  movie: ['title', 'poster'],
+  game: ['title', 'cover'],
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {

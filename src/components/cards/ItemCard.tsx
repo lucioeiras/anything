@@ -5,9 +5,14 @@ import { Pressable, View } from 'react-native';
 import type { LibraryItem } from '@/lib/library/types';
 
 import { ArticleCard } from './ArticleCard';
+import { BookCard } from './BookCard';
+import { GameCard } from './GameCard';
 import { ImageCard } from './ImageCard';
 import { LinkCard } from './LinkCard';
+import { MovieCard } from './MovieCard';
+import { MusicCard } from './MusicCard';
 import { NoteCard } from './NoteCard';
+import { PdfCard } from './PdfCard';
 import { QuoteCard } from './QuoteCard';
 import { RedditCard } from './RedditCard';
 import { TweetCard } from './TweetCard';
@@ -15,6 +20,7 @@ import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
   item: LibraryItem;
+  hideTitleAndAuthor?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
@@ -24,6 +30,7 @@ type ItemCardProps = {
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
 export const ItemCard = memo(function ItemCard({
   item,
+  hideTitleAndAuthor = false,
   isEditing = false,
   isSelected = false,
   onPress,
@@ -37,11 +44,15 @@ export const ItemCard = memo(function ItemCard({
   const renderCardContent = () => {
     switch (item.type) {
       case 'note':
-        return <NoteCard text={item.text} title={item.title} />;
+        return <NoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'quote':
-        return <QuoteCard text={item.text} title={item.title} />;
+        return <QuoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'image':
-        return <ImageCard url={item.image} title={item.title} />;
+        return <ImageCard url={item.image} title={hideTitleAndAuthor ? undefined : item.title} />;
+      case 'pdf':
+        return (
+          <PdfCard url={item.pdf} title={item.title} hideTitleAndAuthor={hideTitleAndAuthor} />
+        );
       case 'link':
         return (
           <LinkCard
@@ -79,6 +90,45 @@ export const ItemCard = memo(function ItemCard({
             text={item.text}
             image={item.image}
           />
+        );
+      case 'book':
+        return (
+          <BookCard
+            title={item.title}
+            authors={item.authors}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+            cover={item.cover}
+            coverAspectRatio={item.coverAspectRatio}
+            publisher={item.publisher}
+            publishedDate={item.publishedDate}
+            pageCount={item.pageCount}
+          />
+        );
+      case 'music':
+        return (
+          <MusicCard
+            title={item.title}
+            artist={item.artist}
+            cover={item.cover}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+          />
+        );
+      case 'movie':
+        return (
+          <MovieCard
+            title={item.title}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+            poster={item.poster}
+            releaseYear={item.releaseYear}
+            voteAverage={item.voteAverage}
+            genres={item.genres}
+            director={item.director}
+            runtime={item.runtime}
+          />
+        );
+      case 'game':
+        return (
+          <GameCard title={item.title} cover={item.cover} hideTitleAndAuthor={hideTitleAndAuthor} />
         );
     }
   };

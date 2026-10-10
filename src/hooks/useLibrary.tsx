@@ -2,8 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import {
+  addBookItemToLibrary,
+  addGameItemToLibrary,
   addImageToLibrary,
   addLinkItemToLibrary,
+  addMovieItemToLibrary,
+  addMusicItemToLibrary,
+  addPdfToLibrary,
   addTextItemToLibrary,
   deleteItemsFromLibrary,
   getFolderDisplayName,
@@ -20,16 +25,29 @@ import {
   saveLibrarySource,
   saveRecentFolder,
   updateItemInLibrary,
+  type AddGameOptions,
   type AddImageOptions,
+  type AddMovieOptions,
+  type AddPdfOptions,
   type DeletedItemBackup,
   type LibrarySource,
   type LinkUploadItem,
   type LoadResult,
   type PickedImageAsset,
+  type PickedPdfAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
 import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
-import type { ImageItem, NoteItem, QuoteItem } from '@/lib/library/types';
+import type {
+  BookItem,
+  GameItem,
+  ImageItem,
+  MovieItem,
+  MusicItem,
+  NoteItem,
+  PdfItem,
+  QuoteItem,
+} from '@/lib/library/types';
 
 export type LibraryState =
   | { status: 'loading' }
@@ -48,6 +66,7 @@ export type LibraryContextValue = {
   pickAndOpenFolder: () => Promise<boolean>;
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
+  addPdf: (asset: PickedPdfAsset, options?: AddPdfOptions) => Promise<PdfItem>;
   addTextItem: (
     text: string,
     title?: string,
@@ -63,6 +82,59 @@ export type LibraryContextValue = {
       preloadedMetadata?: import('@/lib/library/metadata').ResolvedMetadata;
     }
   ) => Promise<LinkUploadItem>;
+  addBookItem: (
+    book: {
+      isbn: string;
+      title: string;
+      authors: string[];
+      cover?: string;
+      coverAspectRatio?: number;
+      description?: string;
+      publisher?: string;
+      publishedDate?: string;
+      pageCount?: number;
+      url?: string;
+    },
+    options?: {
+      tags?: string[];
+      autoTags?: string[];
+      note?: string;
+    }
+  ) => Promise<BookItem>;
+  addMusicItem: (
+    music: {
+      title: string;
+      artist: string;
+      album?: string;
+      cover: string;
+      previewUrl?: string;
+      externalUrl?: string;
+      durationMs?: number;
+      releaseDate?: string;
+      genre?: string;
+    },
+    options?: {
+      tags?: string[];
+      autoTags?: string[];
+      note?: string;
+    }
+  ) => Promise<MusicItem>;
+  addMovieItem: (
+    movie: AddMovieOptions,
+    options?: {
+      tags?: string[];
+      autoTags?: string[];
+      note?: string;
+    }
+  ) => Promise<MovieItem>;
+  addGameItem: (
+    game: AddGameOptions,
+    options?: {
+      tags?: string[];
+      autoTags?: string[];
+      note?: string;
+    }
+  ) => Promise<GameItem>;
   deleteItem: (itemId: string) => Promise<void>;
   deleteItems: (itemIds: string[]) => Promise<DeletedItemBackup[]>;
   restoreItems: (backups: DeletedItemBackup[]) => Promise<void>;
@@ -235,6 +307,19 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addPdf = useCallback(
+    async (asset: PickedPdfAsset, options?: AddPdfOptions) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addPdfToLibrary(targetSource, asset, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const addTextItem = useCallback(
     async (text: string, title?: string, options?: { tags?: string[]; autoTags?: string[] }) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
@@ -264,6 +349,107 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setSource(targetSource);
       }
       const item = await addLinkItemToLibrary(targetSource, url, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
+  const addBookItem = useCallback(
+    async (
+      book: {
+        isbn: string;
+        title: string;
+        authors: string[];
+        cover?: string;
+        coverAspectRatio?: number;
+        description?: string;
+        publisher?: string;
+        publishedDate?: string;
+        pageCount?: number;
+        url?: string;
+      },
+      options?: {
+        tags?: string[];
+        autoTags?: string[];
+        note?: string;
+      }
+    ) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addBookItemToLibrary(targetSource, book, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
+  const addMusicItem = useCallback(
+    async (
+      music: {
+        title: string;
+        artist: string;
+        album?: string;
+        cover: string;
+        previewUrl?: string;
+        externalUrl?: string;
+        durationMs?: number;
+        releaseDate?: string;
+        genre?: string;
+      },
+      options?: {
+        tags?: string[];
+        autoTags?: string[];
+        note?: string;
+      }
+    ) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addMusicItemToLibrary(targetSource, music, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
+  const addMovieItem = useCallback(
+    async (
+      movie: AddMovieOptions,
+      options?: {
+        tags?: string[];
+        autoTags?: string[];
+        note?: string;
+      }
+    ) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addMovieItemToLibrary(targetSource, movie, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
+  const addGameItem = useCallback(
+    async (
+      game: AddGameOptions,
+      options?: {
+        tags?: string[];
+        autoTags?: string[];
+        note?: string;
+      }
+    ) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) {
+        setSource(targetSource);
+      }
+      const item = await addGameItemToLibrary(targetSource, game, options);
       await load(targetSource);
       return item;
     },
@@ -368,8 +554,13 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     pickAndOpenFolder,
     removeRecentFolder,
     addImage,
+    addPdf,
     addTextItem,
     addLinkItem,
+    addBookItem,
+    addMusicItem,
+    addMovieItem,
+    addGameItem,
     deleteItem,
     deleteItems,
     restoreItems,

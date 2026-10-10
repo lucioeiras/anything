@@ -80,7 +80,7 @@ export const TweetCard = ({
   const hasMultipleImages = images.length > 1;
 
   return (
-    <View className="w-full p-7 gap-4 relative bg-sky-950/15">
+    <View className="w-full p-5 gap-4 relative bg-sky-950/25 rounded-xl">
       {onPress && (
         <Pressable
           onPress={onPress}

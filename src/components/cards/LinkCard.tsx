@@ -32,7 +32,7 @@ export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCa
   };
 
   return (
-    <View className="w-full p-7 gap-4">
+    <View className="w-full p-5 gap-4 rounded-xl bg-zinc-900/80">
       <ExpoImage source={{ uri: favicon }} className="w-8 h-8 rounded-full" />
 
       <View className="gap-2">
@@ -45,7 +45,7 @@ export const LinkCard = ({ favicon, siteTitle, description, url, title }: LinkCa
         </Text>
       </View>
 
-      <View className="flex-row items-center gap-1.5 mt-2">
+      <View className="flex-row items-center gap-2 mt-2">
         <LinkIcon size={14} color="#D4D4D8" weight="bold" />
         <Text className="font-sans-semibold text-sm text-zinc-300" numberOfLines={1}>
           {getShortUrl(url)}

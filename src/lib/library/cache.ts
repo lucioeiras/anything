@@ -175,17 +175,52 @@ export function upsertCachedItems(
                 ? item.author
                 : null;
 
-        const text =
-          'text' in item && typeof item.text === 'string'
-            ? item.text
-            : 'description' in item && typeof item.description === 'string'
-              ? item.description
-              : 'subreddit' in item && typeof item.subreddit === 'string'
-                ? item.subreddit
-                : null;
+        let text: string | null = null;
+        if ('text' in item && typeof item.text === 'string') {
+          text = item.text;
+        } else if (item.type === 'book') {
+          const parts: string[] = [];
+          if (item.authors?.length) parts.push(item.authors.join(', '));
+          if (item.isbn) parts.push(item.isbn);
+          if (item.description) parts.push(item.description);
+          if (item.publisher) parts.push(item.publisher);
+          text = parts.length > 0 ? parts.join(' · ') : null;
+        } else if (item.type === 'music') {
+          const parts: string[] = [];
+          if (item.artist) parts.push(item.artist);
+          if (item.album) parts.push(item.album);
+          if (item.genre) parts.push(item.genre);
+          text = parts.length > 0 ? parts.join(' · ') : null;
+        } else if (item.type === 'movie') {
+          const parts: string[] = [];
+          if (item.director) parts.push(`Direção: ${item.director}`);
+          if (item.genres?.length) parts.push(item.genres.join(', '));
+          if (item.releaseYear) parts.push(item.releaseYear);
+          if (item.overview) parts.push(item.overview);
+          text = parts.length > 0 ? parts.join(' · ') : null;
+        } else if (item.type === 'game') {
+          const parts: string[] = [];
+          if (item.platforms?.length) parts.push(item.platforms.join(', '));
+          if (item.genres?.length) parts.push(item.genres.join(', '));
+          if (item.releaseYear) parts.push(item.releaseYear);
+          if (item.developers?.length) parts.push(item.developers.join(', '));
+          if (item.description) parts.push(item.description);
+          text = parts.length > 0 ? parts.join(' · ') : null;
+        } else if ('description' in item && typeof item.description === 'string') {
+          text = item.description;
+        } else if ('subreddit' in item && typeof item.subreddit === 'string') {
+          text = item.subreddit;
+        }
 
         const note = 'note' in item && typeof item.note === 'string' ? item.note : null;
-        const url = 'url' in item && typeof item.url === 'string' ? item.url : null;
+        const url =
+          'url' in item && typeof item.url === 'string'
+            ? item.url
+            : item.type === 'music'
+              ? item.externalUrl || item.previewUrl || null
+              : item.type === 'game'
+                ? item.website || null
+                : null;
         const tags = Array.isArray(item.tags) ? item.tags : [];
         const tagsJson = tags.length > 0 ? JSON.stringify(tags) : null;
 

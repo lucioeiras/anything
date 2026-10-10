@@ -21,15 +21,20 @@ import {
   View,
 } from 'react-native';
 
-import { CardSelectionBar } from '@/components/CardSelectionBar';
-import { ItemCard } from '@/components/ItemCard';
-import { NewImageModal } from '@/components/NewImageModal';
-import { NewLinkModal } from '@/components/NewLinkModal';
-import { NewNoteModal } from '@/components/NewNoteModal';
-import { RestoreToast } from '@/components/RestoreToast';
-import { SearchBar } from '@/components/SearchBar';
+import { ItemCard } from '@/components/cards/ItemCard';
+import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
+import { RestoreToast } from '@/components/menus/RestoreToast';
+import { SearchBar } from '@/components/menus/SearchBar';
+import { NewBookModal } from '@/components/modals/NewBookModal';
+import { NewGameModal } from '@/components/modals/NewGameModal';
+import { NewImageModal } from '@/components/modals/NewImageModal';
+import { NewLinkModal } from '@/components/modals/NewLinkModal';
+import { NewMovieModal } from '@/components/modals/NewMovieModal';
+import { NewMusicModal } from '@/components/modals/NewMusicModal';
+import { NewNoteModal } from '@/components/modals/NewNoteModal';
+import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
-import type { DeletedItemBackup, PickedImageAsset } from '@/lib/library/storage';
+import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 type BoardGridContextType = {
@@ -55,19 +60,45 @@ export default function BoardScreen() {
     searchQuery,
     setSearchQuery,
   } = useLibrary();
-  const { newNote, newLink, newImageUri, newImageFileName, newImageMimeType, newImageTimestamp } =
-    useLocalSearchParams<{
-      newNote?: string;
-      newLink?: string;
-      newImageUri?: string;
-      newImageFileName?: string;
-      newImageMimeType?: string;
-      newImageTimestamp?: string;
-    }>();
+  const {
+    newNote,
+    newLink,
+    newBook,
+    newMusic,
+    newMovie,
+    newGame,
+    newImageUri,
+    newImageFileName,
+    newImageMimeType,
+    newImageTimestamp,
+    newPdfUri,
+    newPdfFileName,
+    newPdfTimestamp,
+  } = useLocalSearchParams<{
+    newNote?: string;
+    newLink?: string;
+    newBook?: string;
+    newMusic?: string;
+    newMovie?: string;
+    newGame?: string;
+    newImageUri?: string;
+    newImageFileName?: string;
+    newImageMimeType?: string;
+    newImageTimestamp?: string;
+    newPdfUri?: string;
+    newPdfFileName?: string;
+    newPdfTimestamp?: string;
+  }>();
   const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
+  const [isMovieModalOpen, setIsMovieModalOpen] = useState(false);
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<PickedImageAsset | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pendingPdf, setPendingPdf] = useState<PickedPdfAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
@@ -79,7 +110,12 @@ export default function BoardScreen() {
   });
   const lastOpenedNoteRef = useRef<string | null>(null);
   const lastOpenedLinkRef = useRef<string | null>(null);
+  const lastOpenedBookRef = useRef<string | null>(null);
+  const lastOpenedMusicRef = useRef<string | null>(null);
+  const lastOpenedMovieRef = useRef<string | null>(null);
+  const lastOpenedGameRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
+  const lastOpenedPdfRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (newNote && newNote !== lastOpenedNoteRef.current) {
@@ -94,6 +130,46 @@ export default function BoardScreen() {
       setIsLinkModalOpen(true);
     }
   }, [newLink]);
+
+  useEffect(() => {
+    if (newBook && newBook !== lastOpenedBookRef.current) {
+      lastOpenedBookRef.current = newBook;
+      setIsBookModalOpen(true);
+    }
+  }, [newBook]);
+
+  useEffect(() => {
+    if (newMusic && newMusic !== lastOpenedMusicRef.current) {
+      lastOpenedMusicRef.current = newMusic;
+      setIsMusicModalOpen(true);
+    }
+  }, [newMusic]);
+
+  useEffect(() => {
+    if (newMovie && newMovie !== lastOpenedMovieRef.current) {
+      lastOpenedMovieRef.current = newMovie;
+      setIsMovieModalOpen(true);
+    }
+  }, [newMovie]);
+
+  useEffect(() => {
+    if (newGame && newGame !== lastOpenedGameRef.current) {
+      lastOpenedGameRef.current = newGame;
+      setIsGameModalOpen(true);
+    }
+  }, [newGame]);
+
+  useEffect(() => {
+    const pdfToken = newPdfTimestamp || newPdfUri;
+    if (newPdfUri && pdfToken && pdfToken !== lastOpenedPdfRef.current) {
+      lastOpenedPdfRef.current = pdfToken;
+      setPendingPdf({
+        uri: newPdfUri,
+        fileName: newPdfFileName,
+      });
+      setIsPdfModalOpen(true);
+    }
+  }, [newPdfUri, newPdfFileName, newPdfTimestamp]);
 
   useEffect(() => {
     const imageToken = newImageTimestamp || newImageUri;
@@ -373,12 +449,24 @@ export default function BoardScreen() {
 
       <NewNoteModal visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
       <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
+      <NewBookModal visible={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} />
+      <NewMusicModal visible={isMusicModalOpen} onClose={() => setIsMusicModalOpen(false)} />
+      <NewMovieModal visible={isMovieModalOpen} onClose={() => setIsMovieModalOpen(false)} />
+      <NewGameModal visible={isGameModalOpen} onClose={() => setIsGameModalOpen(false)} />
       <NewImageModal
         visible={isImageModalOpen}
         imageAsset={pendingImage}
         onClose={() => {
           setIsImageModalOpen(false);
           setPendingImage(null);
+        }}
+      />
+      <NewPdfModal
+        visible={isPdfModalOpen}
+        pdfAsset={pendingPdf}
+        onClose={() => {
+          setIsPdfModalOpen(false);
+          setPendingPdf(null);
         }}
       />
 
@@ -411,7 +499,7 @@ type CellRendererProps = {
 
 const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
   const { style, children, index, ...rest } = props;
-  const { lastIndices, totalItems, reportItemCol } = useContext(BoardGridContext);
+  const { reportItemCol } = useContext(BoardGridContext);
   const isLeftColumn = !style?.left || style.left < 1;
 
   useEffect(() => {
@@ -420,26 +508,8 @@ const CellRenderer = forwardRef<View, CellRendererProps>((props, ref) => {
     }
   }, [index, isLeftColumn, reportItemCol]);
 
-  const hasMultipleItems = totalItems > 1;
-
-  const isLast =
-    typeof index === 'number' &&
-    (!hasMultipleItems ||
-      totalItems <= 2 ||
-      index === totalItems - 1 ||
-      index === lastIndices.col0 ||
-      index === lastIndices.col1);
-
   return (
-    <View
-      ref={ref}
-      {...rest}
-      style={[
-        style,
-        hasMultipleItems && !isLast && styles.cell,
-        hasMultipleItems && isLeftColumn && styles.leftCell,
-      ]}
-    >
+    <View ref={ref} {...rest} style={[style]}>
       {children}
     </View>
   );
@@ -471,21 +541,16 @@ function keyExtractor(item: LibraryItem): string {
 
 const styles = StyleSheet.create({
   contentContainer: {
-    paddingTop: 56,
+    paddingHorizontal: 4,
+    paddingTop: 64,
     paddingBottom: 0,
     flexGrow: 1,
-  },
-  cell: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#27272A',
-  },
-  leftCell: {
-    borderRightWidth: 1,
-    borderRightColor: '#27272A',
   },
   cardWrapper: {
     width: '100%',
     overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingBottom: 16,
   },
   headerWrapper: {
     paddingHorizontal: 8,
