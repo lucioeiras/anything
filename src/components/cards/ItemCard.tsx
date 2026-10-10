@@ -20,6 +20,7 @@ import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
   item: LibraryItem;
+  linkedTitle?: string;
   hideTitleAndAuthor?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
@@ -30,6 +31,7 @@ type ItemCardProps = {
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
 export const ItemCard = memo(function ItemCard({
   item,
+  linkedTitle,
   hideTitleAndAuthor = false,
   isEditing = false,
   isSelected = false,
@@ -44,9 +46,21 @@ export const ItemCard = memo(function ItemCard({
   const renderCardContent = () => {
     switch (item.type) {
       case 'note':
-        return <NoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <NoteCard
+            text={item.text}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            linkedTitle={linkedTitle}
+          />
+        );
       case 'quote':
-        return <QuoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <QuoteCard
+            text={item.text}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            linkedTitle={linkedTitle}
+          />
+        );
       case 'image':
         return <ImageCard url={item.image} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'pdf':

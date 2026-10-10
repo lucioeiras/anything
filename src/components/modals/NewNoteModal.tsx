@@ -1,4 +1,11 @@
-import { CheckIcon, InfoIcon, NotePencilIcon, TextTIcon, XIcon } from 'phosphor-react-native';
+import {
+  CheckIcon,
+  InfoIcon,
+  LinkIcon,
+  NotePencilIcon,
+  TextTIcon,
+  XIcon,
+} from 'phosphor-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,9 +22,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LinkedContentPicker } from '@/components/LinkedContentPicker';
+import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
+import { isLinkableItem } from '@/lib/library/links';
 import type { NoteItem, QuoteItem } from '@/lib/library/types';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
@@ -28,7 +38,7 @@ type NewNoteModalProps = {
 };
 
 export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
-  const { addTextItem, getTags } = useLibrary();
+  const { addTextItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
   const inputRef = useRef<TextInput>(null);
@@ -41,6 +51,10 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [linkedItemId, setLinkedItemId] = useState<string>();
+  const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
+  const libraryItems = state.status === 'ready' ? state.result.items : [];
+  const linkedItem = libraryItems.find((item) => item.id === linkedItemId);
   const [autoTags, setAutoTags] = useState<string[]>([]);
   const autoTagsRef = useRef<string[]>([]);
 
@@ -66,6 +80,8 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
     setAutoTags([]);
     autoTagsRef.current = [];
     setTagInput('');
+    setLinkedItemId(undefined);
+    setIsLinkPickerOpen(false);
     setView('editor');
     onClose();
   };
@@ -86,6 +102,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       const item = await addTextItem(trimmed, title.trim() || undefined, {
         tags: finalTags.length > 0 ? finalTags : undefined,
         autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
+        linkedItemId,
       });
       setText('');
       setTitle('');
@@ -93,6 +110,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       setAutoTags([]);
       autoTagsRef.current = [];
       setTagInput('');
+      setLinkedItemId(undefined);
       setView('editor');
       onSaved?.(item);
       onClose();
@@ -164,7 +182,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   };
 
   const canSave = text.trim().length > 0 && !saving;
-  const hasInfo = Boolean(title.trim() || tags.length > 0 || tagInput.trim());
+  const hasInfo = Boolean(title.trim() || tags.length > 0 || tagInput.trim() || linkedItemId);
 
   return (
     <Modal
@@ -251,6 +269,25 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                   autoTagsRef.current = autoTagsRef.current.filter((t) => t !== removed);
                 }}
               />
+
+              {linkedItem && isLinkableItem(linkedItem) ? (
+                <LinkedContentPreview
+                  item={linkedItem}
+                  onChange={() => setIsLinkPickerOpen(true)}
+                  onRemove={() => setLinkedItemId(undefined)}
+                  containerClassName="px-8 py-6 border-b border-zinc-800"
+                />
+              ) : (
+                <Pressable
+                  onPress={() => setIsLinkPickerOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Link note to content"
+                  className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800"
+                >
+                  <LinkIcon size={20} color="#FFFFFF" />
+                  <Text className="font-sans-semibold text-lg text-white">Link to content</Text>
+                </Pressable>
+              )}
             </ScrollView>
           )}
 
@@ -328,6 +365,13 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <LinkedContentPicker
+        visible={isLinkPickerOpen}
+        items={libraryItems}
+        selectedId={linkedItemId}
+        onSelect={setLinkedItemId}
+        onClose={() => setIsLinkPickerOpen(false)}
+      />
     </Modal>
   );
 }

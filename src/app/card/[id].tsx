@@ -26,6 +26,7 @@ import {
   FilmSlateIcon,
   GameControllerIcon,
   InfoIcon,
+  LinkIcon,
   JoystickIcon,
   MusicNotesIcon,
   NotePencilIcon,
@@ -63,12 +64,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ItemCard } from '@/components/cards/ItemCard';
+import { LinkedContentPicker } from '@/components/LinkedContentPicker';
+import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { getProgressLabel } from '@/components/cards/ProgressStatus';
 import { VinylRecord } from '@/components/effects/VinylRecord';
 import { PdfPreview } from '@/components/PdfPreview';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { cleanRawgDescription } from '@/lib/games/rawg';
+import { isLinkableItem } from '@/lib/library/links';
 import {
   MEDIA_PROGRESS_STATUSES,
   type LibraryItem,
@@ -233,7 +237,25 @@ type CardDetailContentProps = {
 };
 
 function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentProps) {
-  const { deleteItem, updateItem } = useLibrary();
+  const { deleteItem, updateItem, state } = useLibrary();
+  const libraryItems = state.status === 'ready' ? state.result.items : [];
+  const linkedContent =
+    item.type === 'note' || item.type === 'quote'
+      ? libraryItems.find((candidate) => candidate.id === item.linkedItemId)
+      : undefined;
+  const linkedNotes = isLinkableItem(item)
+    ? libraryItems.filter(
+        (candidate): candidate is Extract<LibraryItem, { type: 'note' | 'quote' }> =>
+          (candidate.type === 'note' || candidate.type === 'quote') &&
+          candidate.linkedItemId === item.id
+      )
+    : [];
+  const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
+  const handleUpdateLinkedItem = (linkedItemId?: string) => {
+    updateItem(item.id, { linkedItemId }).catch((e) => {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not update link');
+    });
+  };
   const insets = useSafeAreaInsets();
 
   const initialTitle =
@@ -1010,6 +1032,90 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               )}
             />
 
+            {isNoteOrQuote && (
+              <View className="py-6 px-6 border-b border-zinc-800 gap-3">
+                <View className="flex-row items-center gap-2">
+                  <LinkIcon size={15} color="#E4E4E7" />
+                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                    Linked content
+                  </Text>
+                </View>
+                {linkedContent && isLinkableItem(linkedContent) ? (
+                  <LinkedContentPreview
+                    item={linkedContent}
+                    onChange={() => setIsLinkPickerOpen(true)}
+                    onRemove={() => handleUpdateLinkedItem(undefined)}
+                    containerClassName="rounded-xl bg-zinc-900 px-4 py-4"
+                  />
+                ) : (
+                  <View className="flex-row items-center rounded-xl bg-zinc-900 pr-3">
+                    <Pressable
+                      onPress={() => setIsLinkPickerOpen(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Link to content"
+                      className="flex-1 px-4 py-4"
+                    >
+                      <Text className="font-sans-medium text-base text-white">Link to content</Text>
+                    </Pressable>
+                    {(item.type === 'note' || item.type === 'quote') && item.linkedItemId && (
+                      <Pressable
+                        onPress={() => handleUpdateLinkedItem(undefined)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Remove linked content"
+                        hitSlop={10}
+                        className="p-2 rounded-full bg-zinc-800 active:opacity-70"
+                      >
+                        <XIcon size={16} color="#E4E4E7" weight="bold" />
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+                {linkedContent && isLinkableItem(linkedContent) && (
+                  <Pressable
+                    onPress={() =>
+                      router.push({ pathname: '/card/[id]', params: { id: linkedContent.id } })
+                    }
+                    accessibilityRole="button"
+                    className="self-start py-1"
+                  >
+                    <Text className="font-sans-medium text-sm text-blue-400">
+                      Open linked content
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            {isLinkableItem(item) && linkedNotes.length > 0 && (
+              <View className="py-6 px-6 border-b border-zinc-800 gap-3">
+                <View className="flex-row items-center gap-2">
+                  <NotePencilIcon size={15} color="#E4E4E7" />
+                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                    Linked notes ({linkedNotes.length})
+                  </Text>
+                </View>
+                {linkedNotes.map((linkedNote) => (
+                  <Pressable
+                    key={linkedNote.id}
+                    onPress={() =>
+                      router.push({ pathname: '/card/[id]', params: { id: linkedNote.id } })
+                    }
+                    accessibilityRole="button"
+                    className="rounded-xl bg-zinc-900 px-4 py-4"
+                  >
+                    <Text className="font-sans-medium text-sm text-zinc-100" numberOfLines={3}>
+                      {linkedNote.title || linkedNote.text}
+                    </Text>
+                    {linkedNote.title && (
+                      <Text className="font-sans text-xs text-zinc-400 mt-1" numberOfLines={2}>
+                        {linkedNote.text}
+                      </Text>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
             {/* Review Section */}
             {(item.type === 'book' || item.type === 'movie' || item.type === 'game') &&
               progressStatus === 'completed' && (
@@ -1551,6 +1657,15 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
             </View>
           </View>
         </Modal>
+      )}
+      {isNoteOrQuote && (
+        <LinkedContentPicker
+          visible={isLinkPickerOpen}
+          items={libraryItems}
+          selectedId={item.linkedItemId}
+          onSelect={handleUpdateLinkedItem}
+          onClose={() => setIsLinkPickerOpen(false)}
+        />
       )}
     </View>
   );

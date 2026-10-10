@@ -48,6 +48,11 @@ export function parseItem(raw: unknown): LibraryItem {
   if (typeof item.note === 'string') {
     item.note = decodeHTML(item.note);
   }
+  if (item.type === 'note' || item.type === 'quote') {
+    if (typeof item.linkedItemId !== 'string' || !item.linkedItemId) {
+      delete item.linkedItemId;
+    }
+  }
   if (item.type === 'book') {
     if (Array.isArray(item.authors)) {
       item.authors = item.authors.map((a) => (typeof a === 'string' ? decodeHTML(a) : String(a)));

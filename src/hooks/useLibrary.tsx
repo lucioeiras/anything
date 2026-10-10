@@ -70,7 +70,7 @@ export type LibraryContextValue = {
   addTextItem: (
     text: string,
     title?: string,
-    options?: { tags?: string[]; autoTags?: string[] }
+    options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string }
   ) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (
     url: string,
@@ -322,7 +322,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addTextItem = useCallback(
-    async (text: string, title?: string, options?: { tags?: string[]; autoTags?: string[] }) => {
+    async (
+      text: string,
+      title?: string,
+      options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string }
+    ) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
         setSource(targetSource);

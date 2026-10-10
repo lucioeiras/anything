@@ -676,7 +676,7 @@ export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
   title?: string,
-  options?: { tags?: string[]; autoTags?: string[] }
+  options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -702,6 +702,7 @@ export async function addTextItemToLibrary(
     ...(title ? { title } : {}),
     ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
+    ...(options?.linkedItemId ? { linkedItemId: options.linkedItemId } : {}),
     createdAt: now,
     updatedAt: now,
   };

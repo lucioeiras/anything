@@ -41,8 +41,18 @@ export type MediaReview = {
   comments?: string;
 };
 
-export type NoteItem = BaseItem & { type: 'note'; text: string; title?: string };
-export type QuoteItem = BaseItem & { type: 'quote'; text: string; title?: string };
+export type NoteItem = BaseItem & {
+  type: 'note';
+  text: string;
+  title?: string;
+  linkedItemId?: string;
+};
+export type QuoteItem = BaseItem & {
+  type: 'quote';
+  text: string;
+  title?: string;
+  linkedItemId?: string;
+};
 export type ImageItem = BaseItem & {
   type: 'image';
   image: ImageRef;
