@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { XIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
@@ -7,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
 import { getTagGroups } from '@/lib/library/organize';
-import { getSourceId } from '@/lib/library/storage';
+import { getLibraryFolders, getSourceId } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 type Props = {
@@ -33,15 +32,12 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
   useEffect(() => {
     if (!visible) return;
     let active = true;
-    AsyncStorage.getItem(storageKey)
-      .then((value) => {
+    getLibraryFolders(source)
+      .then((names) => {
         if (!active) return;
-        const parsed: unknown = value ? JSON.parse(value) : [];
         setSaved({
           key: storageKey,
-          names: Array.isArray(parsed)
-            ? parsed.filter((name): name is string => typeof name === 'string')
-            : [],
+          names,
         });
       })
       .catch(() => {
@@ -53,7 +49,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
     return () => {
       active = false;
     };
-  }, [visible, storageKey]);
+  }, [visible, source, storageKey]);
 
   const addToFolder = async (name: string) => {
     if (saving || items.length === 0) return;

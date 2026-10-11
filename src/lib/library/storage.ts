@@ -95,6 +95,66 @@ export function getSourceId(source: LibrarySource): string {
 
 const STORAGE_KEY = 'anything:librarySource';
 const RECENT_FOLDERS_KEY = 'anything:recentFolders';
+const FOLDERS_FILE_NAME = '.anything-folders.json';
+const FOLDERS_SCHEMA_VERSION = 1;
+
+function getLegacyFoldersKey(source: LibrarySource): string {
+  return `anything:folders:${getSourceId(source)}`;
+}
+
+function parseFolderNames(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((name): name is string => typeof name === 'string');
+}
+
+/**
+ * Loads user-created folder names from the library directory. Existing names
+ * stored in AsyncStorage are migrated on first read so they become part of the
+ * same portable library as the item JSON files.
+ */
+export async function getLibraryFolders(source: LibrarySource): Promise<string[]> {
+  const root = getLibraryDirectory(source);
+  const foldersFile = new File(root, FOLDERS_FILE_NAME);
+
+  if (foldersFile.exists) {
+    const parsed: unknown = JSON.parse(await foldersFile.text());
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'version' in parsed &&
+      parsed.version === FOLDERS_SCHEMA_VERSION &&
+      'folders' in parsed
+    ) {
+      return parseFolderNames(parsed.folders);
+    }
+    throw new Error('The folder metadata file has an unsupported format.');
+  }
+
+  let legacyFolders: string[] = [];
+  try {
+    const legacy = await AsyncStorage.getItem(getLegacyFoldersKey(source));
+    legacyFolders = parseFolderNames(legacy ? JSON.parse(legacy) : []);
+  } catch (error) {
+    console.warn('Failed to read legacy folder metadata', error);
+  }
+
+  if (legacyFolders.length > 0) {
+    await saveLibraryFolders(source, legacyFolders);
+  }
+  return legacyFolders;
+}
+
+/** Saves user-created folder names next to the library's item JSON files. */
+export async function saveLibraryFolders(source: LibrarySource, names: string[]): Promise<void> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) root.create({ intermediates: true, idempotent: true });
+
+  const foldersFile = new File(root, FOLDERS_FILE_NAME);
+  if (!foldersFile.exists) {
+    foldersFile.create({ intermediates: true, overwrite: true });
+  }
+  foldersFile.write(JSON.stringify({ version: FOLDERS_SCHEMA_VERSION, folders: names }, null, 2));
+}
 
 export const DEFAULT_LOCAL_FOLDER: SavedFolder = {
   id: 'local',
