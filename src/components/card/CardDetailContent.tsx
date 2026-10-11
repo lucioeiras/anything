@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decodeHTML } from 'entities';
 import * as Clipboard from 'expo-clipboard';
 import { File } from 'expo-file-system';
@@ -28,9 +29,11 @@ import { BookLogs } from '@/components/books/BookLogs';
 import { getProgressLabel } from '@/components/cards/ProgressStatus';
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
+import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem } from '@/lib/library/links';
+import { getSourceId } from '@/lib/library/storage';
 import {
   MEDIA_PROGRESS_STATUSES,
   type BookReadingLog,
@@ -106,6 +109,7 @@ type CardDetailContentProps = {
   item: LibraryItem;
   onDismiss: () => void;
   onSelectTag: (tag: string) => void;
+  onSelectFolder: (name: string) => void;
   onSelectType: (type: LibraryItemType, label: string) => void;
 };
 
@@ -113,9 +117,34 @@ export function CardDetailContent({
   item,
   onDismiss,
   onSelectTag,
+  onSelectFolder,
   onSelectType,
 }: CardDetailContentProps) {
-  const { addTextItem, deleteItem, updateItem, state } = useLibrary();
+  const { addTextItem, deleteItem, updateItem, state, source } = useLibrary();
+  const folderStorageKey = `anything:folders:${getSourceId(source)}`;
+  const [savedFolders, setSavedFolders] = useState<{ key: string; names: string[] } | null>(null);
+  const folderTags = savedFolders?.key === folderStorageKey ? savedFolders.names : [];
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(folderStorageKey)
+      .then((value) => {
+        if (!active) return;
+        const parsed: unknown = value ? JSON.parse(value) : [];
+        setSavedFolders({
+          key: folderStorageKey,
+          names: Array.isArray(parsed)
+            ? parsed.filter((name): name is string => typeof name === 'string')
+            : [],
+        });
+      })
+      .catch(() => {
+        if (active) setSavedFolders({ key: folderStorageKey, names: [] });
+      });
+    return () => {
+      active = false;
+    };
+  }, [folderStorageKey]);
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedContent =
     item.type === 'note' || item.type === 'quote'
@@ -186,6 +215,7 @@ export function CardDetailContent({
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const tagInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -812,6 +842,7 @@ export function CardDetailContent({
               containerClassName="py-6 px-6 border-b border-zinc-800 gap-4"
               tags={tags}
               autoTags={item.autoTags}
+              folderTags={folderTags}
               cardType={item.type}
               onCardTypePress={onSelectType}
               priorityTag={
@@ -846,6 +877,8 @@ export function CardDetailContent({
               onTagPress={(tag, idx) => {
                 if (isEditingTags) {
                   handleRemoveTag(idx);
+                } else if (folderTags.includes(tag.trim())) {
+                  onSelectFolder(tag.trim());
                 } else {
                   onSelectTag(tag);
                 }
@@ -1034,6 +1067,10 @@ export function CardDetailContent({
         <CardActions
           item={item}
           onDelete={handleDelete}
+          onAddToFolder={() => {
+            Keyboard.dismiss();
+            setIsFolderPickerOpen(true);
+          }}
           onDownload={handleDownload}
           onCopy={handleCopy}
           onShare={handleShare}
@@ -1041,6 +1078,18 @@ export function CardDetailContent({
           onOpenPdf={handleOpenPdf}
         />
       </KeyboardAvoidingView>
+
+      <AddToFolderModal
+        visible={isFolderPickerOpen}
+        items={[item]}
+        onClose={() => setIsFolderPickerOpen(false)}
+        onAdded={(updatedItems) => {
+          const updated = updatedItems[0];
+          if (!updated) return;
+          setTags(updated.tags ?? []);
+          showFeedback('Added to folder');
+        }}
+      />
 
       {item.type === 'pdf' && (
         <CardPdfReader

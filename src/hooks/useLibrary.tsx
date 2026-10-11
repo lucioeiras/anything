@@ -154,6 +154,9 @@ export type LibraryContextValue = {
   searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  searchTag: string | null;
+  selectTag: (tag: string) => void;
+  clearSearchTag: () => void;
   searchType: LibraryItemType | null;
   selectCardType: (type: LibraryItemType, label: string) => void;
   isInitialized: boolean;
@@ -168,12 +171,20 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [source, setSourceInternal] = useState<LibrarySource | null>(null);
   const [loaded, setLoaded] = useState<{ source: LibrarySource; state: LibraryState } | null>(null);
   const [searchQuery, setSearchQueryState] = useState('');
+  const [searchTag, setSearchTag] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<LibraryItemType | null>(null);
   const setSearchQuery = useCallback((query: string) => {
     setSearchType(null);
     setSearchQueryState(query);
   }, []);
+  const selectTag = useCallback((tag: string) => {
+    setSearchType(null);
+    setSearchQueryState('');
+    setSearchTag(tag);
+  }, []);
+  const clearSearchTag = useCallback(() => setSearchTag(null), []);
   const selectCardType = useCallback((type: LibraryItemType, label: string) => {
+    setSearchTag(null);
     setSearchType(type);
     setSearchQueryState(label);
   }, []);
@@ -599,6 +610,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     searchItems,
     searchQuery,
     setSearchQuery,
+    searchTag,
+    selectTag,
+    clearSearchTag,
     searchType,
     selectCardType,
     isInitialized,

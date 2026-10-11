@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { FolderPlusIcon } from 'phosphor-react-native';
+import { PlusIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { getSourceId } from '@/lib/library/storage';
 type SavedFolders = { key: string; names: string[] };
 
 export default function OrganizeScreen() {
-  const { source, state, setSearchQuery } = useLibrary();
+  const { source, state, setSearchQuery, clearSearchTag } = useLibrary();
   const storageKey = `anything:folders:${getSourceId(source)}`;
   const [saved, setSaved] = useState<SavedFolders | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -49,6 +49,7 @@ export default function OrganizeScreen() {
 
   const openFolder = (kind: 'status' | 'tag', key: string) => {
     setSearchQuery('');
+    clearSearchTag();
     router.navigate({ pathname: '/board', params: { folderKind: kind, folderKey: key } });
   };
 
@@ -116,10 +117,10 @@ export default function OrganizeScreen() {
         disabled={saved?.key !== storageKey}
         accessibilityRole="button"
         accessibilityLabel="Create folder"
-        className="flex-row items-center justify-center gap-4 px-3 py-6 bg-blue-950/20 active:opacity-80 border-t border-zinc-800"
+        className="flex-row items-center justify-center gap-4 px-3 py-6 bg-violet-950/20 active:opacity-80 border-t border-zinc-800"
       >
-        <FolderPlusIcon size={18} color="#3B82F6" weight="bold" />
-        <Text className="font-sans-semibold text-lg text-blue-500">New Folder</Text>
+        <PlusIcon size={18} color="#C4B5FD" weight="bold" />
+        <Text className="font-sans-semibold text-lg text-violet-300">New Folder</Text>
       </Pressable>
 
       <NewFolderModal

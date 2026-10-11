@@ -50,6 +50,7 @@ import { NewMovieModal } from '@/components/modals/NewMovieModal';
 import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
+import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
@@ -110,8 +111,10 @@ export default function BoardScreen() {
     restoreItems,
     searchItems,
     searchQuery,
+    searchTag,
     searchType,
     setSearchQuery,
+    clearSearchTag,
   } = useLibrary();
   const {
     newNote,
@@ -157,6 +160,7 @@ export default function BoardScreen() {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pendingPdf, setPendingPdf] = useState<PickedPdfAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
@@ -176,13 +180,7 @@ export default function BoardScreen() {
     setSelectedType(null);
     router.setParams({ folderKind: '', folderKey: '' });
   }, []);
-  const handleSearchChange = useCallback(
-    (text: string) => {
-      if (activeFolderKind) clearFolderFilter();
-      setSearchQuery(text);
-    },
-    [activeFolderKind, clearFolderFilter, setSearchQuery]
-  );
+  const handleSearchChange = useCallback((text: string) => setSearchQuery(text), [setSearchQuery]);
   const itemColsRef = useRef<Map<number, number>>(new Map());
   const [lastIndices, setLastIndices] = useState<{ col0: number; col1: number }>({
     col0: -1,
@@ -356,7 +354,8 @@ export default function BoardScreen() {
   const isSearching = searchQuery.trim().length > 0;
   const folderId = activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : '';
   const activeType = searchType ?? (selectedType?.folderId === folderId ? selectedType.type : null);
-  const hasActiveFilter = isSearching || activeType !== null || activeFolderKind !== null;
+  const hasActiveFilter =
+    isSearching || activeType !== null || activeFolderKind !== null || searchTag !== null;
 
   const handleTypeFilter = useCallback(
     (type: LibraryItemType) => {
@@ -376,13 +375,13 @@ export default function BoardScreen() {
             ...(isSearching && !searchType ? { searchQuery } : {}),
           })
         : state.result.items;
-    if (activeFolderKind === 'status') {
-      return matches.filter((item) => matchesStatus(item, activeFolderKey as MediaProgressStatus));
-    }
-    if (activeFolderKind === 'tag') {
-      return matches.filter((item) => item.tags?.some((tag) => tag.trim() === activeFolderKey));
-    }
-    return matches;
+    return matches.filter(
+      (item) =>
+        (!searchTag || item.tags?.some((tag) => tag.trim() === searchTag)) &&
+        (activeFolderKind !== 'status' ||
+          matchesStatus(item, activeFolderKey as MediaProgressStatus)) &&
+        (activeFolderKind !== 'tag' || item.tags?.some((tag) => tag.trim() === activeFolderKey))
+    );
   }, [
     state,
     hasActiveFilter,
@@ -390,10 +389,19 @@ export default function BoardScreen() {
     isSearching,
     searchQuery,
     searchType,
+    searchTag,
     searchItems,
     activeFolderKind,
     activeFolderKey,
   ]);
+
+  const selectedItems = useMemo(
+    () =>
+      state.status === 'ready'
+        ? state.result.items.filter((item) => selectedCardIds.has(item.id))
+        : [],
+    [state, selectedCardIds]
+  );
 
   const reportItemCol = useCallback(
     (index: number, col: number) => {
@@ -509,13 +517,16 @@ export default function BoardScreen() {
             typeLabel
               ? `No ${typeLabel}${queryLabel ? ` matching "${queryLabel}"` : ''}`
               : activeFolderKind
-                ? `No cards in ${folderLabel ?? 'this folder'}${queryLabel ? ` matching "${queryLabel}"` : ''}`
-                : `No cards matching "${queryLabel}"`
+                ? `No cards in ${folderLabel ?? 'this folder'}${searchTag ? ` with tag #${searchTag}` : ''}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                : searchTag
+                  ? `No cards with tag #${searchTag}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                  : `No cards matching "${queryLabel}"`
           }
         >
           <Pressable
             onPress={() => {
               setSearchQuery('');
+              clearSearchTag();
               setSelectedType(null);
               clearFolderFilter();
             }}
@@ -547,7 +558,9 @@ export default function BoardScreen() {
     isSearching,
     searchType,
     searchQuery,
+    searchTag,
     setSearchQuery,
+    clearSearchTag,
     activeFolderKind,
     folderLabel,
     clearFolderFilter,
@@ -599,8 +612,26 @@ export default function BoardScreen() {
           </View>
 
           <SearchBar
-            value={activeFolderKind ? (folderLabel ?? activeFolderKey ?? '') : searchQuery}
+            value={searchQuery}
             onChangeText={handleSearchChange}
+            filters={[
+              ...(activeFolderKind
+                ? [
+                    {
+                      kind: 'folder' as const,
+                      label: folderLabel ?? activeFolderKey ?? '',
+                      status:
+                        activeFolderKind === 'status'
+                          ? (activeFolderKey as MediaProgressStatus)
+                          : undefined,
+                      onRemove: clearFolderFilter,
+                    },
+                  ]
+                : []),
+              ...(searchTag
+                ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
+                : []),
+            ]}
             visible={!isEditing}
           />
         </View>
@@ -633,7 +664,15 @@ export default function BoardScreen() {
         visible={isEditing}
         selectedCount={selectedCardIds.size}
         onDelete={handleDeleteSelected}
+        onAddToFolder={() => setIsFolderPickerOpen(true)}
         onCancel={handleCancelEdition}
+      />
+
+      <AddToFolderModal
+        visible={isFolderPickerOpen}
+        items={selectedItems}
+        onClose={() => setIsFolderPickerOpen(false)}
+        onAdded={handleCancelEdition}
       />
 
       <RestoreToast

@@ -7,6 +7,7 @@ import {
   ClockIcon,
   FilePdfIcon,
   FilmSlateIcon,
+  FolderIcon,
   GameControllerIcon,
   HashIcon,
   ImageIcon,
@@ -56,6 +57,8 @@ export type TagsBoxProps = {
   tags: string[];
   /** Array of automatically generated / smart tags */
   autoTags?: string[];
+  /** Saved folder names whose matching tags should use the folder appearance. */
+  folderTags?: readonly string[];
   /** Callback when tags list changes */
   onTagsChange?: (tags: string[] | ((prev: string[]) => string[])) => void;
   /** Callback when autoTags list changes */
@@ -112,6 +115,7 @@ export type TagsBoxProps = {
 export function TagsBox({
   tags,
   autoTags,
+  folderTags,
   onTagsChange,
   onAutoTagsChange,
   tagInput: tagInputProp,
@@ -297,7 +301,10 @@ export function TagsBox({
         ) : null}
 
         {tags.map((tag, idx) => {
+          const isFolder = folderTags?.includes(tag.trim()) ?? false;
           const isAuto = autoTags?.includes(tag);
+          const tagColor = isFolder ? '#C4B5FD' : isAuto ? '#A1A1AA' : '#60A5FA';
+          const TagPillIcon = isFolder ? FolderIcon : HashIcon;
 
           const pill = (
             <Pressable
@@ -311,17 +318,19 @@ export function TagsBox({
               }}
               onLongPress={onTagLongPress ? () => onTagLongPress(tag, idx) : undefined}
               delayLongPress={250}
+              accessibilityRole="button"
+              accessibilityLabel={isFolder ? `Folder ${tag}` : `Tag ${tag}`}
               className={`flex-row items-center gap-2 rounded-full px-3 py-1 active:opacity-70 ${
-                isAuto ? 'bg-zinc-500/15' : 'bg-blue-500/15'
+                isFolder ? 'bg-violet-500/15' : isAuto ? 'bg-zinc-500/15' : 'bg-blue-500/15'
               }`}
             >
-              <HashIcon size={12} color={isAuto ? '#A1A1AA' : '#60A5FA'} weight="bold" />
+              <TagPillIcon size={12} color={tagColor} weight="bold" />
               <Text
-                className={`font-sans-medium text-base ${isAuto ? 'text-zinc-300' : 'text-blue-400'}`}
+                className={`font-sans-medium text-base ${isFolder ? 'text-violet-300' : isAuto ? 'text-zinc-300' : 'text-blue-400'}`}
               >
                 {tag}
               </Text>
-              {showRemoveIcon && <XIcon size={14} color={isAuto ? '#A1A1AA' : '#60A5FA'} />}
+              {showRemoveIcon && <XIcon size={14} color={tagColor} />}
             </Pressable>
           );
 

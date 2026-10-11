@@ -4,6 +4,7 @@ import {
   DownloadSimpleIcon,
   ExportIcon,
   FilePdfIcon,
+  FolderPlusIcon,
   TrashSimpleIcon,
 } from 'phosphor-react-native';
 import { Pressable, View } from 'react-native';
@@ -13,6 +14,7 @@ import type { LibraryItem } from '@/lib/library/types';
 type CardActionsProps = {
   item: LibraryItem;
   onDelete: () => void;
+  onAddToFolder: () => void;
   onDownload: () => void;
   onCopy: () => void;
   onShare: () => void;
@@ -23,6 +25,7 @@ type CardActionsProps = {
 export function CardActions({
   item,
   onDelete: handleDelete,
+  onAddToFolder: handleAddToFolder,
   onDownload: handleDownload,
   onCopy: handleCopy,
   onShare: handleShare,
@@ -47,6 +50,16 @@ export function CardActions({
           accessibilityLabel="Delete"
         >
           <TrashSimpleIcon size={24} color="#EF4444" />
+        </Pressable>
+
+        <Pressable
+          onPress={handleAddToFolder}
+          hitSlop={12}
+          className="flex-1 items-center justify-center border-r border-zinc-800 pt-6 pb-10 active:bg-zinc-900"
+          accessibilityRole="button"
+          accessibilityLabel="Add to folder"
+        >
+          <FolderPlusIcon size={24} color="#C4B5FD" />
         </Pressable>
 
         {/* Download button (images only) */}

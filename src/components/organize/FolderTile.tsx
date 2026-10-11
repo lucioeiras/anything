@@ -23,6 +23,7 @@ type Props = {
   status?: MediaProgressStatus;
   highlighted?: boolean;
   horizontal?: boolean;
+  disabled?: boolean;
   onPress: () => void;
   onToggleHighlight?: () => void;
 };
@@ -33,6 +34,7 @@ export function FolderTile({
   status,
   highlighted,
   horizontal = false,
+  disabled = false,
   onPress,
   onToggleHighlight,
 }: Props) {
@@ -46,11 +48,15 @@ export function FolderTile({
     : undefined;
 
   return (
-    <View className={`${horizontal ? 'w-[152px] flex-shrink-0' : 'w-1/2'} items-center pb-6`}>
+    <View
+      className={`${horizontal ? 'w-[152px] flex-shrink-0' : 'w-1/2'} items-center pb-6 ${disabled ? 'opacity-40' : ''}`}
+    >
       <Pressable
         onPress={onPress}
+        disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={`${title}, ${items.length} cards`}
+        accessibilityState={{ disabled }}
         className="w-full items-center"
       >
         <View className="mb-[9px] h-[136px] w-[136px]">

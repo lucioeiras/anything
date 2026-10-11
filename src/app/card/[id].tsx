@@ -22,7 +22,7 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { state, setSearchQuery, selectCardType } = useLibrary();
+  const { state, selectTag, selectCardType, setSearchQuery, clearSearchTag } = useLibrary();
 
   const item = useMemo(() => {
     if (state.status !== 'ready') return null;
@@ -69,7 +69,7 @@ export default function CardDetailScreen() {
 
   const handleSelectTag = useCallback(
     (tag: string) => {
-      setSearchQuery(tag);
+      selectTag(tag);
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 200,
@@ -82,7 +82,7 @@ export default function CardDetailScreen() {
         }
       });
     },
-    [translateY, setSearchQuery]
+    [translateY, selectTag]
   );
 
   const handleSelectType = useCallback(
@@ -101,6 +101,21 @@ export default function CardDetailScreen() {
       });
     },
     [translateY, selectCardType]
+  );
+
+  const handleSelectFolder = useCallback(
+    (name: string) => {
+      setSearchQuery('');
+      clearSearchTag();
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        router.replace({ pathname: '/board', params: { folderKind: 'tag', folderKey: name } });
+      });
+    },
+    [translateY, setSearchQuery, clearSearchTag]
   );
 
   if (!item) {
@@ -140,6 +155,7 @@ export default function CardDetailScreen() {
           item={item}
           onDismiss={dismissScreen}
           onSelectTag={handleSelectTag}
+          onSelectFolder={handleSelectFolder}
           onSelectType={handleSelectType}
         />
       </Animated.View>
