@@ -26,6 +26,7 @@ type NewLinkModalProps = {
   initialUrl?: string;
   initialTitle?: string;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: LinkUploadItem) => void;
 };
 
@@ -34,6 +35,7 @@ export function NewLinkModal({
   initialUrl,
   initialTitle,
   onClose,
+  onDismiss,
   onSaved,
 }: NewLinkModalProps) {
   const { addLinkItem, getTags } = useLibrary();
@@ -263,6 +265,7 @@ export function NewLinkModal({
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

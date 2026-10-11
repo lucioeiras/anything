@@ -1,7 +1,32 @@
 export function redirectSystemPath({ path }: { path: string; initial: boolean }) {
   try {
-    if (new URL(path).hostname === 'expo-sharing') {
+    const url = new URL(path);
+
+    if (url.hostname === 'expo-sharing') {
       return '/handle-share';
+    }
+
+    if (
+      url.protocol === 'anything:' &&
+      (url.hostname === 'control-add' || url.pathname === '/control-add' || url.hostname === 'add')
+    ) {
+      const controlItem = url.searchParams.get('controlItem');
+      const token = encodeURIComponent(
+        url.searchParams.get('controlToken') ?? Date.now().toString()
+      );
+
+      const supportedItems = new Set([
+        'note',
+        'link',
+        'book',
+        'music',
+        'movie',
+        'game',
+        'pdf',
+        'image',
+      ]);
+      const item = controlItem && supportedItems.has(controlItem) ? controlItem : 'all';
+      return `/board?controlAddItem=${item}&controlToken=${token}`;
     }
   } catch {
     // Ordinary relative paths are not absolute URLs.

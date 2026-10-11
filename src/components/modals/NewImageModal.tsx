@@ -34,10 +34,17 @@ type NewImageModalProps = {
   visible: boolean;
   imageAsset: PickedImageAsset | null;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: ImageItem) => void;
 };
 
-export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImageModalProps) {
+export function NewImageModal({
+  visible,
+  imageAsset,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewImageModalProps) {
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -188,6 +195,7 @@ export function NewImageModal({ visible, imageAsset, onClose, onSaved }: NewImag
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

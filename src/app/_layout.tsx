@@ -7,9 +7,12 @@ import {
 } from '@expo-google-fonts/instrument-sans';
 import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { ExtensionStorage } from '@bacons/apple-targets';
+import * as Linking from 'expo-linking';
+import { DarkTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 
 import '@/global.css';
 import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
@@ -24,8 +27,85 @@ const CustomDarkTheme = {
   },
 };
 
+const controlStorage = new ExtensionStorage('group.com.diegoeiras.anything');
+
+function openControlDestination(item: string, token: string) {
+  const supportedItems = new Set([
+    'note',
+    'link',
+    'book',
+    'music',
+    'movie',
+    'game',
+    'image',
+    'pdf',
+  ]);
+  router.replace({
+    pathname: '/board',
+    params: { controlAddItem: supportedItems.has(item) ? item : 'all', controlToken: token },
+  });
+}
+
+function consumePendingControlAdd() {
+  const pendingRequest = controlStorage.get('pendingControlAdd');
+  if (!pendingRequest) return;
+
+  controlStorage.remove('pendingControlAdd');
+  const separatorIndex = pendingRequest.indexOf('|');
+  if (separatorIndex === -1) {
+    openControlDestination(pendingRequest, Date.now().toString());
+    return;
+  }
+
+  openControlDestination(
+    pendingRequest.slice(0, separatorIndex),
+    pendingRequest.slice(separatorIndex + 1) || Date.now().toString()
+  );
+}
+
 function RootNavigator() {
   const { isInitialized } = useLibrary();
+  const linkingURL = Linking.useLinkingURL();
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    consumePendingControlAdd();
+  }, [isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      consumePendingControlAdd();
+    });
+
+    return () => subscription.remove();
+  }, [isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized || !linkingURL) return;
+
+    try {
+      const url = new URL(linkingURL);
+      if (url.protocol !== 'anything:') return;
+
+      const controlItem = url.searchParams.get('controlItem');
+      const route = url.pathname.replace(/^\/+/, '');
+      const isControlRoute =
+        url.hostname === 'control-add' ||
+        route === 'control-add' ||
+        url.hostname === 'add' ||
+        (route === 'add' && controlItem !== null);
+
+      if (!isControlRoute) return;
+
+      const token = url.searchParams.get('controlToken') ?? Date.now().toString();
+      openControlDestination(controlItem ?? 'all', token);
+    } catch {
+      // Ignore URLs that are not valid absolute deep links.
+    }
+  }, [isInitialized, linkingURL]);
 
   useEffect(() => {
     if (isInitialized) {

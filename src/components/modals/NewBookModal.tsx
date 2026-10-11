@@ -31,10 +31,11 @@ import { generateAutoTagsAsync } from '@/lib/tags/autoTags';
 type NewBookModalProps = {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: BookItem) => void;
 };
 
-export function NewBookModal({ visible, onClose, onSaved }: NewBookModalProps) {
+export function NewBookModal({ visible, onClose, onDismiss, onSaved }: NewBookModalProps) {
   const { addBookItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -238,6 +239,7 @@ export function NewBookModal({ visible, onClose, onSaved }: NewBookModalProps) {
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

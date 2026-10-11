@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.diegoeiras.anything",
-      "requireFullScreen": true
+      "requireFullScreen": true,
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.diegoeiras.anything"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -72,7 +75,11 @@
           },
           "android": {
             "enabled": true,
-            "singleShareMimeTypes": ["text/*", "image/*", "application/pdf"]
+            "singleShareMimeTypes": [
+              "text/*",
+              "image/*",
+              "application/pdf"
+            ]
           }
         }
       ],
@@ -86,7 +93,8 @@
       "expo-video",
       "llama.rn",
       "@config-plugins/react-native-blob-util",
-      "@config-plugins/react-native-pdf"
+      "@config-plugins/react-native-pdf",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true,

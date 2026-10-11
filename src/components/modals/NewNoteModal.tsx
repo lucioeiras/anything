@@ -40,10 +40,17 @@ type NewNoteModalProps = {
   visible: boolean;
   initialText?: string;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: NoteItem | QuoteItem) => void;
 };
 
-export function NewNoteModal({ visible, initialText, onClose, onSaved }: NewNoteModalProps) {
+export function NewNoteModal({
+  visible,
+  initialText,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewNoteModalProps) {
   const { addMusicItem, addTextItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -266,6 +273,7 @@ export function NewNoteModal({ visible, initialText, onClose, onSaved }: NewNote
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
