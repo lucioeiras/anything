@@ -2,6 +2,7 @@ import { CheckIcon } from 'phosphor-react-native';
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { getLinkableTitle, type LinkableItem } from '@/lib/library/links';
 import type { LibraryItem } from '@/lib/library/types';
 
 import { ArticleCard } from './ArticleCard';
@@ -20,6 +21,7 @@ import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
   item: LibraryItem;
+  linkedItem?: LinkableItem;
   hideTitleAndAuthor?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
@@ -30,6 +32,7 @@ type ItemCardProps = {
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
 export const ItemCard = memo(function ItemCard({
   item,
+  linkedItem,
   hideTitleAndAuthor = false,
   isEditing = false,
   isSelected = false,
@@ -44,9 +47,21 @@ export const ItemCard = memo(function ItemCard({
   const renderCardContent = () => {
     switch (item.type) {
       case 'note':
-        return <NoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <NoteCard
+            text={item.text}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            linkedItem={linkedItem}
+          />
+        );
       case 'quote':
-        return <QuoteCard text={item.text} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <QuoteCard
+            text={item.text}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            linkedTitle={linkedItem ? getLinkableTitle(linkedItem) : undefined}
+          />
+        );
       case 'image':
         return <ImageCard url={item.image} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'pdf':
@@ -65,10 +80,21 @@ export const ItemCard = memo(function ItemCard({
         );
       case 'article':
         return (
-          <ArticleCard articleTitle={item.title} thumbnail={item.thumbnail} origin={item.origin} />
+          <ArticleCard
+            articleTitle={item.title}
+            thumbnail={item.thumbnail}
+            origin={item.origin}
+            progressStatus={item.progressStatus}
+          />
         );
       case 'youtube':
-        return <YouTubeCard videoTitle={item.title} thumbnail={item.thumbnail} />;
+        return (
+          <YouTubeCard
+            videoTitle={item.title}
+            thumbnail={item.thumbnail}
+            progressStatus={item.progressStatus}
+          />
+        );
       case 'tweet':
         return (
           <TweetCard
@@ -95,13 +121,13 @@ export const ItemCard = memo(function ItemCard({
         return (
           <BookCard
             title={item.title}
-            authors={item.authors}
             hideTitleAndAuthor={hideTitleAndAuthor}
             cover={item.cover}
             coverAspectRatio={item.coverAspectRatio}
             publisher={item.publisher}
             publishedDate={item.publishedDate}
             pageCount={item.pageCount}
+            progressStatus={item.progressStatus}
           />
         );
       case 'music':
@@ -122,13 +148,18 @@ export const ItemCard = memo(function ItemCard({
             releaseYear={item.releaseYear}
             voteAverage={item.voteAverage}
             genres={item.genres}
-            director={item.director}
             runtime={item.runtime}
+            progressStatus={item.progressStatus}
           />
         );
       case 'game':
         return (
-          <GameCard title={item.title} cover={item.cover} hideTitleAndAuthor={hideTitleAndAuthor} />
+          <GameCard
+            title={item.title}
+            cover={item.cover}
+            hideTitleAndAuthor={hideTitleAndAuthor}
+            progressStatus={item.progressStatus}
+          />
         );
     }
   };

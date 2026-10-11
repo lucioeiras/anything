@@ -1,7 +1,8 @@
 import { decodeHTML } from 'entities';
 
 export type MusicMetadata = {
-  trackId: number;
+  id: number;
+  kind: 'song' | 'album';
   title: string;
   artist: string;
   album?: string;
@@ -49,15 +50,17 @@ export function formatReleaseYear(dateString?: string): string {
   return match ? match[0] : '';
 }
 
-/**
- * Searches the iTunes Search API for songs matching a query.
- */
-export async function searchITunesMusic(query: string, limit = 25): Promise<MusicMetadata[]> {
+/** Searches the iTunes catalog for songs or albums matching a query. */
+export async function searchITunesMusic(
+  query: string,
+  kind: 'song' | 'album' = 'song',
+  limit = 25
+): Promise<MusicMetadata[]> {
   const cleanQuery = query.trim();
   if (!cleanQuery) return [];
 
   const encoded = encodeURIComponent(cleanQuery);
-  const endpoint = `https://itunes.apple.com/search?term=${encoded}&entity=song&limit=${limit}`;
+  const endpoint = `https://itunes.apple.com/search?term=${encoded}&entity=${kind}&limit=${limit}`;
 
   try {
     const response = await fetch(endpoint, {
@@ -76,27 +79,44 @@ export async function searchITunesMusic(query: string, limit = 25): Promise<Musi
     }
 
     return data.results
-      .filter((item: any) => item && (item.kind === 'song' || item.wrapperType === 'track'))
+      .filter((item: any) =>
+        kind === 'album'
+          ? item?.wrapperType === 'collection' && typeof item.collectionId === 'number'
+          : item?.kind === 'song' && typeof item.trackId === 'number'
+      )
       .map((item: any): MusicMetadata => {
-        const title = decodeHTML(item.trackName || item.trackCensoredName || 'Unknown Title');
+        const title = decodeHTML(
+          kind === 'album'
+            ? item.collectionName || item.collectionCensoredName || 'Unknown Album'
+            : item.trackName || item.trackCensoredName || 'Unknown Title'
+        );
         const artist = decodeHTML(item.artistName || 'Unknown Artist');
-        const album = item.collectionName ? decodeHTML(item.collectionName) : undefined;
+        const album =
+          kind === 'song' && item.collectionName ? decodeHTML(item.collectionName) : undefined;
         const rawCover = item.artworkUrl100 || item.artworkUrl60 || item.artworkUrl30 || '';
         const cover = getHighResArtwork(rawCover, 600);
 
         return {
-          trackId: item.trackId,
+          id: kind === 'album' ? item.collectionId : item.trackId,
+          kind,
           title,
           artist,
           album,
           cover,
-          previewUrl: item.previewUrl || undefined,
-          externalUrl: item.trackViewUrl || item.collectionViewUrl || undefined,
-          durationMs: typeof item.trackTimeMillis === 'number' ? item.trackTimeMillis : undefined,
+          previewUrl: kind === 'song' ? item.previewUrl || undefined : undefined,
+          externalUrl:
+            kind === 'album' ? item.collectionViewUrl || undefined : item.trackViewUrl || undefined,
+          durationMs:
+            kind === 'song' && typeof item.trackTimeMillis === 'number'
+              ? item.trackTimeMillis
+              : undefined,
           releaseDate: item.releaseDate || undefined,
           genre: item.primaryGenreName ? decodeHTML(item.primaryGenreName) : undefined,
         };
-      });
+      })
+      .filter((item: MusicMetadata) =>
+        item.kind === 'album' ? !item.title.toLowerCase().includes(' - single') : true
+      );
   } catch (error) {
     console.warn('Failed to search iTunes music:', error);
     return [];

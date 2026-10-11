@@ -1,4 +1,5 @@
 import { decodeHTML } from 'entities';
+import { LinkIcon } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
 import QuoteClose from '../../../assets/quote-close.svg';
@@ -7,9 +8,10 @@ import QuoteOpen from '../../../assets/quote-open.svg';
 type QuoteProps = {
   text: string;
   title?: string;
+  linkedTitle?: string;
 };
 
-export const QuoteCard = ({ text, title }: QuoteProps) => {
+export const QuoteCard = ({ text, title, linkedTitle }: QuoteProps) => {
   const cleanText = text ? decodeHTML(text) : '';
   const cleanTitle = title ? decodeHTML(title) : undefined;
 
@@ -24,6 +26,14 @@ export const QuoteCard = ({ text, title }: QuoteProps) => {
           {cleanText}
         </Text>
         <QuoteClose />
+        {linkedTitle && (
+          <View className="flex-row items-center gap-2 pt-2">
+            <LinkIcon size={14} color="#93C5FD" />
+            <Text className="font-sans-medium text-xs text-blue-300 flex-shrink" numberOfLines={1}>
+              {linkedTitle}
+            </Text>
+          </View>
+        )}
       </View>
 
       {cleanTitle && (

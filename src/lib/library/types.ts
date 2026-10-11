@@ -41,8 +41,18 @@ export type MediaReview = {
   comments?: string;
 };
 
-export type NoteItem = BaseItem & { type: 'note'; text: string; title?: string };
-export type QuoteItem = BaseItem & { type: 'quote'; text: string; title?: string };
+export type NoteItem = BaseItem & {
+  type: 'note';
+  text: string;
+  title?: string;
+  linkedItemId?: string;
+};
+export type QuoteItem = BaseItem & {
+  type: 'quote';
+  text: string;
+  title?: string;
+  linkedItemId?: string;
+};
 export type ImageItem = BaseItem & {
   type: 'image';
   image: ImageRef;
@@ -130,6 +140,7 @@ export type BookItem = BaseItem & {
 
 export type MusicItem = BaseItem & {
   type: 'music';
+  musicKind?: 'song' | 'album';
   title: string;
   artist: string;
   album?: string;

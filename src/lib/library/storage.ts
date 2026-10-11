@@ -676,7 +676,7 @@ export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
   title?: string,
-  options?: { tags?: string[]; autoTags?: string[] }
+  options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string; forceNote?: boolean }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -685,8 +685,9 @@ export async function addTextItemToLibrary(
 
   const trimmed = rawText.trim();
   const isQuote =
-    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
-    (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2);
+    !options?.forceNote &&
+    ((trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+      (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2));
 
   const cleanText = isQuote ? trimmed.slice(1, -1).trim() : trimmed;
   const itemType: 'quote' | 'note' = isQuote ? 'quote' : 'note';
@@ -702,6 +703,7 @@ export async function addTextItemToLibrary(
     ...(title ? { title } : {}),
     ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
+    ...(options?.linkedItemId ? { linkedItemId: options.linkedItemId } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -926,6 +928,7 @@ export async function addBookItemToLibrary(
 export async function addMusicItemToLibrary(
   source: LibrarySource,
   music: {
+    musicKind: 'song' | 'album';
     title: string;
     artist: string;
     album?: string;
@@ -954,6 +957,7 @@ export async function addMusicItemToLibrary(
     id,
     version: SCHEMA_VERSION,
     type: 'music',
+    musicKind: music.musicKind,
     title: music.title,
     artist: music.artist,
     cover: music.cover,

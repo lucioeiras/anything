@@ -429,7 +429,7 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
 
             {/* Details Section when a movie is selected */}
             {selectedMovie && (
-              <View className="mt-6">
+              <View>
                 {/* Tags section */}
                 <TagsBox
                   tags={tags}

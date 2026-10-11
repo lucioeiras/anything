@@ -50,7 +50,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MusicMetadata[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<MusicMetadata | null>(null);
+  const [selectedMusic, setSelectedMusic] = useState<MusicMetadata | null>(null);
 
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -60,6 +60,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
   const autoTagsRef = useRef<string[]>([]);
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRequestRef = useRef(0);
 
   const existingTags = useMemo(
     () => (visible ? getTags().map((t) => t.tag) : []),
@@ -100,51 +101,60 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
+    const request = ++searchRequestRef.current;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     if (!text.trim()) {
       setResults([]);
       setIsSearching(false);
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       return;
     }
 
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     setIsSearching(true);
+    setResults([]);
 
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const found = await searchITunesMusic(text.trim());
-        setResults(found);
+        const [songs, albums] = await Promise.all([
+          searchITunesMusic(text.trim(), 'song', 15),
+          searchITunesMusic(text.trim(), 'album', 15),
+        ]);
+        const found: MusicMetadata[] = [];
+        for (let index = 0; index < Math.max(songs.length, albums.length); index++) {
+          if (songs[index]) found.push(songs[index]);
+          if (albums[index]) found.push(albums[index]);
+        }
+        if (request === searchRequestRef.current) setResults(found);
       } catch (err) {
         console.warn('Search error:', err);
       } finally {
-        setIsSearching(false);
+        if (request === searchRequestRef.current) setIsSearching(false);
       }
     }, 350);
   };
 
-  const handleSelectTrack = (track: MusicMetadata) => {
-    setSelectedTrack(track);
+  const handleSelectMusic = (music: MusicMetadata) => {
+    setSelectedMusic(music);
 
-    // Auto-generate tags based on track metadata
+    // Auto-generate tags based on the selected music metadata.
     const generated = generateAutoTags({
-      title: track.title,
-      author: track.artist,
+      title: music.title,
+      author: music.artist,
       type: 'music',
       existingTags,
     });
 
     const additionalTags: string[] = [];
-    if (track.artist) {
+    if (music.artist) {
       additionalTags.push(
-        track.artist
+        music.artist
           .toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .trim()
       );
     }
-    if (track.genre) {
+    if (music.genre) {
       additionalTags.push(
-        track.genre
+        music.genre
           .toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .trim()
@@ -156,18 +166,17 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
   };
 
   const handleClearSearch = () => {
-    setQuery('');
-    setResults([]);
-    setIsSearching(false);
+    handleQueryChange('');
     searchInputRef.current?.focus();
   };
 
-  const handleClose = () => {
-    if (saving) return;
+  const resetModal = () => {
+    ++searchRequestRef.current;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     setQuery('');
     setResults([]);
     setIsSearching(false);
-    setSelectedTrack(null);
+    setSelectedMusic(null);
     setTags([]);
     setAutoTags([]);
     autoTagsRef.current = [];
@@ -176,8 +185,13 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
     onClose();
   };
 
+  const handleClose = () => {
+    if (saving) return;
+    resetModal();
+  };
+
   const handleSave = async () => {
-    if (!selectedTrack || saving) return;
+    if (!selectedMusic || saving) return;
 
     setSaving(true);
     try {
@@ -190,15 +204,16 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
 
       const item = await addMusicItem(
         {
-          title: selectedTrack.title,
-          artist: selectedTrack.artist,
-          album: selectedTrack.album,
-          cover: selectedTrack.cover,
-          previewUrl: selectedTrack.previewUrl,
-          externalUrl: selectedTrack.externalUrl,
-          durationMs: selectedTrack.durationMs,
-          releaseDate: selectedTrack.releaseDate,
-          genre: selectedTrack.genre,
+          musicKind: selectedMusic.kind,
+          title: selectedMusic.title,
+          artist: selectedMusic.artist,
+          album: selectedMusic.album,
+          cover: selectedMusic.cover,
+          previewUrl: selectedMusic.previewUrl,
+          externalUrl: selectedMusic.externalUrl,
+          durationMs: selectedMusic.durationMs,
+          releaseDate: selectedMusic.releaseDate,
+          genre: selectedMusic.genre,
         },
         {
           tags: finalTags.length > 0 ? finalTags : undefined,
@@ -207,7 +222,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
         }
       );
 
-      handleClose();
+      resetModal();
       onSaved?.(item);
     } catch (e) {
       console.error('Failed to save music item:', e);
@@ -217,7 +232,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
     }
   };
 
-  const canSave = selectedTrack !== null && !saving;
+  const canSave = selectedMusic !== null && !saving;
 
   return (
     <Modal
@@ -247,39 +262,45 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
             <View className="gap-3 p-8 pt-0">
               <Text className="font-sans-semibold text-2xl text-white">Add music</Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search songs from the iTunes catalog to add to your library.
+                Search songs or albums from the iTunes catalog to add to your library.
               </Text>
             </View>
 
-            {/* Selected Track Banner or Search Input */}
-            {selectedTrack ? (
+            {/* Selected music banner or search input */}
+            {selectedMusic ? (
               <View className="px-8 py-6 border-t border-b border-zinc-800 flex-row items-center gap-6">
                 <ExpoImage
-                  source={{ uri: selectedTrack.cover }}
+                  source={{ uri: selectedMusic.cover }}
                   className="w-24 h-24 rounded-lg bg-zinc-800"
                   contentFit="cover"
                 />
                 <View className="flex-1 gap-2">
                   <Text className="font-sans-semibold text-lg text-white" numberOfLines={1}>
-                    {selectedTrack.title}
+                    {selectedMusic.title}
                   </Text>
                   <Text className="font-sans text-base text-zinc-300" numberOfLines={1}>
-                    {selectedTrack.artist}
+                    {selectedMusic.artist}
                   </Text>
-                  {selectedTrack.album && (
-                    <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
-                      {selectedTrack.album}
-                      {selectedTrack.releaseDate &&
-                        ` • ${formatReleaseYear(selectedTrack.releaseDate)}`}
+                  {selectedMusic.kind === 'album' ? (
+                    <Text className="font-sans text-sm text-zinc-400 mt-0.5">
+                      Album
+                      {selectedMusic.releaseDate &&
+                        ` • ${formatReleaseYear(selectedMusic.releaseDate)}`}
                     </Text>
-                  )}
+                  ) : selectedMusic.album ? (
+                    <Text className="font-sans text-sm text-zinc-400 mt-0.5" numberOfLines={1}>
+                      {selectedMusic.album}
+                      {selectedMusic.releaseDate &&
+                        ` • ${formatReleaseYear(selectedMusic.releaseDate)}`}
+                    </Text>
+                  ) : null}
                 </View>
                 <Pressable
-                  onPress={() => setSelectedTrack(null)}
+                  onPress={() => setSelectedMusic(null)}
                   hitSlop={10}
                   className="p-2 rounded-full bg-zinc-800 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Change song"
+                  accessibilityLabel="Change music selection"
                 >
                   <XIcon size={16} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -291,8 +312,8 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                 <TextInput
                   ref={searchInputRef}
                   value={query}
-                  onChangeText={handleQueryChange}
-                  placeholder="Search song, artist, or album..."
+                  onChangeText={(text) => handleQueryChange(text)}
+                  placeholder="Search song, album, or artist..."
                   placeholderTextColor="#71717A"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -319,14 +340,16 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
               </View>
             )}
 
-            {/* Results List if no track is selected yet */}
-            {!selectedTrack && (
+            {/* Results list if no music is selected yet */}
+            {!selectedMusic && (
               <View className="w-full">
                 {results.map((item) => (
                   <Pressable
-                    key={item.trackId}
-                    onPress={() => handleSelectTrack(item)}
+                    key={`${item.kind}-${item.id}`}
+                    onPress={() => handleSelectMusic(item)}
                     className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-900 active:bg-zinc-900"
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.kind === 'album' ? 'Álbum' : 'Música'}: ${item.title}, ${item.artist}`}
                   >
                     <View className="w-12 h-12 rounded-md bg-zinc-800 overflow-hidden">
                       {item.cover ? (
@@ -347,8 +370,11 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                         {item.title}
                       </Text>
                       <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
-                        {item.artist}
+                        {item.kind === 'album' ? 'Album' : 'Música'} • {item.artist}
                         {item.album ? ` • ${item.album}` : ''}
+                        {item.kind === 'album' && item.releaseDate
+                          ? ` • ${formatReleaseYear(item.releaseDate)}`
+                          : ''}
                       </Text>
                     </View>
 
@@ -364,15 +390,15 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                   <View className="py-12 items-center justify-center">
                     <MusicNotesIcon size={32} color="#52525B" weight="duotone" />
                     <Text className="font-sans text-sm text-zinc-500 mt-3">
-                      No songs found for "{query}"
+                      No songs or albums found for "{query}"
                     </Text>
                   </View>
                 )}
               </View>
             )}
 
-            {/* Details Section when a track is selected */}
-            {selectedTrack && (
+            {/* Details section when music is selected */}
+            {selectedMusic && (
               <View>
                 {/* Tags section */}
                 <TagsBox
@@ -405,7 +431,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                       ref={noteInputRef}
                       value={note}
                       onChangeText={setNote}
-                      placeholder="Add personal thoughts or notes about this song..."
+                      placeholder={`Add personal thoughts or notes about this ${selectedMusic.kind}...`}
                       placeholderTextColor="#71717A"
                       multiline
                       textAlignVertical="top"
@@ -440,7 +466,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                 hitSlop={12}
                 className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
                 accessibilityRole="button"
-                accessibilityLabel="Save music"
+                accessibilityLabel={`Save ${selectedMusic?.kind ?? 'music'}`}
               >
                 {saving ? (
                   <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
@@ -451,7 +477,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
                 <Text
                   className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
                 >
-                  Save music
+                  Save {selectedMusic?.kind ?? 'music'}
                 </Text>
               </Pressable>
             </View>

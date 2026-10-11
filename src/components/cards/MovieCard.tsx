@@ -4,6 +4,10 @@ import { cssInterop } from 'nativewind';
 import { memo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { MediaProgressStatus } from '@/lib/library/types';
+
+import { ProgressStatus } from './ProgressStatus';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type MovieCardProps = {
@@ -13,8 +17,8 @@ type MovieCardProps = {
   releaseYear?: string;
   voteAverage?: number;
   genres?: string[];
-  director?: string;
   runtime?: number;
+  progressStatus?: MediaProgressStatus;
 };
 
 type FilmPerforationsProps = {
@@ -50,14 +54,13 @@ export const MovieCard = ({
   poster,
   releaseYear,
   genres,
-  director,
   runtime,
+  progressStatus,
 }: MovieCardProps) => {
   const [aspectRatio, setAspectRatio] = useState(2 / 3);
   const [posterHeight, setPosterHeight] = useState(0);
 
   const cleanTitle = title ? decodeHTML(title) : 'Untitled Movie';
-  const cleanDirector = director ? decodeHTML(director) : undefined;
   const genreText =
     genres && genres.length > 0 ? genres.slice(0, 2).map(decodeHTML).join(', ') : undefined;
 
@@ -97,20 +100,13 @@ export const MovieCard = ({
       {!hideTitleAndAuthor && (
         <View className="w-full gap-1.5 my-3 items-center">
           <Text
-            className="flex-1 font-sans-medium text-base leading-[1.3] text-zinc-50 text-center"
+            className="flex-1 font-sans-medium text-sm leading-[1.3] text-zinc-50 text-center"
             numberOfLines={2}
           >
             {cleanTitle}
           </Text>
 
-          {cleanDirector && (
-            <Text
-              className="font-sans text-xs text-zinc-400 leading-[1.4] text-center"
-              numberOfLines={1}
-            >
-              {cleanDirector}
-            </Text>
-          )}
+          <ProgressStatus type="movie" status={progressStatus} />
         </View>
       )}
     </View>

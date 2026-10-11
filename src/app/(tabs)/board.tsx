@@ -35,6 +35,7 @@ import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
+import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import type { LibraryItem } from '@/lib/library/types';
 
 type BoardGridContextType = {
@@ -320,17 +321,33 @@ export default function BoardScreen() {
       isEditing,
       selectedCardIds,
       searchQuery,
+      libraryState: state,
       lastIndices,
       totalItems: displayedItems.length,
     }),
-    [isEditing, selectedCardIds, searchQuery, lastIndices, displayedItems.length]
+    [isEditing, selectedCardIds, searchQuery, lastIndices, displayedItems.length, state]
   );
+
+  const linkableItems = useMemo(() => {
+    const linkedItems = new Map<string, LinkableItem>();
+    if (state.status === 'ready') {
+      for (const item of state.result.items) {
+        if (isLinkableItem(item)) linkedItems.set(item.id, item);
+      }
+    }
+    return linkedItems;
+  }, [state]);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<LibraryItem>) => (
       <View style={styles.cardWrapper}>
         <ItemCard
           item={item}
+          linkedItem={
+            (item.type === 'note' || item.type === 'quote') && item.linkedItemId
+              ? linkableItems.get(item.linkedItemId)
+              : undefined
+          }
           isEditing={isEditing}
           isSelected={selectedCardIds.has(item.id)}
           onPress={handleCardPress}
@@ -338,7 +355,7 @@ export default function BoardScreen() {
         />
       </View>
     ),
-    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress]
+    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems]
   );
 
   const renderHeader = useCallback(() => {

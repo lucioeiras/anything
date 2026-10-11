@@ -5,15 +5,25 @@ import { GameControllerIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
+import type { MediaProgressStatus } from '@/lib/library/types';
+
+import { ProgressStatus } from './ProgressStatus';
+
 cssInterop(ExpoImage, { className: 'style' });
 
 type GameCardProps = {
   title: string;
   cover: string;
   hideTitleAndAuthor?: boolean;
+  progressStatus?: MediaProgressStatus;
 };
 
-export const GameCard = ({ title, cover, hideTitleAndAuthor = false }: GameCardProps) => {
+export const GameCard = ({
+  title,
+  cover,
+  hideTitleAndAuthor = false,
+  progressStatus,
+}: GameCardProps) => {
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
 
   return (
@@ -39,13 +49,14 @@ export const GameCard = ({ title, cover, hideTitleAndAuthor = false }: GameCardP
       </View>
 
       {!hideTitleAndAuthor && (
-        <View className="w-full p-3 gap-2">
+        <View className="w-full my-3 gap-2">
           <Text
-            className="font-sans-semibold text-base leading-snug text-zinc-50 text-center"
+            className="font-sans-semibold text-sm leading-snug text-zinc-50 text-center"
             numberOfLines={2}
           >
             {decodeHTML(title)}
           </Text>
+          <ProgressStatus type="game" status={progressStatus} />
         </View>
       )}
     </View>
