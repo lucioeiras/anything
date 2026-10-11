@@ -75,7 +75,7 @@ export default function OrganizeScreen() {
             <View className="flex-row items-center gap-2 px-6 justify-center">
               <CircleNotchIcon size={16} color="#E4E4E7" />
               <Text className="font-sans-semibold text-base tracking-wider uppercase text-zinc-200">
-                Status
+                By Status
               </Text>
             </View>
 
@@ -107,7 +107,7 @@ export default function OrganizeScreen() {
             <View className="flex-row items-center gap-2 justify-center">
               <TagIcon size={16} color="#E4E4E7" />
               <Text className="font-sans-semibold text-base tracking-wider uppercase text-zinc-200">
-                Tags
+                Your Tags
               </Text>
             </View>
 
