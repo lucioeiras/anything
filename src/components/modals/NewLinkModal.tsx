@@ -23,11 +23,19 @@ import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewLinkModalProps = {
   visible: boolean;
+  initialUrl?: string;
+  initialTitle?: string;
   onClose: () => void;
   onSaved?: (item: LinkUploadItem) => void;
 };
 
-export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
+export function NewLinkModal({
+  visible,
+  initialUrl,
+  initialTitle,
+  onClose,
+  onSaved,
+}: NewLinkModalProps) {
   const { addLinkItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
@@ -35,8 +43,8 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const tagsInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
 
-  const [url, setUrl] = useState('');
-  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState(initialUrl ?? '');
+  const [title, setTitle] = useState(initialTitle ?? '');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
