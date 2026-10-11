@@ -42,6 +42,7 @@ import type {
   BookItem,
   GameItem,
   ImageItem,
+  LibraryItemType,
   MovieItem,
   MusicItem,
   NoteItem,
@@ -147,6 +148,8 @@ export type LibraryContextValue = {
   searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  searchType: LibraryItemType | null;
+  selectCardType: (type: LibraryItemType, label: string) => void;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -158,7 +161,16 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [source, setSourceInternal] = useState<LibrarySource | null>(null);
   const [loaded, setLoaded] = useState<{ source: LibrarySource; state: LibraryState } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQueryState] = useState('');
+  const [searchType, setSearchType] = useState<LibraryItemType | null>(null);
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchType(null);
+    setSearchQueryState(query);
+  }, []);
+  const selectCardType = useCallback((type: LibraryItemType, label: string) => {
+    setSearchType(type);
+    setSearchQueryState(label);
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [recentFolders, setRecentFolders] = useState<SavedFolder[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -575,6 +587,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     searchItems,
     searchQuery,
     setSearchQuery,
+    searchType,
+    selectCardType,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,

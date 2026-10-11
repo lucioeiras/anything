@@ -15,13 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CardDetailContent } from '@/components/card/CardDetailContent';
 import { useLibrary } from '@/hooks/useLibrary';
+import type { LibraryItemType } from '@/lib/library/types';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { state, setSearchQuery } = useLibrary();
+  const { state, setSearchQuery, selectCardType } = useLibrary();
 
   const item = useMemo(() => {
     if (state.status !== 'ready') return null;
@@ -84,6 +85,24 @@ export default function CardDetailScreen() {
     [translateY, setSearchQuery]
   );
 
+  const handleSelectType = useCallback(
+    (type: LibraryItemType, label: string) => {
+      selectCardType(type, label);
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/board');
+        }
+      });
+    },
+    [translateY, selectCardType]
+  );
+
   if (!item) {
     return (
       <View className="flex-1 bg-black/70 items-center justify-center">
@@ -121,6 +140,7 @@ export default function CardDetailScreen() {
           item={item}
           onDismiss={dismissScreen}
           onSelectTag={handleSelectTag}
+          onSelectType={handleSelectType}
         />
       </Animated.View>
     </View>

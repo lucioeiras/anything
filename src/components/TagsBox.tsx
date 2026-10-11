@@ -1,12 +1,25 @@
 import {
+  ArticleIcon,
   ArrowsClockwiseIcon,
+  BookOpenIcon,
   BookmarkSimpleIcon,
   CheckCircleIcon,
   ClockIcon,
+  FilePdfIcon,
+  FilmSlateIcon,
+  GameControllerIcon,
   HashIcon,
+  ImageIcon,
+  LinkIcon,
+  MusicNotesIcon,
+  NotePencilIcon,
   ProhibitIcon,
+  QuotesIcon,
+  RedditLogoIcon,
   TagIcon,
+  TwitterLogoIcon,
   XIcon,
+  YoutubeLogoIcon,
 } from 'phosphor-react-native';
 import { useRef, useState } from 'react';
 import {
@@ -19,6 +32,24 @@ import {
   type TextInputKeyPressEventData,
   View,
 } from 'react-native';
+
+import type { LibraryItemType } from '@/lib/library/types';
+
+const cardTypeTags = {
+  note: { label: 'Note', icon: NotePencilIcon },
+  quote: { label: 'Quote', icon: QuotesIcon },
+  image: { label: 'Image', icon: ImageIcon },
+  pdf: { label: 'PDF', icon: FilePdfIcon },
+  link: { label: 'Link', icon: LinkIcon },
+  article: { label: 'Article', icon: ArticleIcon },
+  youtube: { label: 'YouTube', icon: YoutubeLogoIcon },
+  tweet: { label: 'Tweet', icon: TwitterLogoIcon },
+  reddit: { label: 'Reddit', icon: RedditLogoIcon },
+  book: { label: 'Book', icon: BookOpenIcon },
+  music: { label: 'Music', icon: MusicNotesIcon },
+  movie: { label: 'Movie', icon: FilmSlateIcon },
+  game: { label: 'Game', icon: GameControllerIcon },
+} satisfies Record<LibraryItemType, { label: string; icon: typeof TagIcon }>;
 
 export type TagsBoxProps = {
   /** Current array of tags */
@@ -73,6 +104,9 @@ export type TagsBoxProps = {
     onPress?: () => void;
     accessibilityLabel?: string;
   };
+  /** Derived card type pill, shown after the status and before saved tags. */
+  cardType?: LibraryItemType;
+  onCardTypePress?: (type: LibraryItemType, label: string) => void;
 };
 
 export function TagsBox({
@@ -99,6 +133,8 @@ export function TagsBox({
   onLayout,
   renderTagWrapper,
   priorityTag,
+  cardType,
+  onCardTypePress,
 }: TagsBoxProps) {
   const fallbackInputRef = useRef<TextInput>(null);
   const effectiveInputRef = inputRef ?? fallbackInputRef;
@@ -203,6 +239,8 @@ export function TagsBox({
     abandoned: ProhibitIcon,
   } as const;
   const PriorityTagIcon = priorityTag ? priorityTagIcons[priorityTag.icon] : null;
+  const cardTypeTag = cardType ? cardTypeTags[cardType] : null;
+  const CardTypeIcon = cardTypeTag?.icon;
 
   return (
     <View onLayout={onLayout} className={baseContainerClass}>
@@ -243,6 +281,18 @@ export function TagsBox({
               {priorityTag.label}
             </Text>
             <ArrowsClockwiseIcon size={12} color={priorityTagStyles[priorityTag.tone].icon} />
+          </Pressable>
+        ) : null}
+
+        {cardType && cardTypeTag && CardTypeIcon ? (
+          <Pressable
+            onPress={() => onCardTypePress?.(cardType, cardTypeTag.label)}
+            accessibilityRole="button"
+            accessibilityLabel={`Search ${cardTypeTag.label} cards`}
+            className="flex-row items-center gap-2 rounded-full bg-zinc-500/15 px-3 py-1 active:opacity-70"
+          >
+            <CardTypeIcon size={12} color="#A1A1AA" weight="bold" />
+            <Text className="font-sans-medium text-base text-zinc-300">{cardTypeTag.label}</Text>
           </Pressable>
         ) : null}
 

@@ -35,6 +35,7 @@ import {
   MEDIA_PROGRESS_STATUSES,
   type BookReadingLog,
   type LibraryItem,
+  type LibraryItemType,
   type MediaProgressStatus,
 } from '@/lib/library/types';
 import { CardActions } from './CardActions';
@@ -105,9 +106,15 @@ type CardDetailContentProps = {
   item: LibraryItem;
   onDismiss: () => void;
   onSelectTag: (tag: string) => void;
+  onSelectType: (type: LibraryItemType, label: string) => void;
 };
 
-export function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentProps) {
+export function CardDetailContent({
+  item,
+  onDismiss,
+  onSelectTag,
+  onSelectType,
+}: CardDetailContentProps) {
   const { addTextItem, deleteItem, updateItem, state } = useLibrary();
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedContent =
@@ -774,6 +781,8 @@ export function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailCo
               containerClassName="py-6 px-6 border-b border-zinc-800 gap-4"
               tags={tags}
               autoTags={item.autoTags}
+              cardType={item.type}
+              onCardTypePress={onSelectType}
               priorityTag={
                 isTrackableItem(item)
                   ? {

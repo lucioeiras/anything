@@ -34,8 +34,8 @@ import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
-import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
+import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 type BoardGridContextType = {
@@ -59,6 +59,7 @@ export default function BoardScreen() {
     restoreItems,
     searchItems,
     searchQuery,
+    searchType,
     setSearchQuery,
   } = useLibrary();
   const {
@@ -279,8 +280,8 @@ export default function BoardScreen() {
   const displayedItems = useMemo(() => {
     if (state.status !== 'ready') return [];
     if (!isSearching) return state.result.items;
-    return searchItems({ searchQuery });
-  }, [state, isSearching, searchQuery, searchItems]);
+    return searchType ? searchItems({ type: searchType }) : searchItems({ searchQuery });
+  }, [state, isSearching, searchQuery, searchType, searchItems]);
 
   const reportItemCol = useCallback(
     (index: number, col: number) => {
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 4,
     paddingTop: 64,
-    paddingBottom: 0,
+    paddingBottom: 80,
     flexGrow: 1,
   },
   cardWrapper: {
