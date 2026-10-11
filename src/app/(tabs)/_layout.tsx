@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { NutIcon, PlusIcon, SquaresFourIcon } from 'phosphor-react-native';
+import { NutIcon, PlusIcon, SquaresFourIcon, TagIcon } from 'phosphor-react-native';
 
 const iconSize = 28;
 
@@ -33,7 +33,20 @@ export default function TabLayout() {
             <SquaresFourIcon
               size={iconSize}
               color={color as string}
-              weight={focused ? 'fill' : 'light'}
+              weight={focused ? 'fill' : 'regular'}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tags"
+        options={{
+          title: 'Tags',
+          tabBarIcon: ({ color, focused }) => (
+            <TagIcon
+              size={iconSize - 4}
+              color={color as string}
+              weight={focused ? 'fill' : 'regular'}
             />
           ),
         }}

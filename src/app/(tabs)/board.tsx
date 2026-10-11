@@ -1,6 +1,22 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
-import { PlusIcon, WarningIcon } from 'phosphor-react-native';
+import {
+  ArticleIcon,
+  BookOpenIcon,
+  FilePdfIcon,
+  FilmSlateIcon,
+  GameControllerIcon,
+  ImageIcon,
+  LinkIcon,
+  MusicNotesIcon,
+  NotePencilIcon,
+  PlusIcon,
+  QuotesIcon,
+  RedditLogoIcon,
+  TwitterLogoIcon,
+  WarningIcon,
+  YoutubeLogoIcon,
+} from 'phosphor-react-native';
 import {
   createContext,
   forwardRef,
@@ -16,6 +32,7 @@ import {
   Alert,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -36,7 +53,41 @@ import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
-import type { LibraryItem } from '@/lib/library/types';
+import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
+import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
+import type { MediaProgressStatus } from '@/lib/library/types';
+
+const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
+  note: 'Notes',
+  quote: 'Quotes',
+  image: 'Images',
+  pdf: 'PDFs',
+  link: 'Links',
+  article: 'Articles',
+  youtube: 'YouTube',
+  tweet: 'Tweets',
+  reddit: 'Reddit',
+  book: 'Books',
+  music: 'Music',
+  movie: 'Movies',
+  game: 'Games',
+};
+
+const CARD_TYPE_ICONS = {
+  note: NotePencilIcon,
+  quote: QuotesIcon,
+  image: ImageIcon,
+  pdf: FilePdfIcon,
+  link: LinkIcon,
+  article: ArticleIcon,
+  youtube: YoutubeLogoIcon,
+  tweet: TwitterLogoIcon,
+  reddit: RedditLogoIcon,
+  book: BookOpenIcon,
+  music: MusicNotesIcon,
+  movie: FilmSlateIcon,
+  game: GameControllerIcon,
+} satisfies Record<LibraryItemType, typeof NotePencilIcon>;
 
 type BoardGridContextType = {
   lastIndices: { col0: number; col1: number };
@@ -76,6 +127,8 @@ export default function BoardScreen() {
     newPdfUri,
     newPdfFileName,
     newPdfTimestamp,
+    folderKind,
+    folderKey,
   } = useLocalSearchParams<{
     newNote?: string;
     newLink?: string;
@@ -90,6 +143,8 @@ export default function BoardScreen() {
     newPdfUri?: string;
     newPdfFileName?: string;
     newPdfTimestamp?: string;
+    folderKind?: 'status' | 'tag';
+    folderKey?: string;
   }>();
   const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -105,6 +160,29 @@ export default function BoardScreen() {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
+  const [selectedType, setSelectedType] = useState<{
+    type: LibraryItemType;
+    folderId: string;
+  } | null>(null);
+  const activeFolderKind =
+    folderKey && (folderKind === 'status' || folderKind === 'tag') ? folderKind : null;
+  const activeFolderKey = activeFolderKind ? folderKey : null;
+  const folderLabel =
+    activeFolderKind === 'status'
+      ? STATUS_FOLDERS.find((folder) => folder.key === activeFolderKey)?.title
+      : activeFolderKey;
+
+  const clearFolderFilter = useCallback(() => {
+    setSelectedType(null);
+    router.setParams({ folderKind: '', folderKey: '' });
+  }, []);
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      if (activeFolderKind) clearFolderFilter();
+      setSearchQuery(text);
+    },
+    [activeFolderKind, clearFolderFilter, setSearchQuery]
+  );
   const itemColsRef = useRef<Map<number, number>>(new Map());
   const [lastIndices, setLastIndices] = useState<{ col0: number; col1: number }>({
     col0: -1,
@@ -276,12 +354,46 @@ export default function BoardScreen() {
   };
 
   const isSearching = searchQuery.trim().length > 0;
+  const folderId = activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : '';
+  const activeType = searchType ?? (selectedType?.folderId === folderId ? selectedType.type : null);
+  const hasActiveFilter = isSearching || activeType !== null || activeFolderKind !== null;
+
+  const handleTypeFilter = useCallback(
+    (type: LibraryItemType) => {
+      if (searchType) setSearchQuery('');
+      setSelectedType(activeType === type ? null : { type, folderId });
+    },
+    [activeType, folderId, searchType, setSearchQuery]
+  );
 
   const displayedItems = useMemo(() => {
     if (state.status !== 'ready') return [];
-    if (!isSearching) return state.result.items;
-    return searchType ? searchItems({ type: searchType }) : searchItems({ searchQuery });
-  }, [state, isSearching, searchQuery, searchType, searchItems]);
+    if (!hasActiveFilter) return state.result.items;
+    const matches =
+      activeType || (isSearching && !searchType)
+        ? searchItems({
+            ...(activeType ? { type: activeType } : {}),
+            ...(isSearching && !searchType ? { searchQuery } : {}),
+          })
+        : state.result.items;
+    if (activeFolderKind === 'status') {
+      return matches.filter((item) => matchesStatus(item, activeFolderKey as MediaProgressStatus));
+    }
+    if (activeFolderKind === 'tag') {
+      return matches.filter((item) => item.tags?.some((tag) => tag.trim() === activeFolderKey));
+    }
+    return matches;
+  }, [
+    state,
+    hasActiveFilter,
+    activeType,
+    isSearching,
+    searchQuery,
+    searchType,
+    searchItems,
+    activeFolderKind,
+    activeFolderKey,
+  ]);
 
   const reportItemCol = useCallback(
     (index: number, col: number) => {
@@ -363,10 +475,10 @@ export default function BoardScreen() {
     if (state.status !== 'ready') return null;
     const hasIssues = state.result.issues.length > 0;
     const hasDownloads = state.result.pendingDownloads > 0;
-    if (!hasIssues && !hasDownloads) return null;
 
     return (
-      <View style={styles.headerWrapper}>
+      <View className="pb-2">
+        <TypeFilters selectedType={activeType} onSelect={handleTypeFilter} />
         {hasIssues && (
           <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
             <WarningIcon size={16} color="#fbbf24" weight="fill" />
@@ -384,17 +496,32 @@ export default function BoardScreen() {
         )}
       </View>
     );
-  }, [state]);
+  }, [state, activeType, handleTypeFilter]);
 
   const renderEmpty = useCallback(() => {
-    if (isSearching) {
+    if (hasActiveFilter) {
+      const typeLabel = activeType ? CARD_TYPE_LABELS[activeType].toLowerCase() : null;
+      const queryLabel = isSearching && !searchType ? searchQuery.trim() : null;
       return (
-        <Centered title="No results found" message={`No cards matching "${searchQuery.trim()}"`}>
+        <Centered
+          title="No results found"
+          message={
+            typeLabel
+              ? `No ${typeLabel}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+              : activeFolderKind
+                ? `No cards in ${folderLabel ?? 'this folder'}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                : `No cards matching "${queryLabel}"`
+          }
+        >
           <Pressable
-            onPress={() => setSearchQuery('')}
+            onPress={() => {
+              setSearchQuery('');
+              setSelectedType(null);
+              clearFolderFilter();
+            }}
             className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
           >
-            <Text className="font-sans-medium text-sm text-zinc-200">Clear search</Text>
+            <Text className="font-sans-medium text-sm text-zinc-200">Clear filters</Text>
           </Pressable>
         </Centered>
       );
@@ -414,7 +541,17 @@ export default function BoardScreen() {
         </Pressable>
       </Centered>
     );
-  }, [isSearching, searchQuery, setSearchQuery]);
+  }, [
+    hasActiveFilter,
+    activeType,
+    isSearching,
+    searchType,
+    searchQuery,
+    setSearchQuery,
+    activeFolderKind,
+    folderLabel,
+    clearFolderFilter,
+  ]);
 
   return (
     <View className="flex-1 bg-zinc-950">
@@ -461,7 +598,11 @@ export default function BoardScreen() {
             </BoardGridContext.Provider>
           </View>
 
-          <SearchBar value={searchQuery} onChangeText={setSearchQuery} visible={!isEditing} />
+          <SearchBar
+            value={activeFolderKind ? (folderLabel ?? activeFolderKey ?? '') : searchQuery}
+            onChangeText={handleSearchChange}
+            visible={!isEditing}
+          />
         </View>
       )}
 
@@ -502,6 +643,63 @@ export default function BoardScreen() {
         onDismiss={handleDismissToast}
       />
     </View>
+  );
+}
+
+function TypeFilters({
+  selectedType,
+  onSelect,
+}: {
+  selectedType: LibraryItemType | null;
+  onSelect: (type: LibraryItemType) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerClassName="items-center gap-2 px-3 py-2.5"
+      keyboardShouldPersistTaps="always"
+      accessibilityLabel="Filter cards by type"
+    >
+      {ITEM_TYPES.map((type) => {
+        const Icon = CARD_TYPE_ICONS[type];
+        return (
+          <TypeFilterButton
+            key={type}
+            label={CARD_TYPE_LABELS[type]}
+            icon={Icon}
+            selected={selectedType === type}
+            onPress={() => onSelect(type)}
+          />
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function TypeFilterButton({
+  label,
+  icon: Icon,
+  selected,
+  onPress,
+}: {
+  label: string;
+  icon: typeof NotePencilIcon;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      className={`flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${selected ? 'border-white bg-white' : 'border-zinc-700'}`}
+    >
+      <Icon size={16} color={selected ? '#000000' : '#a1a1aa'} weight="regular" />
+      <Text className={`font-sans-medium text-sm ${selected ? 'text-black' : 'text-zinc-300'}`}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -569,9 +767,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: 8,
     paddingBottom: 16,
-  },
-  headerWrapper: {
-    paddingHorizontal: 8,
-    paddingBottom: 8,
   },
 });
