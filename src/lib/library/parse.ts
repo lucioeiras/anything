@@ -62,6 +62,18 @@ export function parseItem(raw: unknown): LibraryItem {
     if (typeof item.publisher === 'string') {
       item.publisher = decodeHTML(item.publisher);
     }
+    item.readingLogs = Array.isArray(item.readingLogs)
+      ? item.readingLogs.filter(
+          (log): log is Record<string, unknown> =>
+            isObject(log) &&
+            typeof log.id === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(String(log.date)) &&
+            Number.isInteger(log.page) &&
+            (log.page as number) >= 0 &&
+            typeof log.createdAt === 'string' &&
+            (log.noteId === undefined || typeof log.noteId === 'string')
+        )
+      : [];
   }
   if (item.type === 'music') {
     if (typeof item.artist === 'string') {
