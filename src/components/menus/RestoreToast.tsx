@@ -55,7 +55,7 @@ export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreTo
 
   return (
     <View
-      style={{ bottom: 64 }}
+      style={{ bottom: 62 }}
       className="w-full absolute left-0 right-0 z-40 items-center"
       pointerEvents="box-none"
     >

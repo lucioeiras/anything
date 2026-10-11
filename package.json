@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@config-plugins/react-native-blob-util": "^14.0.2",
     "@config-plugins/react-native-pdf": "^14.0.2",
     "@expo-google-fonts/instrument-sans": "^0.4.2",

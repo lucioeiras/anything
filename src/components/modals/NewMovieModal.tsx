@@ -40,10 +40,11 @@ import { generateAutoTags } from '@/lib/tags/autoTags';
 type NewMovieModalProps = {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: MovieItem) => void;
 };
 
-export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps) {
+export function NewMovieModal({ visible, onClose, onDismiss, onSaved }: NewMovieModalProps) {
   const { addMovieItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -271,6 +272,7 @@ export function NewMovieModal({ visible, onClose, onSaved }: NewMovieModalProps)
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

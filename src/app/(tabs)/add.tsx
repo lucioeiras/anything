@@ -1,6 +1,6 @@
 import { File } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   BookIcon,
   FilePdfIcon,
@@ -11,11 +11,15 @@ import {
   MusicNotesIcon,
   NotePencilIcon,
 } from 'phosphor-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddElementScreen() {
+  const { controlItem, controlToken } = useLocalSearchParams<{
+    controlItem?: string;
+    controlToken?: string;
+  }>();
   const [isPicking, setIsPicking] = useState(false);
 
   const handlePickImage = async () => {
@@ -126,6 +130,41 @@ export default function AddElementScreen() {
       params: { newGame: Date.now().toString() },
     });
   };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      switch (controlItem) {
+        case 'note':
+          handleOpenNote();
+          break;
+        case 'link':
+          handleOpenLink();
+          break;
+        case 'pdf':
+          void handlePickPdf();
+          break;
+        case 'image':
+          void handlePickImage();
+          break;
+        case 'book':
+          handleOpenBook();
+          break;
+        case 'music':
+          handleOpenMusic();
+          break;
+        case 'movie':
+          handleOpenMovie();
+          break;
+        case 'game':
+          handleOpenGame();
+          break;
+      }
+    }, 0);
+
+    return () => clearTimeout(timeout);
+    // The screen is replaced after dispatch, so this should only run once per control tap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlItem, controlToken]);
 
   return (
     <SafeAreaView className="flex-1 bg-zinc-950 items-center justify-center" edges={['top']}>

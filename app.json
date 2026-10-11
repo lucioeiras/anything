@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.diegoeiras.anything",
-      "requireFullScreen": true
+      "requireFullScreen": true,
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.diegoeiras.anything"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -57,7 +60,29 @@
           }
         }
       ],
-      "expo-sharing",
+      [
+        "expo-sharing",
+        {
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsText": true,
+              "supportsWebUrlWithMaxCount": 1,
+              "supportsWebPageWithMaxCount": 1,
+              "supportsImageWithMaxCount": 1,
+              "supportsFileWithMaxCount": 1
+            }
+          },
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "text/*",
+              "image/*",
+              "application/pdf"
+            ]
+          }
+        }
+      ],
       [
         "expo-media-library",
         {
@@ -68,7 +93,8 @@
       "expo-video",
       "llama.rn",
       "@config-plugins/react-native-blob-util",
-      "@config-plugins/react-native-pdf"
+      "@config-plugins/react-native-pdf",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true,

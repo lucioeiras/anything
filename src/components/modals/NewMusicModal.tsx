@@ -37,10 +37,11 @@ import { generateAutoTags } from '@/lib/tags/autoTags';
 type NewMusicModalProps = {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: MusicItem) => void;
 };
 
-export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps) {
+export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusicModalProps) {
   const { addMusicItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
@@ -240,6 +241,7 @@ export function NewMusicModal({ visible, onClose, onSaved }: NewMusicModalProps)
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

@@ -38,11 +38,19 @@ import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewNoteModalProps = {
   visible: boolean;
+  initialText?: string;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: NoteItem | QuoteItem) => void;
 };
 
-export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
+export function NewNoteModal({
+  visible,
+  initialText,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewNoteModalProps) {
   const { addMusicItem, addTextItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -52,7 +60,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   const tagsInputRef = useRef<TextInput>(null);
 
   const [view, setView] = useState<'editor' | 'info'>('editor');
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText ?? '');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -265,6 +273,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

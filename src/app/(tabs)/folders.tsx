@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { PlusIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
@@ -9,14 +8,11 @@ import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
 import { getTagGroups, matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
-import { getSourceId } from '@/lib/library/storage';
-
-type SavedFolders = { key: string; names: string[] };
+import { getLibraryFolders, getSourceId, saveLibraryFolders } from '@/lib/library/storage';
 
 export default function OrganizeScreen() {
-  const { source, state, setSearchQuery, clearSearchTag } = useLibrary();
-  const storageKey = `anything:folders:${getSourceId(source)}`;
-  const [saved, setSaved] = useState<SavedFolders | null>(null);
+  const { source, state, setSearchQuery, clearSearchTag, updateItem } = useLibrary();
+  const [saved, setSaved] = useState<{ source: string; names: string[] } | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const items = useMemo(() => (state.status === 'ready' ? state.result.items : []), [state]);
   const tagGroups = useMemo(() => getTagGroups(items), [items]);
@@ -24,28 +20,26 @@ export default function OrganizeScreen() {
     () => new Map(tagGroups.map((group) => [group.tag, group.items])),
     [tagGroups]
   );
-  const folderNames = saved?.key === storageKey ? saved.names : [];
+  const sourceId = getSourceId(source);
+  const folderNames = saved?.source === sourceId ? saved.names : [];
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(storageKey)
-      .then((value) => {
+    getLibraryFolders(source)
+      .then((names) => {
         if (!active) return;
-        const parsed: unknown = value ? JSON.parse(value) : [];
-        setSaved({
-          key: storageKey,
-          names: Array.isArray(parsed)
-            ? parsed.filter((name): name is string => typeof name === 'string')
-            : [],
-        });
+        setSaved({ source: sourceId, names });
       })
       .catch(() => {
-        if (active) setSaved({ key: storageKey, names: [] });
+        if (active) {
+          setSaved({ source: sourceId, names: [] });
+          Alert.alert('Could not load folders', 'Please try again.');
+        }
       });
     return () => {
       active = false;
     };
-  }, [storageKey]);
+  }, [source, sourceId]);
 
   const openFolder = (kind: 'status' | 'tag', key: string) => {
     setSearchQuery('');
@@ -54,7 +48,7 @@ export default function OrganizeScreen() {
   };
 
   const createFolder = async (name: string): Promise<boolean> => {
-    if (saved?.key !== storageKey) return false;
+    if (saved?.source !== sourceId) return false;
     if (
       [...folderNames, ...STATUS_FOLDERS.map((folder) => folder.title)].some(
         (existing) => existing.toLocaleLowerCase() === name.toLocaleLowerCase()
@@ -66,13 +60,41 @@ export default function OrganizeScreen() {
 
     const next = [...folderNames, name];
     try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(next));
-      setSaved({ key: storageKey, names: next });
+      await saveLibraryFolders(source, next);
+      setSaved({ source: sourceId, names: next });
       return true;
     } catch {
       Alert.alert('Could not create folder', 'Please try again.');
       return false;
     }
+  };
+
+  const confirmDeleteFolder = (name: string) => {
+    Alert.alert('Delete folder?', `“${name}” will be removed from your folders.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (saved?.source !== sourceId) return;
+          const next = folderNames.filter((folderName) => folderName !== name);
+          try {
+            const taggedItems = items.filter((item) =>
+              item.tags?.some((tag) => tag.trim() === name)
+            );
+            for (const item of taggedItems) {
+              await updateItem(item.id, {
+                tags: item.tags?.filter((tag) => tag.trim() !== name) ?? [],
+              });
+            }
+            await saveLibraryFolders(source, next);
+            setSaved({ source: sourceId, names: next });
+          } catch {
+            Alert.alert('Could not delete folder', 'Please try again.');
+          }
+        },
+      },
+    ]);
   };
 
   if (state.status === 'loading')
@@ -107,6 +129,7 @@ export default function OrganizeScreen() {
               title={name}
               items={itemsByTag.get(name) ?? []}
               onPress={() => openFolder('tag', name)}
+              onLongPress={() => confirmDeleteFolder(name)}
             />
           ))}
         </View>
@@ -114,7 +137,7 @@ export default function OrganizeScreen() {
 
       <Pressable
         onPress={() => setIsCreateOpen(true)}
-        disabled={saved?.key !== storageKey}
+        disabled={saved?.source !== sourceId}
         accessibilityRole="button"
         accessibilityLabel="Create folder"
         className="flex-row items-center justify-center gap-4 px-3 py-6 bg-violet-950/20 active:opacity-80 border-t border-zinc-800"

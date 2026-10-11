@@ -96,6 +96,16 @@ type BoardGridContextType = {
   reportItemCol: (index: number, col: number) => void;
 };
 
+type AddControlItem =
+  'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'all';
+
+type AddControlAction = {
+  item: AddControlItem;
+  token?: string;
+  imageAsset?: PickedImageAsset;
+  pdfAsset?: PickedPdfAsset;
+};
+
 const BoardGridContext = createContext<BoardGridContextType>({
   lastIndices: { col0: -1, col1: -1 },
   totalItems: 0,
@@ -130,6 +140,8 @@ export default function BoardScreen() {
     newPdfUri,
     newPdfFileName,
     newPdfTimestamp,
+    controlAddItem,
+    controlToken,
     folderKind,
     folderKey,
   } = useLocalSearchParams<{
@@ -146,6 +158,8 @@ export default function BoardScreen() {
     newPdfUri?: string;
     newPdfFileName?: string;
     newPdfTimestamp?: string;
+    controlAddItem?: AddControlItem;
+    controlToken?: string;
     folderKind?: 'status' | 'tag';
     folderKey?: string;
   }>();
@@ -194,73 +208,204 @@ export default function BoardScreen() {
   const lastOpenedGameRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
   const lastOpenedPdfRef = useRef<string | null>(null);
+  const lastOpenedControlRef = useRef<string | null>(null);
+
+  const activeAddModalRef = useRef<Exclude<AddControlItem, 'all'> | null>(null);
+  const queuedControlActionRef = useRef<AddControlAction | null>(null);
+
+  const openControlAction = useCallback((action: AddControlAction) => {
+    if (action.item === 'all') {
+      activeAddModalRef.current = null;
+      router.replace('/add');
+      return;
+    }
+
+    activeAddModalRef.current = action.item;
+    switch (action.item) {
+      case 'note':
+        setIsNoteDrawerOpen(true);
+        break;
+      case 'link':
+        setIsLinkModalOpen(true);
+        break;
+      case 'book':
+        setIsBookModalOpen(true);
+        break;
+      case 'music':
+        setIsMusicModalOpen(true);
+        break;
+      case 'movie':
+        setIsMovieModalOpen(true);
+        break;
+      case 'game':
+        setIsGameModalOpen(true);
+        break;
+      case 'image':
+        if (!action.imageAsset) {
+          activeAddModalRef.current = null;
+          router.replace({
+            pathname: '/add',
+            params: { controlItem: 'image', controlToken: action.token ?? Date.now().toString() },
+          });
+          break;
+        }
+        setPendingImage(action.imageAsset ?? null);
+        setIsImageModalOpen(true);
+        break;
+      case 'pdf':
+        if (!action.pdfAsset) {
+          activeAddModalRef.current = null;
+          router.replace({
+            pathname: '/add',
+            params: { controlItem: 'pdf', controlToken: action.token ?? Date.now().toString() },
+          });
+          break;
+        }
+        setPendingPdf(action.pdfAsset ?? null);
+        setIsPdfModalOpen(true);
+        break;
+    }
+  }, []);
+
+  const requestControlAction = useCallback(
+    (action: AddControlAction) => {
+      if (!activeAddModalRef.current) {
+        openControlAction(action);
+        return;
+      }
+
+      queuedControlActionRef.current = action;
+      setIsNoteDrawerOpen(false);
+      setIsLinkModalOpen(false);
+      setIsBookModalOpen(false);
+      setIsMusicModalOpen(false);
+      setIsMovieModalOpen(false);
+      setIsGameModalOpen(false);
+      setIsImageModalOpen(false);
+      setIsPdfModalOpen(false);
+    },
+    [openControlAction]
+  );
+
+  const handleAddModalDismiss = useCallback(() => {
+    activeAddModalRef.current = null;
+    const queuedAction = queuedControlActionRef.current;
+    if (!queuedAction) return;
+
+    queuedControlActionRef.current = null;
+    openControlAction(queuedAction);
+  }, [openControlAction]);
+
+  const closeAddModal = useCallback((item: Exclude<AddControlItem, 'all'>) => {
+    if (!queuedControlActionRef.current) {
+      activeAddModalRef.current = null;
+    }
+
+    switch (item) {
+      case 'note':
+        setIsNoteDrawerOpen(false);
+        break;
+      case 'link':
+        setIsLinkModalOpen(false);
+        break;
+      case 'book':
+        setIsBookModalOpen(false);
+        break;
+      case 'music':
+        setIsMusicModalOpen(false);
+        break;
+      case 'movie':
+        setIsMovieModalOpen(false);
+        break;
+      case 'game':
+        setIsGameModalOpen(false);
+        break;
+      case 'image':
+        setIsImageModalOpen(false);
+        setPendingImage(null);
+        break;
+      case 'pdf':
+        setIsPdfModalOpen(false);
+        setPendingPdf(null);
+        break;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!controlAddItem || !controlToken) return;
+    const requestKey = `${controlAddItem}:${controlToken}`;
+    if (requestKey === lastOpenedControlRef.current) return;
+    lastOpenedControlRef.current = requestKey;
+    requestControlAction({ item: controlAddItem, token: controlToken });
+  }, [controlAddItem, controlToken, requestControlAction]);
 
   useEffect(() => {
     if (newNote && newNote !== lastOpenedNoteRef.current) {
       lastOpenedNoteRef.current = newNote;
-      setIsNoteDrawerOpen(true);
+      requestControlAction({ item: 'note' });
     }
-  }, [newNote]);
+  }, [newNote, requestControlAction]);
 
   useEffect(() => {
     if (newLink && newLink !== lastOpenedLinkRef.current) {
       lastOpenedLinkRef.current = newLink;
-      setIsLinkModalOpen(true);
+      requestControlAction({ item: 'link' });
     }
-  }, [newLink]);
+  }, [newLink, requestControlAction]);
 
   useEffect(() => {
     if (newBook && newBook !== lastOpenedBookRef.current) {
       lastOpenedBookRef.current = newBook;
-      setIsBookModalOpen(true);
+      requestControlAction({ item: 'book' });
     }
-  }, [newBook]);
+  }, [newBook, requestControlAction]);
 
   useEffect(() => {
     if (newMusic && newMusic !== lastOpenedMusicRef.current) {
       lastOpenedMusicRef.current = newMusic;
-      setIsMusicModalOpen(true);
+      requestControlAction({ item: 'music' });
     }
-  }, [newMusic]);
+  }, [newMusic, requestControlAction]);
 
   useEffect(() => {
     if (newMovie && newMovie !== lastOpenedMovieRef.current) {
       lastOpenedMovieRef.current = newMovie;
-      setIsMovieModalOpen(true);
+      requestControlAction({ item: 'movie' });
     }
-  }, [newMovie]);
+  }, [newMovie, requestControlAction]);
 
   useEffect(() => {
     if (newGame && newGame !== lastOpenedGameRef.current) {
       lastOpenedGameRef.current = newGame;
-      setIsGameModalOpen(true);
+      requestControlAction({ item: 'game' });
     }
-  }, [newGame]);
+  }, [newGame, requestControlAction]);
 
   useEffect(() => {
     const pdfToken = newPdfTimestamp || newPdfUri;
     if (newPdfUri && pdfToken && pdfToken !== lastOpenedPdfRef.current) {
       lastOpenedPdfRef.current = pdfToken;
-      setPendingPdf({
-        uri: newPdfUri,
-        fileName: newPdfFileName,
+      requestControlAction({
+        item: 'pdf',
+        pdfAsset: { uri: newPdfUri, fileName: newPdfFileName },
       });
-      setIsPdfModalOpen(true);
     }
-  }, [newPdfUri, newPdfFileName, newPdfTimestamp]);
+  }, [newPdfUri, newPdfFileName, newPdfTimestamp, requestControlAction]);
 
   useEffect(() => {
     const imageToken = newImageTimestamp || newImageUri;
     if (newImageUri && imageToken && imageToken !== lastOpenedImageRef.current) {
       lastOpenedImageRef.current = imageToken;
-      setPendingImage({
-        uri: newImageUri,
-        fileName: newImageFileName,
-        mimeType: newImageMimeType,
+      requestControlAction({
+        item: 'image',
+        imageAsset: {
+          uri: newImageUri,
+          fileName: newImageFileName,
+          mimeType: newImageMimeType,
+        },
       });
-      setIsImageModalOpen(true);
     }
-  }, [newImageUri, newImageFileName, newImageMimeType, newImageTimestamp]);
+  }, [newImageUri, newImageFileName, newImageMimeType, newImageTimestamp, requestControlAction]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -637,27 +782,47 @@ export default function BoardScreen() {
         </View>
       )}
 
-      <NewNoteModal visible={isNoteDrawerOpen} onClose={() => setIsNoteDrawerOpen(false)} />
-      <NewLinkModal visible={isLinkModalOpen} onClose={() => setIsLinkModalOpen(false)} />
-      <NewBookModal visible={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} />
-      <NewMusicModal visible={isMusicModalOpen} onClose={() => setIsMusicModalOpen(false)} />
-      <NewMovieModal visible={isMovieModalOpen} onClose={() => setIsMovieModalOpen(false)} />
-      <NewGameModal visible={isGameModalOpen} onClose={() => setIsGameModalOpen(false)} />
+      <NewNoteModal
+        visible={isNoteDrawerOpen}
+        onClose={() => closeAddModal('note')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewLinkModal
+        visible={isLinkModalOpen}
+        onClose={() => closeAddModal('link')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewBookModal
+        visible={isBookModalOpen}
+        onClose={() => closeAddModal('book')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewMusicModal
+        visible={isMusicModalOpen}
+        onClose={() => closeAddModal('music')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewMovieModal
+        visible={isMovieModalOpen}
+        onClose={() => closeAddModal('movie')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewGameModal
+        visible={isGameModalOpen}
+        onClose={() => closeAddModal('game')}
+        onDismiss={handleAddModalDismiss}
+      />
       <NewImageModal
         visible={isImageModalOpen}
         imageAsset={pendingImage}
-        onClose={() => {
-          setIsImageModalOpen(false);
-          setPendingImage(null);
-        }}
+        onClose={() => closeAddModal('image')}
+        onDismiss={handleAddModalDismiss}
       />
       <NewPdfModal
         visible={isPdfModalOpen}
         pdfAsset={pendingPdf}
-        onClose={() => {
-          setIsPdfModalOpen(false);
-          setPendingPdf(null);
-        }}
+        onClose={() => closeAddModal('pdf')}
+        onDismiss={handleAddModalDismiss}
       />
 
       <CardSelectionBar

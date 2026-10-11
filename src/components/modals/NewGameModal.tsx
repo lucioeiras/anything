@@ -38,10 +38,11 @@ import { generateAutoTagsAsync } from '@/lib/tags/autoTags';
 type NewGameModalProps = {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: GameItem) => void;
 };
 
-export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
+export function NewGameModal({ visible, onClose, onDismiss, onSaved }: NewGameModalProps) {
   const { addGameItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -276,6 +277,7 @@ export function NewGameModal({ visible, onClose, onSaved }: NewGameModalProps) {
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView

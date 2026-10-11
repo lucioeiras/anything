@@ -33,10 +33,11 @@ type NewPdfModalProps = {
   visible: boolean;
   pdfAsset: PickedPdfAsset | null;
   onClose: () => void;
+  onDismiss?: () => void;
   onSaved?: (item: PdfItem) => void;
 };
 
-export function NewPdfModal({ visible, pdfAsset, onClose, onSaved }: NewPdfModalProps) {
+export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: NewPdfModalProps) {
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -187,6 +188,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onSaved }: NewPdfModal
       animationType="fade"
       transparent
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
