@@ -1,25 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { FolderPlusIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
 import { getTagGroups, matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
 import { getSourceId } from '@/lib/library/storage';
-import { FolderPlusIcon } from 'phosphor-react-native';
 
 type SavedFolders = { key: string; names: string[] };
 
@@ -28,8 +18,6 @@ export default function OrganizeScreen() {
   const storageKey = `anything:folders:${getSourceId(source)}`;
   const [saved, setSaved] = useState<SavedFolders | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [folderName, setFolderName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const items = useMemo(() => (state.status === 'ready' ? state.result.items : []), [state]);
   const tagGroups = useMemo(() => getTagGroups(items), [items]);
   const itemsByTag = useMemo(
@@ -64,35 +52,25 @@ export default function OrganizeScreen() {
     router.navigate({ pathname: '/board', params: { folderKind: kind, folderKey: key } });
   };
 
-  const closeCreate = () => {
-    if (isSaving) return;
-    setIsCreateOpen(false);
-    setFolderName('');
-  };
-
-  const createFolder = async () => {
-    const name = folderName.trim();
-    if (!name || isSaving || saved?.key !== storageKey) return;
+  const createFolder = async (name: string): Promise<boolean> => {
+    if (saved?.key !== storageKey) return false;
     if (
       [...folderNames, ...STATUS_FOLDERS.map((folder) => folder.title)].some(
         (existing) => existing.toLocaleLowerCase() === name.toLocaleLowerCase()
       )
     ) {
       Alert.alert('Folder already exists', 'Choose a different name.');
-      return;
+      return false;
     }
 
-    setIsSaving(true);
     const next = [...folderNames, name];
     try {
       await AsyncStorage.setItem(storageKey, JSON.stringify(next));
       setSaved({ key: storageKey, names: next });
-      setIsCreateOpen(false);
-      setFolderName('');
+      return true;
     } catch {
       Alert.alert('Could not create folder', 'Please try again.');
-    } finally {
-      setIsSaving(false);
+      return false;
     }
   };
 
@@ -144,50 +122,11 @@ export default function OrganizeScreen() {
         <Text className="font-sans-semibold text-lg text-blue-500">New Folder</Text>
       </Pressable>
 
-      <Modal visible={isCreateOpen} transparent animationType="fade" onRequestClose={closeCreate}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 justify-end bg-black/70"
-        >
-          <View className="rounded-t-3xl border-t border-zinc-800 bg-zinc-900 px-6 pb-10 pt-7">
-            <Text className="font-sans-semibold text-xl text-zinc-50">New folder</Text>
-            <Text className="mt-2 font-sans text-sm text-zinc-400">
-              Add the folder name as a tag to any card to place it here.
-            </Text>
-            <TextInput
-              autoFocus
-              value={folderName}
-              onChangeText={setFolderName}
-              onSubmitEditing={createFolder}
-              returnKeyType="done"
-              maxLength={40}
-              placeholder="Folder name"
-              placeholderTextColor="#71717a"
-              accessibilityLabel="Folder name"
-              className="mt-6 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-sans text-base text-zinc-50"
-            />
-            <View className="mt-6 flex-row gap-3">
-              <Pressable
-                onPress={closeCreate}
-                disabled={isSaving}
-                accessibilityRole="button"
-                className="flex-1 items-center rounded-xl bg-zinc-800 py-3"
-              >
-                <Text className="font-sans-semibold text-zinc-200">Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={createFolder}
-                disabled={!folderName.trim() || isSaving}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !folderName.trim() || isSaving }}
-                className={`flex-1 items-center rounded-xl py-3 ${folderName.trim() && !isSaving ? 'bg-zinc-50' : 'bg-zinc-700'}`}
-              >
-                <Text className="font-sans-semibold text-zinc-950">Create</Text>
-              </Pressable>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      <NewFolderModal
+        visible={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={createFolder}
+      />
     </SafeAreaView>
   );
 }

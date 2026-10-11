@@ -1,0 +1,162 @@
+import { CheckIcon, FolderIcon, XIcon } from 'phosphor-react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type NewFolderModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  onCreate: (name: string) => Promise<boolean>;
+};
+
+export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalProps) {
+  const insets = useSafeAreaInsets();
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const canSave = name.trim().length > 0 && !saving;
+
+  const handleClose = () => {
+    if (saving) return;
+    setName('');
+    onClose();
+  };
+
+  const handleCreate = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      const created = await onCreate(name.trim());
+      if (created) {
+        setName('');
+        onClose();
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={handleClose}
+      statusBarTranslucent
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
+        <View style={{ paddingTop: Math.max(insets.top, 16) }} className="flex-1 w-full relative">
+          <ScrollView
+            className="flex-1 w-full"
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="gap-3 p-8 pt-0">
+              <Text className="font-sans-semibold text-2xl text-white">Create a new folder</Text>
+              <Text className="font-sans text-base text-zinc-400 leading-relaxed">
+                Add the folder name as a tag to any card to place it here.
+              </Text>
+            </View>
+
+            <View className="flex-row items-center gap-4 py-5 px-8 border-t border-b border-zinc-800">
+              <FolderIcon size={20} color="#D4D4D8" />
+              <TextInput
+                autoFocus
+                value={name}
+                onChangeText={setName}
+                onSubmitEditing={handleCreate}
+                returnKeyType="done"
+                maxLength={40}
+                placeholder="Folder name"
+                placeholderTextColor="#71717A"
+                accessibilityLabel="Folder name"
+                className="flex-1 font-sans text-xl text-white leading-tight"
+                style={styles.borderlessInput}
+                underlineColorAndroid="transparent"
+              />
+              {name.length > 0 && (
+                <Pressable
+                  onPress={() => setName('')}
+                  hitSlop={10}
+                  className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear folder name"
+                >
+                  <XIcon size={12} color="#E4E4E7" weight="bold" />
+                </Pressable>
+              )}
+            </View>
+          </ScrollView>
+
+          <View pointerEvents="box-none">
+            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
+              <Pressable
+                onPress={handleClose}
+                disabled={saving}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+              >
+                <XIcon size={24} color="#FFFFFF" weight="bold" />
+                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleCreate}
+                disabled={!canSave}
+                hitSlop={12}
+                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
+                accessibilityRole="button"
+                accessibilityLabel="Create folder"
+                accessibilityState={{ disabled: !canSave }}
+              >
+                {saving ? (
+                  <ActivityIndicator size={24} color="#3B82F6" />
+                ) : (
+                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
+                )}
+                <Text
+                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
+                >
+                  Create folder
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#09090B',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 20,
+    paddingBottom: 40,
+  },
+  borderlessInput: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+});
