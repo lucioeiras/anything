@@ -15,13 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CardDetailContent } from '@/components/card/CardDetailContent';
 import { useLibrary } from '@/hooks/useLibrary';
+import type { LibraryItemType } from '@/lib/library/types';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { state, setSearchQuery } = useLibrary();
+  const { state, selectTag, selectCardType, setSearchQuery, clearSearchTag } = useLibrary();
 
   const item = useMemo(() => {
     if (state.status !== 'ready') return null;
@@ -68,7 +69,7 @@ export default function CardDetailScreen() {
 
   const handleSelectTag = useCallback(
     (tag: string) => {
-      setSearchQuery(tag);
+      selectTag(tag);
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 200,
@@ -81,7 +82,40 @@ export default function CardDetailScreen() {
         }
       });
     },
-    [translateY, setSearchQuery]
+    [translateY, selectTag]
+  );
+
+  const handleSelectType = useCallback(
+    (type: LibraryItemType, label: string) => {
+      selectCardType(type, label);
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/board');
+        }
+      });
+    },
+    [translateY, selectCardType]
+  );
+
+  const handleSelectFolder = useCallback(
+    (name: string) => {
+      setSearchQuery('');
+      clearSearchTag();
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        router.replace({ pathname: '/board', params: { folderKind: 'tag', folderKey: name } });
+      });
+    },
+    [translateY, setSearchQuery, clearSearchTag]
   );
 
   if (!item) {
@@ -121,6 +155,8 @@ export default function CardDetailScreen() {
           item={item}
           onDismiss={dismissScreen}
           onSelectTag={handleSelectTag}
+          onSelectFolder={handleSelectFolder}
+          onSelectType={handleSelectType}
         />
       </Animated.View>
     </View>

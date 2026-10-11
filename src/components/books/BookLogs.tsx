@@ -138,7 +138,7 @@ export function BookLogs({
           }}
           accessibilityRole="button"
           accessibilityLabel="Log reading"
-          className="flex-row items-center justify-center gap-4 px-3 py-5 border-t border-zinc-800 bg-amber-950/20 active:opacity-80"
+          className="flex-row items-center justify-center gap-4 px-3 py-5 bg-amber-950/20 active:opacity-80"
         >
           <PlusIcon size={16} color="#FCD34D" weight="bold" />
           <Text className="font-sans-semibold text-base text-amber-300">Log reading</Text>

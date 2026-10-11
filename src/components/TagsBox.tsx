@@ -1,12 +1,26 @@
 import {
+  ArticleIcon,
   ArrowsClockwiseIcon,
+  BookOpenIcon,
   BookmarkSimpleIcon,
   CheckCircleIcon,
   ClockIcon,
+  FilePdfIcon,
+  FilmSlateIcon,
+  FolderIcon,
+  GameControllerIcon,
   HashIcon,
+  ImageIcon,
+  LinkIcon,
+  MusicNotesIcon,
+  NotePencilIcon,
   ProhibitIcon,
+  QuotesIcon,
+  RedditLogoIcon,
   TagIcon,
+  TwitterLogoIcon,
   XIcon,
+  YoutubeLogoIcon,
 } from 'phosphor-react-native';
 import { useRef, useState } from 'react';
 import {
@@ -20,11 +34,31 @@ import {
   View,
 } from 'react-native';
 
+import type { LibraryItemType } from '@/lib/library/types';
+
+const cardTypeTags = {
+  note: { label: 'Note', icon: NotePencilIcon },
+  quote: { label: 'Quote', icon: QuotesIcon },
+  image: { label: 'Image', icon: ImageIcon },
+  pdf: { label: 'PDF', icon: FilePdfIcon },
+  link: { label: 'Link', icon: LinkIcon },
+  article: { label: 'Article', icon: ArticleIcon },
+  youtube: { label: 'YouTube', icon: YoutubeLogoIcon },
+  tweet: { label: 'Tweet', icon: TwitterLogoIcon },
+  reddit: { label: 'Reddit', icon: RedditLogoIcon },
+  book: { label: 'Book', icon: BookOpenIcon },
+  music: { label: 'Music', icon: MusicNotesIcon },
+  movie: { label: 'Movie', icon: FilmSlateIcon },
+  game: { label: 'Game', icon: GameControllerIcon },
+} satisfies Record<LibraryItemType, { label: string; icon: typeof TagIcon }>;
+
 export type TagsBoxProps = {
   /** Current array of tags */
   tags: string[];
   /** Array of automatically generated / smart tags */
   autoTags?: string[];
+  /** Saved folder names whose matching tags should use the folder appearance. */
+  folderTags?: readonly string[];
   /** Callback when tags list changes */
   onTagsChange?: (tags: string[] | ((prev: string[]) => string[])) => void;
   /** Callback when autoTags list changes */
@@ -73,11 +107,15 @@ export type TagsBoxProps = {
     onPress?: () => void;
     accessibilityLabel?: string;
   };
+  /** Derived card type pill, shown after the status and before saved tags. */
+  cardType?: LibraryItemType;
+  onCardTypePress?: (type: LibraryItemType, label: string) => void;
 };
 
 export function TagsBox({
   tags,
   autoTags,
+  folderTags,
   onTagsChange,
   onAutoTagsChange,
   tagInput: tagInputProp,
@@ -99,6 +137,8 @@ export function TagsBox({
   onLayout,
   renderTagWrapper,
   priorityTag,
+  cardType,
+  onCardTypePress,
 }: TagsBoxProps) {
   const fallbackInputRef = useRef<TextInput>(null);
   const effectiveInputRef = inputRef ?? fallbackInputRef;
@@ -203,6 +243,8 @@ export function TagsBox({
     abandoned: ProhibitIcon,
   } as const;
   const PriorityTagIcon = priorityTag ? priorityTagIcons[priorityTag.icon] : null;
+  const cardTypeTag = cardType ? cardTypeTags[cardType] : null;
+  const CardTypeIcon = cardTypeTag?.icon;
 
   return (
     <View onLayout={onLayout} className={baseContainerClass}>
@@ -246,8 +288,23 @@ export function TagsBox({
           </Pressable>
         ) : null}
 
+        {cardType && cardTypeTag && CardTypeIcon ? (
+          <Pressable
+            onPress={() => onCardTypePress?.(cardType, cardTypeTag.label)}
+            accessibilityRole="button"
+            accessibilityLabel={`Search ${cardTypeTag.label} cards`}
+            className="flex-row items-center gap-2 rounded-full bg-zinc-500/15 px-3 py-1 active:opacity-70"
+          >
+            <CardTypeIcon size={12} color="#A1A1AA" weight="bold" />
+            <Text className="font-sans-medium text-base text-zinc-300">{cardTypeTag.label}</Text>
+          </Pressable>
+        ) : null}
+
         {tags.map((tag, idx) => {
+          const isFolder = folderTags?.includes(tag.trim()) ?? false;
           const isAuto = autoTags?.includes(tag);
+          const tagColor = isFolder ? '#C4B5FD' : isAuto ? '#A1A1AA' : '#60A5FA';
+          const TagPillIcon = isFolder ? FolderIcon : HashIcon;
 
           const pill = (
             <Pressable
@@ -261,17 +318,19 @@ export function TagsBox({
               }}
               onLongPress={onTagLongPress ? () => onTagLongPress(tag, idx) : undefined}
               delayLongPress={250}
+              accessibilityRole="button"
+              accessibilityLabel={isFolder ? `Folder ${tag}` : `Tag ${tag}`}
               className={`flex-row items-center gap-2 rounded-full px-3 py-1 active:opacity-70 ${
-                isAuto ? 'bg-zinc-500/15' : 'bg-blue-500/15'
+                isFolder ? 'bg-violet-500/15' : isAuto ? 'bg-zinc-500/15' : 'bg-blue-500/15'
               }`}
             >
-              <HashIcon size={12} color={isAuto ? '#A1A1AA' : '#60A5FA'} weight="bold" />
+              <TagPillIcon size={12} color={tagColor} weight="bold" />
               <Text
-                className={`font-sans-medium text-base ${isAuto ? 'text-zinc-300' : 'text-blue-400'}`}
+                className={`font-sans-medium text-base ${isFolder ? 'text-violet-300' : isAuto ? 'text-zinc-300' : 'text-blue-400'}`}
               >
                 {tag}
               </Text>
-              {showRemoveIcon && <XIcon size={14} color={isAuto ? '#A1A1AA' : '#60A5FA'} />}
+              {showRemoveIcon && <XIcon size={14} color={tagColor} />}
             </Pressable>
           );
 

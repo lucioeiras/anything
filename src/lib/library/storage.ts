@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
+import { isQuoteText } from './quotes';
 import { resolveUrlMetadata, type ResolvedMetadata } from './metadata';
 import {
   clearSourceCache,
@@ -676,7 +677,13 @@ export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
   title?: string,
-  options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string; forceNote?: boolean }
+  options?: {
+    tags?: string[];
+    autoTags?: string[];
+    linkedItemId?: string;
+    forceNote?: boolean;
+    author?: string;
+  }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -684,10 +691,7 @@ export async function addTextItemToLibrary(
   }
 
   const trimmed = rawText.trim();
-  const isQuote =
-    !options?.forceNote &&
-    ((trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
-      (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2));
+  const isQuote = !options?.forceNote && isQuoteText(trimmed);
 
   const cleanText = isQuote ? trimmed.slice(1, -1).trim() : trimmed;
   const itemType: 'quote' | 'note' = isQuote ? 'quote' : 'note';
@@ -701,6 +705,7 @@ export async function addTextItemToLibrary(
     type: itemType,
     text: cleanText,
     ...(title ? { title } : {}),
+    ...(isQuote && options?.author?.trim() ? { author: options.author.trim() } : {}),
     ...(options?.tags && options.tags.length > 0 ? { tags: options.tags } : {}),
     ...(options?.autoTags && options.autoTags.length > 0 ? { autoTags: options.autoTags } : {}),
     ...(options?.linkedItemId ? { linkedItemId: options.linkedItemId } : {}),

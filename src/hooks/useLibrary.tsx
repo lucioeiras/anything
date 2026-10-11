@@ -42,6 +42,7 @@ import type {
   BookItem,
   GameItem,
   ImageItem,
+  LibraryItemType,
   MovieItem,
   MusicItem,
   NoteItem,
@@ -70,7 +71,13 @@ export type LibraryContextValue = {
   addTextItem: (
     text: string,
     title?: string,
-    options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string; forceNote?: boolean }
+    options?: {
+      tags?: string[];
+      autoTags?: string[];
+      linkedItemId?: string;
+      forceNote?: boolean;
+      author?: string;
+    }
   ) => Promise<NoteItem | QuoteItem>;
   addLinkItem: (
     url: string,
@@ -147,6 +154,11 @@ export type LibraryContextValue = {
   searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  searchTag: string | null;
+  selectTag: (tag: string) => void;
+  clearSearchTag: () => void;
+  searchType: LibraryItemType | null;
+  selectCardType: (type: LibraryItemType, label: string) => void;
   isInitialized: boolean;
   hasSavedSource: boolean;
   shouldAutoOpenBoard: boolean;
@@ -158,7 +170,24 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [source, setSourceInternal] = useState<LibrarySource | null>(null);
   const [loaded, setLoaded] = useState<{ source: LibrarySource; state: LibraryState } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQueryState] = useState('');
+  const [searchTag, setSearchTag] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<LibraryItemType | null>(null);
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchType(null);
+    setSearchQueryState(query);
+  }, []);
+  const selectTag = useCallback((tag: string) => {
+    setSearchType(null);
+    setSearchQueryState('');
+    setSearchTag(tag);
+  }, []);
+  const clearSearchTag = useCallback(() => setSearchTag(null), []);
+  const selectCardType = useCallback((type: LibraryItemType, label: string) => {
+    setSearchTag(null);
+    setSearchType(type);
+    setSearchQueryState(label);
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [recentFolders, setRecentFolders] = useState<SavedFolder[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -325,7 +354,13 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     async (
       text: string,
       title?: string,
-      options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string; forceNote?: boolean }
+      options?: {
+        tags?: string[];
+        autoTags?: string[];
+        linkedItemId?: string;
+        forceNote?: boolean;
+        author?: string;
+      }
     ) => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
       if (!source) {
@@ -575,6 +610,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     searchItems,
     searchQuery,
     setSearchQuery,
+    searchTag,
+    selectTag,
+    clearSearchTag,
+    searchType,
+    selectCardType,
     isInitialized,
     hasSavedSource,
     shouldAutoOpenBoard,
