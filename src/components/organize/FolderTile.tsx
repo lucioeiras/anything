@@ -21,6 +21,7 @@ export function FolderTile({
   onPress,
   onToggleHighlight,
 }: Props) {
+  const isEmpty = items.length === 0;
   const artwork = items
     .map(getItemArtwork)
     .filter((value): value is string => Boolean(value))
@@ -30,9 +31,11 @@ export function FolderTile({
     <View className={`${horizontal ? 'w-[152px] flex-shrink-0' : 'w-1/2'} items-center pb-6`}>
       <Pressable
         onPress={onPress}
+        disabled={isEmpty}
         accessibilityRole="button"
+        accessibilityState={{ disabled: isEmpty }}
         accessibilityLabel={`${title}, ${items.length} cards`}
-        className="w-full items-center"
+        className={`w-full items-center ${isEmpty ? 'opacity-50' : ''}`}
       >
         <View className="mb-[9px] h-[136px] w-[136px]">
           <View className="absolute left-4 top-2 h-[116px] w-[104px] -translate-x-[9px] translate-y-[5px] -rotate-[11deg] overflow-hidden rounded-[10px] border border-zinc-800">
@@ -64,7 +67,9 @@ export function FolderTile({
       {onToggleHighlight && (
         <Pressable
           onPress={onToggleHighlight}
+          disabled={isEmpty}
           accessibilityRole="button"
+          accessibilityState={{ disabled: isEmpty }}
           accessibilityLabel={
             highlighted ? `Remove ${title} from highlights` : `Highlight ${title}`
           }
