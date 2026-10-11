@@ -135,7 +135,17 @@ export type BookItem = BaseItem & {
   publisher?: string;
   publishedDate?: string;
   pageCount?: number;
+  readingLogs?: BookReadingLog[];
   url?: string;
+};
+
+export type BookReadingLog = {
+  id: string;
+  /** Local calendar date in YYYY-MM-DD format. */
+  date: string;
+  page: number;
+  createdAt: string;
+  noteId?: string;
 };
 
 export type MusicItem = BaseItem & {
