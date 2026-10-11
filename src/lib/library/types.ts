@@ -51,6 +51,7 @@ export type QuoteItem = BaseItem & {
   type: 'quote';
   text: string;
   title?: string;
+  author?: string;
   linkedItemId?: string;
 };
 export type ImageItem = BaseItem & {

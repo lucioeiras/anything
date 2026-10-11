@@ -53,6 +53,13 @@ export function parseItem(raw: unknown): LibraryItem {
       delete item.linkedItemId;
     }
   }
+  if (item.type === 'quote') {
+    if (typeof item.author === 'string') {
+      item.author = decodeHTML(item.author);
+    } else {
+      delete item.author;
+    }
+  }
   if (item.type === 'book') {
     if (Array.isArray(item.authors)) {
       item.authors = item.authors.map((a) => (typeof a === 'string' ? decodeHTML(a) : String(a)));

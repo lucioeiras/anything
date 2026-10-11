@@ -6,7 +6,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as WebBrowser from 'expo-web-browser';
-import { LinkIcon, NotePencilIcon, TextTIcon, XIcon } from 'phosphor-react-native';
+import { LinkIcon, NotePencilIcon, TextTIcon, UserIcon, XIcon } from 'phosphor-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -144,6 +144,9 @@ export function CardDetailContent({
         : '';
   const initialText = 'text' in item && typeof item.text === 'string' ? decodeHTML(item.text) : '';
   const [title, setTitle] = useState(initialTitle);
+  const [quoteAuthor, setQuoteAuthor] = useState(
+    item.type === 'quote' ? decodeHTML(item.author || '') : ''
+  );
   const [tags, setTags] = useState<string[]>(item.tags || []);
   const [progressStatus, setProgressStatus] = useState<MediaProgressStatus>(
     isTrackableItem(item) ? getCurrentProgressStatus(item.type, item.progressStatus) : 'want'
@@ -344,6 +347,17 @@ export function CardDetailContent({
       await updateItem(item.id, { title: cleanTitle || undefined } as Partial<LibraryItem>);
     } catch (e) {
       console.warn('Failed to save title', e);
+    }
+  };
+
+  const handleSaveQuoteAuthor = async () => {
+    if (item.type !== 'quote') return;
+    const cleanAuthor = quoteAuthor.trim();
+    if ((item.author || '') === cleanAuthor) return;
+    try {
+      await updateItem(item.id, { author: cleanAuthor || undefined });
+    } catch (e) {
+      console.warn('Failed to save quote author', e);
     }
   };
 
@@ -775,6 +789,23 @@ export function CardDetailContent({
                 underlineColorAndroid="transparent"
               />
             </View>
+
+            {item.type === 'quote' && (
+              <View className="flex-row items-center gap-4 py-5 px-6 border-b border-zinc-800">
+                <UserIcon size={20} color="#E4E4E7" />
+
+                <TextInput
+                  value={quoteAuthor}
+                  onChangeText={setQuoteAuthor}
+                  onBlur={handleSaveQuoteAuthor}
+                  placeholder="Add an author..."
+                  placeholderTextColor="#71717A"
+                  className="flex-1 font-sans text-xl text-zinc-100 leading-tight"
+                  style={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                  underlineColorAndroid="transparent"
+                />
+              </View>
+            )}
 
             {/* Tags section */}
             <TagsBox

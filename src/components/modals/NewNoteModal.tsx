@@ -5,6 +5,7 @@ import {
   MusicNotesIcon,
   NotePencilIcon,
   TextTIcon,
+  UserIcon,
   XIcon,
 } from 'phosphor-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +31,7 @@ import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem } from '@/lib/library/links';
+import { isQuoteText } from '@/lib/library/quotes';
 import type { NoteItem, QuoteItem } from '@/lib/library/types';
 import type { MusicMetadata } from '@/lib/music/itunes';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
@@ -46,11 +48,13 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
 
   const inputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
+  const authorInputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
 
   const [view, setView] = useState<'editor' | 'info'>('editor');
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -82,6 +86,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
     if (saving) return;
     setText('');
     setTitle('');
+    setAuthor('');
     setTags([]);
     setAutoTags([]);
     autoTagsRef.current = [];
@@ -144,9 +149,11 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
         autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
         linkedItemId: musicId,
         forceNote: Boolean(lyricsSong),
+        author: isQuoteText(trimmed) && !lyricsSong ? author.trim() || undefined : undefined,
       });
       setText('');
       setTitle('');
+      setAuthor('');
       setTags([]);
       setAutoTags([]);
       autoTagsRef.current = [];
@@ -226,8 +233,14 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   };
 
   const canSave = text.trim().length > 0 && !saving;
+  const isQuote = !lyricsSong && isQuoteText(text);
   const hasInfo = Boolean(
-    title.trim() || tags.length > 0 || tagInput.trim() || linkedItemId || lyricsSong
+    title.trim() ||
+    (isQuote && author.trim()) ||
+    tags.length > 0 ||
+    tagInput.trim() ||
+    linkedItemId ||
+    lyricsSong
   );
 
   const handleLyricsSelect = (snippet: string, song: MusicMetadata) => {
@@ -291,9 +304,13 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
             >
               {/* Header */}
               <View className="gap-3 p-8">
-                <Text className="font-sans-semibold text-2xl text-white">Note info</Text>
+                <Text className="font-sans-semibold text-2xl text-white">
+                  {isQuote ? 'Quote info' : 'Note info'}
+                </Text>
                 <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                  Add a title and tags to organize this note on your board.
+                  {isQuote
+                    ? 'Add an author, title and tags to organize this quote on your board.'
+                    : 'Add a title and tags to organize this note on your board.'}
                 </Text>
               </View>
 
@@ -309,13 +326,31 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                   placeholderTextColor="#71717A"
                   returnKeyType="next"
                   onSubmitEditing={() => {
-                    tagsInputRef.current?.focus();
+                    (isQuote ? authorInputRef : tagsInputRef).current?.focus();
                   }}
                   className="w-full font-sans text-xl text-white leading-tight"
                   style={styles.borderlessInput}
                   underlineColorAndroid="transparent"
                 />
               </View>
+
+              {isQuote && (
+                <View className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800">
+                  <UserIcon size={20} color="#D4D4D8" />
+                  <TextInput
+                    ref={authorInputRef}
+                    value={author}
+                    onChangeText={setAuthor}
+                    placeholder="Add an author to this quote"
+                    placeholderTextColor="#71717A"
+                    returnKeyType="next"
+                    onSubmitEditing={() => tagsInputRef.current?.focus()}
+                    className="flex-1 font-sans text-xl text-white leading-tight"
+                    style={styles.borderlessInput}
+                    underlineColorAndroid="transparent"
+                  />
+                </View>
+              )}
 
               {/* Tags Section */}
               <TagsBox
