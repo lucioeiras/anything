@@ -31,13 +31,13 @@ export const ArticleCard = ({
           {decodeHTML(articleTitle)}
         </Text>
 
-        <ProgressStatus type="article" status={progressStatus} align="start" />
-
-        <View className="flex-row items-center gap-2 mt-2">
+        <View className="flex-row items-center gap-2 mt-1 mb-2">
           <Text className="font-sans-semibold text-sm text-zinc-400" numberOfLines={1}>
             {decodeHTML(origin)}
           </Text>
         </View>
+
+        <ProgressStatus type="article" status={progressStatus} align="start" />
       </View>
     </View>
   );
