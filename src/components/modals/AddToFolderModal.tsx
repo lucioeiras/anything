@@ -96,6 +96,35 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
     }
   };
 
+  const confirmDeleteFolder = (name: string) => {
+    if (saving || folderNames === null) return;
+    Alert.alert('Delete folder?', `“${name}” will be removed from your folders and cards.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (saving || folderNames === null) return;
+          const next = folderNames.filter((folderName) => folderName !== name);
+          try {
+            const taggedItems = libraryItems.filter((item) =>
+              item.tags?.some((tag) => tag.trim() === name)
+            );
+            for (const item of taggedItems) {
+              await updateItem(item.id, {
+                tags: item.tags?.filter((tag) => tag.trim() !== name) ?? [],
+              });
+            }
+            await saveLibraryFolders(source, next);
+            setSaved({ key: storageKey, names: next });
+          } catch {
+            Alert.alert('Could not delete folder', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   const handleClose = () => {
     if (!saving) onClose();
   };
@@ -135,6 +164,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
                   items={itemsByTag.get(name) ?? []}
                   disabled={items.length === 0 || alreadyAdded || saving}
                   onPress={() => addToFolder(name)}
+                  onLongPress={() => confirmDeleteFolder(name)}
                 />
               );
             })}

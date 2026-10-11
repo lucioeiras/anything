@@ -76,15 +76,15 @@ export function SearchBar({
                 className={`max-w-full flex-row items-center gap-1.5 rounded-full px-3 py-1.5 active:opacity-70 ${status ? '' : isTag ? 'bg-blue-500/15' : 'bg-violet-500/15'}`}
                 style={status ? { backgroundColor: `${status.color}26` } : undefined}
               >
-                <Icon size={14} color={iconColor} weight="bold" />
+                <Icon size={16} color={iconColor} weight="bold" />
                 <Text
                   numberOfLines={1}
-                  className={`max-w-[180px] font-sans-medium text-base ${isTag ? 'text-blue-300' : 'text-violet-300'}`}
+                  className={`max-w-[180px] font-sans-medium text-lg ${isTag ? 'text-blue-300' : 'text-violet-300'}`}
                   style={status ? { color: status.color } : undefined}
                 >
                   {filter.label}
                 </Text>
-                <XIcon size={12} color={iconColor} weight="bold" />
+                <XIcon size={14} color={iconColor} weight="bold" />
               </Pressable>
             );
           })}
@@ -94,7 +94,7 @@ export function SearchBar({
             onChangeText={onChangeText}
             placeholder={filters.length > 0 ? 'Search within...' : placeholder}
             placeholderTextColor="#52525C"
-            className="min-w-[110px] flex-grow font-sans text-xl text-white leading-tight"
+            className="min-w-[110px] flex-grow font-sans text-2xl text-white leading-tight"
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"

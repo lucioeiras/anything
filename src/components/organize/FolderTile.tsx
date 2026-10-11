@@ -54,9 +54,9 @@ export function FolderTile({
       className={`${horizontal ? 'w-[152px] flex-shrink-0' : 'w-1/2'} items-center pb-6 ${disabled ? 'opacity-40' : ''}`}
     >
       <Pressable
-        onPress={onPress}
+        onPress={disabled ? undefined : onPress}
         onLongPress={onLongPress}
-        disabled={disabled}
+        disabled={disabled && !onLongPress}
         accessibilityRole="button"
         accessibilityLabel={`${title}, ${items.length} cards`}
         accessibilityState={{ disabled }}

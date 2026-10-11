@@ -11,7 +11,7 @@ import { getTagGroups, matchesStatus, STATUS_FOLDERS } from '@/lib/library/organ
 import { getLibraryFolders, getSourceId, saveLibraryFolders } from '@/lib/library/storage';
 
 export default function OrganizeScreen() {
-  const { source, state, setSearchQuery, clearSearchTag } = useLibrary();
+  const { source, state, setSearchQuery, clearSearchTag, updateItem } = useLibrary();
   const [saved, setSaved] = useState<{ source: string; names: string[] } | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const items = useMemo(() => (state.status === 'ready' ? state.result.items : []), [state]);
@@ -79,6 +79,14 @@ export default function OrganizeScreen() {
           if (saved?.source !== sourceId) return;
           const next = folderNames.filter((folderName) => folderName !== name);
           try {
+            const taggedItems = items.filter((item) =>
+              item.tags?.some((tag) => tag.trim() === name)
+            );
+            for (const item of taggedItems) {
+              await updateItem(item.id, {
+                tags: item.tags?.filter((tag) => tag.trim() !== name) ?? [],
+              });
+            }
             await saveLibraryFolders(source, next);
             setSaved({ source: sourceId, names: next });
           } catch {
