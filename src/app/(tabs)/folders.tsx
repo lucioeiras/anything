@@ -69,6 +69,26 @@ export default function OrganizeScreen() {
     }
   };
 
+  const confirmDeleteFolder = (name: string) => {
+    Alert.alert('Delete folder?', `“${name}” will be removed from your folders.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (saved?.source !== sourceId) return;
+          const next = folderNames.filter((folderName) => folderName !== name);
+          try {
+            await saveLibraryFolders(source, next);
+            setSaved({ source: sourceId, names: next });
+          } catch {
+            Alert.alert('Could not delete folder', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   if (state.status === 'loading')
     return (
       <View className="flex-1 justify-center bg-zinc-950">
@@ -101,6 +121,7 @@ export default function OrganizeScreen() {
               title={name}
               items={itemsByTag.get(name) ?? []}
               onPress={() => openFolder('tag', name)}
+              onLongPress={() => confirmDeleteFolder(name)}
             />
           ))}
         </View>

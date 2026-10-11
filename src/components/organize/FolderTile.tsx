@@ -25,6 +25,7 @@ type Props = {
   horizontal?: boolean;
   disabled?: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
   onToggleHighlight?: () => void;
 };
 
@@ -36,6 +37,7 @@ export function FolderTile({
   horizontal = false,
   disabled = false,
   onPress,
+  onLongPress,
   onToggleHighlight,
 }: Props) {
   const artwork = items
@@ -53,6 +55,7 @@ export function FolderTile({
     >
       <Pressable
         onPress={onPress}
+        onLongPress={onLongPress}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={`${title}, ${items.length} cards`}

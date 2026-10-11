@@ -1,12 +1,13 @@
-import { XIcon } from 'phosphor-react-native';
+import { PlusIcon, XIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
-import { getTagGroups } from '@/lib/library/organize';
-import { getLibraryFolders, getSourceId } from '@/lib/library/storage';
+import { getTagGroups, STATUS_FOLDERS } from '@/lib/library/organize';
+import { getLibraryFolders, getSourceId, saveLibraryFolders } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 type Props = {
@@ -22,6 +23,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
   const storageKey = `anything:folders:${getSourceId(source)}`;
   const [saved, setSaved] = useState<{ key: string; names: string[] } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const folderNames = saved?.key === storageKey ? saved.names : null;
   const libraryItems = useMemo(() => (state.status === 'ready' ? state.result.items : []), [state]);
   const itemsByTag = useMemo(
@@ -72,6 +74,28 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
     }
   };
 
+  const createFolder = async (name: string): Promise<boolean> => {
+    if (folderNames === null) return false;
+    if (
+      [...folderNames, ...STATUS_FOLDERS.map((folder) => folder.title)].some(
+        (existing) => existing.toLocaleLowerCase() === name.toLocaleLowerCase()
+      )
+    ) {
+      Alert.alert('Folder already exists', 'Choose a different name.');
+      return false;
+    }
+
+    const next = [...folderNames, name];
+    try {
+      await saveLibraryFolders(source, next);
+      setSaved({ key: storageKey, names: next });
+      return true;
+    } catch {
+      Alert.alert('Could not create folder', 'Please try again.');
+      return false;
+    }
+  };
+
   const handleClose = () => {
     if (!saving) onClose();
   };
@@ -87,10 +111,10 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
       <View className="flex-1 bg-zinc-950" style={{ paddingTop: Math.max(insets.top, 16) }}>
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-6 pb-12 pt-8"
+          contentContainerClassName="flex-grow px-6 pb-12 pt-8"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-1 gap-2 px-2 pb-8">
+          <View className="gap-2 px-2 pb-8">
             <Text className="font-sans-semibold text-2xl text-white text-center">
               Add to folder
             </Text>
@@ -117,27 +141,49 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
           </View>
           {folderNames === null && <ActivityIndicator className="py-6" color="#A1A1AA" />}
           {folderNames?.length === 0 && (
-            <Text className="px-2 pt-2 font-sans text-sm text-zinc-500">
-              Create a folder in the Folders tab to add cards here.
-            </Text>
+            <View className="flex-1 items-center justify-center px-8 py-12">
+              <Text className="font-sans-medium text-lg text-zinc-100">No folders yet</Text>
+              <Text className="mt-2 text-center font-sans text-base text-zinc-500">
+                Create a folder to organize these cards.
+              </Text>
+            </View>
           )}
         </ScrollView>
 
-        <Pressable
-          onPress={handleClose}
-          disabled={saving}
-          className="w-full flex-row items-center justify-center gap-4 border-t border-zinc-800 bg-zinc-950 pt-6 pb-10 active:bg-zinc-900"
-          accessibilityRole="button"
-          accessibilityLabel="Cancel"
-        >
-          {saving ? (
-            <ActivityIndicator size={24} color="#A1A1AA" />
-          ) : (
-            <XIcon size={24} color="#FFFFFF" weight="bold" />
-          )}
-          <Text className="font-sans-bold text-xl text-white">Cancel</Text>
-        </Pressable>
+        <View className="w-full flex-row border-t border-zinc-800 bg-zinc-950">
+          <Pressable
+            onPress={handleClose}
+            disabled={saving}
+            className="w-1/2 flex-row items-center justify-center gap-3 px-2 pt-6 pb-10 active:bg-zinc-900"
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+            accessibilityState={{ disabled: saving }}
+          >
+            {saving ? (
+              <ActivityIndicator size={20} color="#A1A1AA" />
+            ) : (
+              <XIcon size={20} color="#FFFFFF" weight="bold" />
+            )}
+            <Text className="font-sans-bold text-lg text-white">Cancel</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setIsCreateOpen(true)}
+            disabled={saving}
+            className="w-1/2 flex-row items-center justify-center gap-3 border-l border-zinc-800 px-2 pt-6 pb-12 active:bg-zinc-900"
+            accessibilityRole="button"
+            accessibilityLabel="Create folder"
+            accessibilityState={{ disabled: saving }}
+          >
+            <PlusIcon size={20} color="#C4B5FD" weight="bold" />
+            <Text className="font-sans-semibold text-lg text-violet-300">New Folder</Text>
+          </Pressable>
+        </View>
       </View>
+      <NewFolderModal
+        visible={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={createFolder}
+      />
     </Modal>
   );
 }
