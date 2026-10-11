@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { NutIcon, PlusIcon, SquaresFourIcon, TagIcon } from 'phosphor-react-native';
+import { FolderIcon, NutIcon, PlusIcon, SquaresFourIcon } from 'phosphor-react-native';
 
 const iconSize = 28;
 
@@ -39,11 +39,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tags"
+        name="folders"
         options={{
-          title: 'Tags',
+          title: 'Folders',
           tabBarIcon: ({ color, focused }) => (
-            <TagIcon
+            <FolderIcon
               size={iconSize - 4}
               color={color as string}
               weight={focused ? 'fill' : 'regular'}

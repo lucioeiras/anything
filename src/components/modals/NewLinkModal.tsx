@@ -1,4 +1,4 @@
-import { CheckIcon, LinkIcon, NotePencilIcon, XIcon } from 'phosphor-react-native';
+import { CheckIcon, LinkIcon, NotePencilIcon, TextTIcon, XIcon } from 'phosphor-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,10 +31,12 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const { addLinkItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+  const titleInputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
 
   const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
@@ -191,6 +193,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
   const handleClose = () => {
     if (saving) return;
     setUrl('');
+    setTitle('');
     setTags([]);
     setAutoTags([]);
     autoTagsRef.current = [];
@@ -219,12 +222,14 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
       const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
       const item = await addLinkItem(targetUrl, {
+        title: title.trim() || undefined,
         tags: finalTags.length > 0 ? finalTags : undefined,
         autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
         note: note.trim() || undefined,
         preloadedMetadata: resolvedMetadata ?? undefined,
       });
       setUrl('');
+      setTitle('');
       setTags([]);
       setAutoTags([]);
       autoTagsRef.current = [];
@@ -292,7 +297,7 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                 keyboardType="url"
                 returnKeyType="next"
                 onSubmitEditing={() => {
-                  tagsInputRef.current?.focus();
+                  titleInputRef.current?.focus();
                 }}
                 className="flex-1 font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
@@ -311,6 +316,25 @@ export function NewLinkModal({ visible, onClose, onSaved }: NewLinkModalProps) {
                   <XIcon size={12} color="#E4E4E7" weight="bold" />
                 </Pressable>
               )}
+            </View>
+
+            {/* Title Input */}
+            <View className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800">
+              <TextTIcon size={20} color="#D4D4D8" />
+              <TextInput
+                ref={titleInputRef}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Add a title here..."
+                placeholderTextColor="#71717A"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  tagsInputRef.current?.focus();
+                }}
+                className="flex-1 font-sans text-xl text-white leading-tight"
+                style={styles.borderlessInput}
+                underlineColorAndroid="transparent"
+              />
             </View>
 
             {/* Tags section */}

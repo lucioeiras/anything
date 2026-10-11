@@ -1,12 +1,26 @@
 import { Image } from 'expo-image';
+import {
+  BookmarkSimpleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ProhibitIcon,
+} from 'phosphor-react-native';
 import { Pressable, Text, View } from 'react-native';
 
-import { getItemArtwork } from '@/lib/library/organize';
-import type { LibraryItem } from '@/lib/library/types';
+import { getItemArtwork, STATUS_FOLDERS } from '@/lib/library/organize';
+import type { LibraryItem, MediaProgressStatus } from '@/lib/library/types';
+
+const statusIcons = {
+  want: BookmarkSimpleIcon,
+  'in-progress': ClockIcon,
+  completed: CheckCircleIcon,
+  abandoned: ProhibitIcon,
+} as const;
 
 type Props = {
   title: string;
   items: LibraryItem[];
+  status?: MediaProgressStatus;
   highlighted?: boolean;
   horizontal?: boolean;
   onPress: () => void;
@@ -16,26 +30,28 @@ type Props = {
 export function FolderTile({
   title,
   items,
+  status,
   highlighted,
   horizontal = false,
   onPress,
   onToggleHighlight,
 }: Props) {
-  const isEmpty = items.length === 0;
   const artwork = items
     .map(getItemArtwork)
     .filter((value): value is string => Boolean(value))
     .slice(0, 3);
+  const StatusIcon = status ? statusIcons[status] : null;
+  const titleColor = status
+    ? STATUS_FOLDERS.find((folder) => folder.key === status)?.color
+    : undefined;
 
   return (
     <View className={`${horizontal ? 'w-[152px] flex-shrink-0' : 'w-1/2'} items-center pb-6`}>
       <Pressable
         onPress={onPress}
-        disabled={isEmpty}
         accessibilityRole="button"
-        accessibilityState={{ disabled: isEmpty }}
         accessibilityLabel={`${title}, ${items.length} cards`}
-        className={`w-full items-center ${isEmpty ? 'opacity-50' : ''}`}
+        className="w-full items-center"
       >
         <View className="mb-[9px] h-[136px] w-[136px]">
           <View className="absolute left-4 top-2 h-[116px] w-[104px] -translate-x-[9px] translate-y-[5px] -rotate-[11deg] overflow-hidden rounded-[10px] border border-zinc-800">
@@ -55,9 +71,16 @@ export function FolderTile({
           </View>
         </View>
 
-        <Text className="text-center font-sans-semibold text-sm text-zinc-50" numberOfLines={2}>
-          {title}
-        </Text>
+        <View className="max-w-full flex-row items-center justify-center gap-1.5 px-2">
+          {StatusIcon && <StatusIcon size={15} color={titleColor} weight="bold" />}
+          <Text
+            className="flex-shrink text-center font-sans-semibold text-sm text-zinc-50"
+            style={titleColor ? { color: titleColor } : undefined}
+            numberOfLines={2}
+          >
+            {title}
+          </Text>
+        </View>
 
         <Text className="mt-[3px] font-sans text-xs text-zinc-400">
           {items.length} {items.length === 1 ? 'card' : 'cards'}
@@ -67,9 +90,7 @@ export function FolderTile({
       {onToggleHighlight && (
         <Pressable
           onPress={onToggleHighlight}
-          disabled={isEmpty}
           accessibilityRole="button"
-          accessibilityState={{ disabled: isEmpty }}
           accessibilityLabel={
             highlighted ? `Remove ${title} from highlights` : `Highlight ${title}`
           }
