@@ -2,6 +2,7 @@ import {
   CheckIcon,
   InfoIcon,
   LinkIcon,
+  MusicNotesIcon,
   NotePencilIcon,
   TextTIcon,
   XIcon,
@@ -24,11 +25,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
+import { MusicLyricsPicker } from '@/components/modals/MusicLyricsPicker';
 import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem } from '@/lib/library/links';
 import type { NoteItem, QuoteItem } from '@/lib/library/types';
+import type { MusicMetadata } from '@/lib/music/itunes';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewNoteModalProps = {
@@ -38,7 +41,7 @@ type NewNoteModalProps = {
 };
 
 export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
-  const { addTextItem, getTags, state } = useLibrary();
+  const { addMusicItem, addTextItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
   const inputRef = useRef<TextInput>(null);
@@ -53,6 +56,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   const [saving, setSaving] = useState(false);
   const [linkedItemId, setLinkedItemId] = useState<string>();
   const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
+  const [isLyricsPickerOpen, setIsLyricsPickerOpen] = useState(false);
+  const [lyricsSong, setLyricsSong] = useState<MusicMetadata | null>(null);
+  const [lyricsSnippet, setLyricsSnippet] = useState('');
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedItem = libraryItems.find((item) => item.id === linkedItemId);
   const [autoTags, setAutoTags] = useState<string[]>([]);
@@ -82,6 +88,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
     setTagInput('');
     setLinkedItemId(undefined);
     setIsLinkPickerOpen(false);
+    setIsLyricsPickerOpen(false);
+    setLyricsSong(null);
+    setLyricsSnippet('');
     setView('editor');
     onClose();
   };
@@ -99,10 +108,42 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       }
       const savedAutoTags = autoTagsRef.current.filter((t) => finalTags.includes(t));
 
+      let musicId = linkedItemId;
+      if (lyricsSong) {
+        const existing = libraryItems.find(
+          (candidate) =>
+            candidate.type === 'music' &&
+            candidate.musicKind !== 'album' &&
+            (lyricsSong.externalUrl
+              ? candidate.externalUrl === lyricsSong.externalUrl
+              : candidate.title === lyricsSong.title &&
+                candidate.artist === lyricsSong.artist &&
+                candidate.album === lyricsSong.album)
+        );
+        if (existing) {
+          musicId = existing.id;
+        } else {
+          const music = await addMusicItem({
+            musicKind: 'song',
+            title: lyricsSong.title,
+            artist: lyricsSong.artist,
+            album: lyricsSong.album,
+            cover: lyricsSong.cover,
+            previewUrl: lyricsSong.previewUrl,
+            externalUrl: lyricsSong.externalUrl,
+            durationMs: lyricsSong.durationMs,
+            releaseDate: lyricsSong.releaseDate,
+            genre: lyricsSong.genre,
+          });
+          musicId = music.id;
+        }
+      }
+
       const item = await addTextItem(trimmed, title.trim() || undefined, {
         tags: finalTags.length > 0 ? finalTags : undefined,
         autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
-        linkedItemId,
+        linkedItemId: musicId,
+        forceNote: Boolean(lyricsSong),
       });
       setText('');
       setTitle('');
@@ -111,6 +152,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
       autoTagsRef.current = [];
       setTagInput('');
       setLinkedItemId(undefined);
+      setLyricsSong(null);
+      setLyricsSnippet('');
+      setIsLyricsPickerOpen(false);
       setView('editor');
       onSaved?.(item);
       onClose();
@@ -182,7 +226,25 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
   };
 
   const canSave = text.trim().length > 0 && !saving;
-  const hasInfo = Boolean(title.trim() || tags.length > 0 || tagInput.trim() || linkedItemId);
+  const hasInfo = Boolean(
+    title.trim() || tags.length > 0 || tagInput.trim() || linkedItemId || lyricsSong
+  );
+
+  const handleLyricsSelect = (snippet: string, song: MusicMetadata) => {
+    setText((current) => {
+      const previous = current.trimEnd();
+      const base =
+        lyricsSnippet && previous.endsWith(lyricsSnippet)
+          ? previous.slice(0, -lyricsSnippet.length).trimEnd()
+          : previous;
+      return base ? `${base}\n\n${snippet}` : snippet;
+    });
+    setLyricsSong(song);
+    setLyricsSnippet(snippet);
+    setLinkedItemId(undefined);
+    setIsLyricsPickerOpen(false);
+    setView('editor');
+  };
 
   return (
     <Modal
@@ -270,7 +332,14 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                 }}
               />
 
-              {linkedItem && isLinkableItem(linkedItem) ? (
+              {lyricsSong ? (
+                <LinkedContentPreview
+                  pendingMusic={lyricsSong}
+                  onChange={() => setIsLyricsPickerOpen(true)}
+                  onRemove={() => setLyricsSong(null)}
+                  containerClassName="px-8 py-6 border-b border-zinc-800"
+                />
+              ) : linkedItem && isLinkableItem(linkedItem) ? (
                 <LinkedContentPreview
                   item={linkedItem}
                   onChange={() => setIsLinkPickerOpen(true)}
@@ -303,29 +372,35 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
               >
-                <XIcon size={22} color="#FFFFFF" weight="bold" />
+                <XIcon size={20} color="#FFFFFF" weight="bold" />
                 <Text className="font-sans-bold text-lg text-white">Cancel</Text>
               </Pressable>
 
               {/* Info / Note Switcher Button */}
+              {view === 'editor' && (
+                <Pressable
+                  onPress={() => setIsLyricsPickerOpen(true)}
+                  disabled={saving}
+                  className="px-8 pt-6 pb-10 flex-row gap-1.5 items-center justify-center border-r border-zinc-800"
+                  accessibilityRole="button"
+                  accessibilityLabel="Add song lyrics"
+                >
+                  <MusicNotesIcon
+                    size={20}
+                    color={lyricsSong ? '#3B82F6' : '#FFFFFF'}
+                    weight="bold"
+                  />
+                </Pressable>
+              )}
               {view === 'editor' ? (
                 <Pressable
                   onPress={handleSwitchToInfo}
                   hitSlop={12}
-                  className="flex-1 pt-6 pb-10 flex-row gap-2.5 items-center justify-center border-r border-zinc-800"
+                  className="px-8 pt-6 pb-10 flex-row gap-2.5 items-center justify-center border-r border-zinc-800"
                   accessibilityRole="button"
                   accessibilityLabel="Note info"
                 >
-                  <InfoIcon
-                    size={22}
-                    color={hasInfo ? '#3B82F6' : '#FFFFFF'}
-                    weight={hasInfo ? 'fill' : 'bold'}
-                  />
-                  <Text
-                    className={`font-sans-bold text-lg ${hasInfo ? 'text-blue-500' : 'text-white'}`}
-                  >
-                    Info
-                  </Text>
+                  <InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />
                 </Pressable>
               ) : (
                 <Pressable
@@ -335,7 +410,7 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                   accessibilityRole="button"
                   accessibilityLabel="Back to note editor"
                 >
-                  <NotePencilIcon size={22} color="#FFFFFF" weight="bold" />
+                  <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
                   <Text className="font-sans-bold text-lg text-white">Note</Text>
                 </Pressable>
               )}
@@ -350,9 +425,9 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
                 accessibilityLabel="Save note"
               >
                 {saving ? (
-                  <ActivityIndicator size={22} color={canSave ? '#000000' : '#FFFFFF'} />
+                  <ActivityIndicator size={20} color={canSave ? '#000000' : '#FFFFFF'} />
                 ) : (
-                  <CheckIcon size={22} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
+                  <CheckIcon size={20} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
                 )}
 
                 <Text
@@ -371,6 +446,11 @@ export function NewNoteModal({ visible, onClose, onSaved }: NewNoteModalProps) {
         selectedId={linkedItemId}
         onSelect={setLinkedItemId}
         onClose={() => setIsLinkPickerOpen(false)}
+      />
+      <MusicLyricsPicker
+        visible={isLyricsPickerOpen}
+        onClose={() => setIsLyricsPickerOpen(false)}
+        onSelect={handleLyricsSelect}
       />
     </Modal>
   );

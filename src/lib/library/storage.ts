@@ -676,7 +676,7 @@ export async function addTextItemToLibrary(
   source: LibrarySource,
   rawText: string,
   title?: string,
-  options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string }
+  options?: { tags?: string[]; autoTags?: string[]; linkedItemId?: string; forceNote?: boolean }
 ): Promise<NoteItem | QuoteItem> {
   const root = getLibraryDirectory(source);
   if (!root.exists) {
@@ -685,8 +685,9 @@ export async function addTextItemToLibrary(
 
   const trimmed = rawText.trim();
   const isQuote =
-    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
-    (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2);
+    !options?.forceNote &&
+    ((trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+      (trimmed.startsWith('“') && trimmed.endsWith('”') && trimmed.length >= 2));
 
   const cleanText = isQuote ? trimmed.slice(1, -1).trim() : trimmed;
   const itemType: 'quote' | 'note' = isQuote ? 'quote' : 'note';

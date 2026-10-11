@@ -1,17 +1,26 @@
 import { Image as ExpoImage } from 'expo-image';
-import { LinkIcon, XIcon } from 'phosphor-react-native';
+import { LinkIcon, MusicNotesIcon, XIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { getLinkableTitle, getLinkableTypeLabel, type LinkableItem } from '@/lib/library/links';
+import type { MusicMetadata } from '@/lib/music/itunes';
 
-type Props = {
-  item: LinkableItem;
+type SharedProps = {
   onChange?: () => void;
   onRemove?: () => void;
   compact?: boolean;
   containerClassName?: string;
 };
+
+type Props = SharedProps &
+  (
+    | { item: LinkableItem; pendingMusic?: undefined }
+    | {
+        item?: undefined;
+        pendingMusic: Pick<MusicMetadata, 'title' | 'artist' | 'album' | 'cover'>;
+      }
+  );
 
 function getPreviewImage(item: LinkableItem): string | undefined {
   switch (item.type) {
@@ -69,20 +78,31 @@ function getInitialAspectRatio(item: LinkableItem): number {
 
 export function LinkedContentPreview({
   item,
+  pendingMusic,
   onChange,
   onRemove,
   compact = false,
   containerClassName = '',
 }: Props) {
-  const image = getPreviewImage(item);
-  const subtitle = getPreviewSubtitle(item);
-  const initialRatio = getInitialAspectRatio(item);
+  const title = item ? getLinkableTitle(item) : pendingMusic.title;
+  const typeLabel = item ? getLinkableTypeLabel(item) : 'Song';
+  const image = item ? getPreviewImage(item) : pendingMusic.cover;
+  const subtitle = item
+    ? getPreviewSubtitle(item)
+    : [pendingMusic.artist, pendingMusic.album].filter(Boolean).join(' • ');
+  const initialRatio = item ? getInitialAspectRatio(item) : 1;
   const [loadedRatio, setLoadedRatio] = useState<{ image?: string; ratio: number }>({
     image,
     ratio: initialRatio,
   });
   const aspectRatio = loadedRatio.image === image ? loadedRatio.ratio : initialRatio;
-  const maxSize = compact ? 44 : item.type === 'link' ? 64 : item.type === 'music' ? 80 : 96;
+  const maxSize = compact
+    ? 44
+    : item?.type === 'link'
+      ? 64
+      : item?.type === 'music' || pendingMusic
+        ? 80
+        : 96;
   const imageSize = {
     width: aspectRatio >= 1 ? maxSize : maxSize * aspectRatio,
     height: aspectRatio >= 1 ? maxSize / aspectRatio : maxSize,
@@ -109,6 +129,8 @@ export function LinkedContentPreview({
               }
             }}
           />
+        ) : pendingMusic ? (
+          <MusicNotesIcon size={compact ? 16 : 24} color="#71717A" />
         ) : (
           <LinkIcon size={compact ? 16 : 24} color="#71717A" />
         )}
@@ -118,13 +140,13 @@ export function LinkedContentPreview({
           className={`font-sans-medium text-zinc-400 ${compact ? 'text-[10px]' : 'text-xs'}`}
           numberOfLines={1}
         >
-          {getLinkableTypeLabel(item)}
+          {typeLabel}
         </Text>
         <Text
           className={`font-sans-semibold text-white ${compact ? 'text-xs' : 'text-lg'}`}
           numberOfLines={2}
         >
-          {getLinkableTitle(item)}
+          {title}
         </Text>
         {subtitle && !compact ? (
           <Text className="font-sans text-sm text-zinc-400" numberOfLines={2}>
@@ -144,7 +166,7 @@ export function LinkedContentPreview({
       <Pressable
         onPress={onChange}
         accessibilityRole="button"
-        accessibilityLabel={`Change linked content: ${getLinkableTitle(item)}`}
+        accessibilityLabel={`Change linked content: ${title}`}
         className="flex-1 flex-row items-center gap-6"
       >
         {content}
