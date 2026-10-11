@@ -1079,8 +1079,9 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
               </View>
             )}
 
+            {/* Linked Notes Section */}
             {isLinkableItem(item) && linkedNotes.length > 0 && (
-              <View className="py-6 px-6 border-b border-zinc-800 gap-3">
+              <View className="py-6 px-6 border-b border-zinc-800 gap-4">
                 <View className="flex-row items-center gap-2">
                   <NotePencilIcon size={15} color="#E4E4E7" />
                   <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
@@ -1096,7 +1097,10 @@ function CardDetailContent({ item, onDismiss, onSelectTag }: CardDetailContentPr
                     accessibilityRole="button"
                     className="rounded-xl bg-zinc-900 px-4 py-4"
                   >
-                    <Text className="font-sans-medium text-sm text-zinc-100" numberOfLines={3}>
+                    <Text
+                      className="font-sans-medium text-sm text-zinc-100 leading-[1.8]"
+                      numberOfLines={3}
+                    >
                       {linkedNote.title || linkedNote.text}
                     </Text>
                     {linkedNote.title && (
