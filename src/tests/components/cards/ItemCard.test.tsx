@@ -130,6 +130,18 @@ describe('ItemCard', () => {
     expect(getByText(expectedText)).toBeTruthy();
   });
 
+  it('renders TikTok with a vertical thumbnail and without progress status', async () => {
+    const tiktok = examples.find(([item]) => item.type === 'tiktok')?.[0];
+    if (!tiktok) throw new Error('Missing TikTok test item');
+
+    const { getByTestId, getByText, queryByText } = await render(<ItemCard item={tiktok} />);
+    expect(getByTestId('video-thumbnail-container').props.style).toMatchObject({
+      aspectRatio: 9 / 16,
+    });
+    expect(getByText('TikTok')).toBeTruthy();
+    expect(queryByText('Want to watch')).toBeNull();
+  });
+
   it('passes press actions the original item and supports selection display', async () => {
     const item = examples[0][0];
     const onPress = jest.fn();

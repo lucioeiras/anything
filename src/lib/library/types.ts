@@ -97,7 +97,6 @@ export type YouTubeItem = BaseItem & {
 
 export type TikTokItem = BaseItem & {
   type: 'tiktok';
-  progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
   thumbnail: ImageRef;

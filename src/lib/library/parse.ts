@@ -53,6 +53,9 @@ export function parseItem(raw: unknown): LibraryItem {
       delete item.linkedItemId;
     }
   }
+  if (item.type === 'tiktok') {
+    delete item.progressStatus;
+  }
   if (item.type === 'quote') {
     if (typeof item.author === 'string') {
       item.author = decodeHTML(item.author);

@@ -17,6 +17,7 @@ import { PdfCard } from './PdfCard';
 import { QuoteCard } from './QuoteCard';
 import { RedditCard } from './RedditCard';
 import { TweetCard } from './TweetCard';
+import { TikTokCard } from './TikTokCard';
 import { YouTubeCard } from './YouTubeCard';
 
 type ItemCardProps = {
@@ -96,14 +97,7 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'tiktok':
-        return (
-          <YouTubeCard
-            videoTitle={item.title}
-            thumbnail={item.thumbnail}
-            progressStatus={item.progressStatus}
-            platform="TikTok"
-          />
-        );
+        return <TikTokCard videoTitle={item.title} thumbnail={item.thumbnail} />;
       case 'tweet':
         return (
           <TweetCard

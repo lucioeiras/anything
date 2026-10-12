@@ -839,7 +839,6 @@ export async function addLinkItemToLibrary(
         id,
         version: SCHEMA_VERSION,
         type: 'tiktok',
-        progressStatus: 'want',
         url: metadata.url,
         title: metadata.title,
         thumbnail: metadata.thumbnail,

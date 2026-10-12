@@ -2,7 +2,9 @@ import type { LibraryItem } from './types';
 
 export type LinkableItem = Extract<
   LibraryItem,
-  { type: 'article' | 'youtube' | 'tiktok' | 'link' | 'movie' | 'book' | 'game' | 'music' }
+  {
+    type: 'article' | 'youtube' | 'tiktok' | 'link' | 'movie' | 'book' | 'game' | 'music';
+  }
 >;
 
 export function isLinkableItem(item: LibraryItem): item is LinkableItem {

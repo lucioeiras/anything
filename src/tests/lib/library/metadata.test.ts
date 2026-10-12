@@ -26,7 +26,7 @@ describe('metadata helpers', () => {
     await expect(resolveUrlMetadata('https://vm.tiktok.com/short')).resolves.toMatchObject({
       type: 'tiktok',
       title: 'TikTok Video',
-      thumbnail: '',
+      thumbnail: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',
     });
     fetchMock.mockRestore();
   });

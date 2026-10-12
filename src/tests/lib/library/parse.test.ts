@@ -52,6 +52,19 @@ describe('parseItem', () => {
     ).toMatchObject({ linkedItemId: 'book-1' });
   });
 
+  it('drops legacy TikTok progress statuses', () => {
+    expect(
+      parseItem({
+        ...base,
+        type: 'tiktok',
+        url: 'https://www.tiktok.com/@person/video/123',
+        title: 'A TikTok video',
+        thumbnail: 'cover.jpg',
+        progressStatus: 'completed',
+      })
+    ).not.toHaveProperty('progressStatus');
+  });
+
   it('normalizes quote authors and filters malformed book reading logs', () => {
     const quote = parseItem({ ...base, type: 'quote', text: 'Words', author: 'A &amp; B' });
     expect(quote).toMatchObject({ author: 'A & B' });

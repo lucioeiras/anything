@@ -19,6 +19,7 @@ import {
   RedditLogoIcon,
   TagIcon,
   TwitterLogoIcon,
+  TiktokLogoIcon,
   XIcon,
   YoutubeLogoIcon,
 } from 'phosphor-react-native';
@@ -44,7 +45,7 @@ const cardTypeTags = {
   link: { label: 'Link', icon: LinkIcon },
   article: { label: 'Article', icon: ArticleIcon },
   youtube: { label: 'YouTube', icon: YoutubeLogoIcon },
-  tiktok: { label: 'TikTok', icon: YoutubeLogoIcon },
+  tiktok: { label: 'TikTok', icon: TiktokLogoIcon },
   tweet: { label: 'Tweet', icon: TwitterLogoIcon },
   reddit: { label: 'Reddit', icon: RedditLogoIcon },
   book: { label: 'Book', icon: BookOpenIcon },

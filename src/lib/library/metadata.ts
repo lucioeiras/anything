@@ -257,7 +257,7 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
 
   if (/(?:^|\.)tiktok\.com$/i.test(hostname)) {
     let title = 'TikTok Video';
-    let thumbnail = '';
+    let thumbnail = 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128';
     try {
       const response = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`);
       if (response.ok) {

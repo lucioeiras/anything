@@ -16,7 +16,7 @@ import {
   TwitterLogoIcon,
   WarningIcon,
   YoutubeLogoIcon,
-  VideoCameraIcon,
+  TiktokLogoIcon,
 } from 'phosphor-react-native';
 import {
   createContext,
@@ -84,7 +84,7 @@ const CARD_TYPE_ICONS = {
   link: LinkIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,
-  tiktok: VideoCameraIcon,
+  tiktok: TiktokLogoIcon,
   tweet: TwitterLogoIcon,
   reddit: RedditLogoIcon,
   book: BookOpenIcon,
