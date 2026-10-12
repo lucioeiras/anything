@@ -185,7 +185,11 @@ export const ItemCard = memo(function ItemCard({
       <View className="w-full overflow-hidden">{renderCardContent()}</View>
 
       {isSelected && (
-        <View pointerEvents="none" className="absolute inset-0 border-[3px] border-blue-500 z-10" />
+        <View
+          testID="item-card-selection-outline"
+          pointerEvents="none"
+          className="absolute inset-0 rounded-xl border-[3px] border-blue-500 z-10"
+        />
       )}
 
       {isEditing && (

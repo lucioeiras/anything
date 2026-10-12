@@ -154,6 +154,13 @@ describe('ItemCard', () => {
     expect(onPress).toHaveBeenCalledWith(item);
   });
 
+  it('rounds the selection outline to match the card corners', async () => {
+    const item = examples[0][0];
+    const { getByTestId } = await render(<ItemCard item={item} isEditing isSelected />);
+
+    expect(getByTestId('item-card-selection-outline').props.className).toContain('rounded-xl');
+  });
+
   it('makes multi-image tweets interactive inside the tweet card', async () => {
     const item: LibraryItem = {
       ...base,
