@@ -26,6 +26,8 @@ type ItemCardProps = {
   item: LibraryItem;
   linkedItem?: LinkableItem;
   hideTitleAndAuthor?: boolean;
+  showAudioPlaybackRate?: boolean;
+  compactAudioWaveform?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
@@ -38,6 +40,8 @@ export const ItemCard = memo(function ItemCard({
   item,
   linkedItem,
   hideTitleAndAuthor = false,
+  showAudioPlaybackRate = false,
+  compactAudioWaveform = false,
   isEditing = false,
   isSelected = false,
   onPress,
@@ -79,7 +83,15 @@ export const ItemCard = memo(function ItemCard({
       case 'video':
         return <VideoCard uri={item.video} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'audio':
-        return <AudioCard uri={item.audio} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <AudioCard
+            uri={item.audio}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            waveform={item.waveform}
+            showPlaybackRate={showAudioPlaybackRate}
+            compactWaveform={compactAudioWaveform}
+          />
+        );
       case 'link':
         return (
           <LinkCard

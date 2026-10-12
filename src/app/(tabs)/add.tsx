@@ -19,9 +19,10 @@ import {
   NotePencilIcon,
   MicrophoneIcon,
 } from 'phosphor-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { buildAudioWaveform, normalizeAudioMetering } from '@/lib/library/audioWaveform';
 
 export default function AddElementScreen() {
   const { controlItem, controlToken } = useLocalSearchParams<{
@@ -30,9 +31,21 @@ export default function AddElementScreen() {
   }>();
   const [isPickingMedia, setIsPickingMedia] = useState(false);
   const [isPickingPdf, setIsPickingPdf] = useState(false);
-  const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, directory: 'document' });
-  const recorderState = useAudioRecorderState(recorder);
+  const recorder = useAudioRecorder({
+    ...RecordingPresets.HIGH_QUALITY,
+    directory: 'document',
+    isMeteringEnabled: true,
+  });
+  const recorderState = useAudioRecorderState(recorder, 100);
+  const waveformSamplesRef = useRef<number[]>([]);
   const [isRecordingAction, setIsRecordingAction] = useState(false);
+
+  useEffect(() => {
+    if (recorderState.isRecording && recorderState.metering !== undefined) {
+      waveformSamplesRef.current.push(normalizeAudioMetering(recorderState.metering));
+    }
+  }, [recorderState.isRecording, recorderState.metering, recorderState.durationMillis]);
+
   const handleRecordAudio = async () => {
     if (isRecordingAction) return;
     setIsRecordingAction(true);
@@ -45,8 +58,13 @@ export default function AddElementScreen() {
         }
         await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
         await recorder.prepareToRecordAsync();
+        waveformSamplesRef.current = [];
         recorder.record();
       } else {
+        const finalMetering = recorder.getStatus().metering;
+        if (finalMetering !== undefined) {
+          waveformSamplesRef.current.push(normalizeAudioMetering(finalMetering));
+        }
         await recorder.stop();
         await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
         if (recorder.uri)
@@ -55,6 +73,7 @@ export default function AddElementScreen() {
             params: {
               newAudioUri: recorder.uri,
               newAudioDuration: String(recorderState.durationMillis ?? 0),
+              newAudioWaveform: JSON.stringify(buildAudioWaveform(waveformSamplesRef.current)),
               newAudioTimestamp: Date.now().toString(),
             },
           });

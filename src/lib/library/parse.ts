@@ -1,5 +1,6 @@
 import { decodeHTML } from 'entities';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
+import { parseAudioWaveform } from './audioWaveform';
 
 /**
  * Lightweight runtime validation for item JSON. Files on disk can be edited by
@@ -143,6 +144,11 @@ export function parseItem(raw: unknown): LibraryItem {
         typeof p === 'string' ? decodeHTML(p) : String(p)
       );
     }
+  }
+  if (item.type === 'audio') {
+    const waveform = parseAudioWaveform(item.waveform);
+    if (waveform) item.waveform = waveform;
+    else delete item.waveform;
   }
 
   return item as unknown as LibraryItem;

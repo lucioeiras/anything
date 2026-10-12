@@ -53,7 +53,7 @@ export function CardActions({
     },
     {
       accessibilityLabel: 'Add to folder',
-      icon: <FolderPlusIcon size={24} color="#C4B5FD" />,
+      icon: <FolderPlusIcon size={24} color="#FFFFFF" />,
       onPress: onAddToFolder,
     },
     ...(isImage

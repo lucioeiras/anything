@@ -170,17 +170,17 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View className="flex-row p-8 pt-0 gap-8 items-center max-h-48 border-b border-zinc-800">
+            <View className="flex-row p-8 pt-0 gap-6 items-center max-h-48 border-b border-zinc-800">
               <Pressable
                 onPress={() => (playerStatus.playing ? player.pause() : player.play())}
                 accessibilityRole="button"
                 accessibilityLabel={
                   playerStatus.playing ? 'Pause recording preview' : 'Play recording preview'
                 }
-                className="h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 active:opacity-70"
+                className="h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800 active:opacity-70"
               >
-                <MicrophoneIcon size={32} color="#60A5FA" weight="duotone" />
-                <Text className="mt-1 font-sans text-xs text-zinc-400">
+                <MicrophoneIcon size={24} color="#EF4444" weight="duotone" />
+                <Text className="mt-2 font-sans-semibold text-xs text-zinc-400">
                   {playerStatus.playing ? 'Pause' : durationLabel}
                 </Text>
               </Pressable>

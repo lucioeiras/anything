@@ -198,10 +198,10 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
           />
           <Button
             accessibilityLabel="Create folder"
-            variant="primary"
+            variant="secondary"
             onPress={() => setIsCreateOpen(true)}
             disabled={saving}
-            icon={<PlusIcon size={20} color="#C4B5FD" weight="bold" />}
+            icon={<PlusIcon size={20} color="#FFFFFF" weight="bold" />}
             text="New Folder"
           />
         </ActionFooter>

@@ -63,6 +63,7 @@ import { NewAudioModal } from '@/components/modals/NewAudioModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
+import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import type {
   DeletedItemBackup,
   PickedImageAsset,
@@ -181,6 +182,7 @@ export default function BoardScreen() {
     newVideoTimestamp,
     newAudioUri,
     newAudioDuration,
+    newAudioWaveform,
     newAudioTimestamp,
     controlAddItem,
     controlToken,
@@ -206,6 +208,7 @@ export default function BoardScreen() {
     newVideoTimestamp?: string;
     newAudioUri?: string;
     newAudioDuration?: string;
+    newAudioWaveform?: string;
     newAudioTimestamp?: string;
     controlAddItem?: AddControlItem;
     controlToken?: string;
@@ -415,9 +418,19 @@ export default function BoardScreen() {
     if (!newAudioUri || !token || token === lastOpenedAudioRef.current) return;
     lastOpenedAudioRef.current = token;
     activeAddModalRef.current = 'audio';
-    setPendingAudio({ uri: newAudioUri, durationMs: Number(newAudioDuration) || undefined });
+    let waveform: number[] | undefined;
+    try {
+      waveform = parseAudioWaveform(newAudioWaveform ? JSON.parse(newAudioWaveform) : undefined);
+    } catch {
+      waveform = undefined;
+    }
+    setPendingAudio({
+      uri: newAudioUri,
+      durationMs: Number(newAudioDuration) || undefined,
+      waveform,
+    });
     setIsAudioModalOpen(true);
-  }, [newAudioUri, newAudioDuration, newAudioTimestamp]);
+  }, [newAudioUri, newAudioDuration, newAudioWaveform, newAudioTimestamp]);
 
   useEffect(() => {
     if (!controlAddItem || !controlToken) return;
@@ -710,6 +723,7 @@ export default function BoardScreen() {
       <View style={styles.cardWrapper}>
         <ItemCard
           item={item}
+          compactAudioWaveform
           linkedItem={
             (item.type === 'note' || item.type === 'quote') && item.linkedItemId
               ? linkableItems.get(item.linkedItemId)

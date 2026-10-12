@@ -58,7 +58,7 @@ export function Button({
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        className={`flex-row items-center justify-center overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${isSmall ? 'gap-2' : 'gap-3'} ${text ? (isSmall ? 'px-4 py-2' : 'px-6 py-3') : isSmall ? 'p-3' : 'p-4'} ${variant === 'secondary' && 'border border-zinc-800'}`}
+        className={`flex-row items-center justify-center overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${isSmall ? 'gap-2' : 'gap-3'} ${text ? (isSmall ? 'px-4 py-2' : 'px-6 py-3') : isSmall ? 'p-3' : 'p-4'} ${variant === 'secondary' && 'border border-white/10'}`}
         style={variant === 'primary' ? { backgroundColor } : undefined}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}

@@ -131,7 +131,7 @@ export function CardPreview({
 
       {!isNoteOrQuote && !isMusic && (
         <View className="w-full max-w-sm">
-          <ItemCard item={displayItem} hideTitleAndAuthor />
+          <ItemCard item={displayItem} hideTitleAndAuthor showAudioPlaybackRate />
         </View>
       )}
 

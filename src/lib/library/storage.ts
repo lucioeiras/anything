@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
+import { parseAudioWaveform } from './audioWaveform';
 import { isQuoteText } from './quotes';
 import { resolveUrlMetadata, type ResolvedMetadata } from './metadata';
 import {
@@ -519,7 +520,12 @@ export function getAudiosDirectory(source: LibrarySource): Directory {
   return new Directory(getLibraryDirectory(source), AUDIOS_DIR);
 }
 
-export type PickedAudioAsset = { uri: string; durationMs?: number; fileName?: string };
+export type PickedAudioAsset = {
+  uri: string;
+  durationMs?: number;
+  fileName?: string;
+  waveform?: number[];
+};
 
 export async function addAudioToLibrary(
   source: LibrarySource,
@@ -546,6 +552,7 @@ export async function addAudioToLibrary(
     destination.create({ intermediates: true, overwrite: true });
     destination.write(new Uint8Array(buffer));
   }
+  const waveform = parseAudioWaveform(asset.waveform);
   const now = new Date().toISOString();
   const item: AudioItem = {
     id,
@@ -559,6 +566,7 @@ export async function addAudioToLibrary(
       ? { autoTags: options.autoTags.filter(Boolean) }
       : {}),
     ...(asset.durationMs ? { durationMs: asset.durationMs } : {}),
+    ...(waveform ? { waveform } : {}),
     createdAt: now,
     updatedAt: now,
   };
