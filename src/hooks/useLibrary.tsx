@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
+import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
 import {
   addBookItemToLibrary,
   addGameItemToLibrary,
@@ -37,7 +38,6 @@ import {
   type PickedPdfAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
-import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
 import type {
   BookItem,
   GameItem,
