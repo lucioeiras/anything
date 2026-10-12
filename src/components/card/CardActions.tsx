@@ -5,6 +5,7 @@ import {
   ExportIcon,
   FilePdfIcon,
   FolderPlusIcon,
+  NotePencilIcon,
   TrashSimpleIcon,
 } from 'phosphor-react-native';
 import { Pressable, View } from 'react-native';
@@ -20,6 +21,7 @@ type CardActionsProps = {
   onShare: () => void;
   onOpenLink: () => void;
   onOpenPdf: () => void;
+  onEditNote: () => void;
 };
 
 export function CardActions({
@@ -31,6 +33,7 @@ export function CardActions({
   onShare: handleShare,
   onOpenLink: handleOpenLink,
   onOpenPdf: handleOpenPdf,
+  onEditNote: handleEditNote,
 }: CardActionsProps) {
   const isLink = ['link', 'article', 'youtube', 'tiktok', 'tweet', 'reddit'].includes(item.type);
   const isImage = item.type === 'image';
@@ -95,6 +98,18 @@ export function CardActions({
             accessibilityLabel="Copy"
           >
             <CopyIcon size={24} color="#FFFFFF" />
+          </Pressable>
+        )}
+
+        {item.type === 'note' && (
+          <Pressable
+            onPress={handleEditNote}
+            hitSlop={12}
+            className="flex-1 pt-6 pb-10 items-center justify-center border-r border-zinc-800 active:bg-zinc-900"
+            accessibilityRole="button"
+            accessibilityLabel="Edit note"
+          >
+            <NotePencilIcon size={24} color="#FFFFFF" weight="bold" />
           </Pressable>
         )}
 

@@ -29,6 +29,7 @@ type ItemCardProps = {
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
   onLongPress?: (item: LibraryItem) => void;
+  onNoteTextChange?: (itemId: string, text: string) => void;
 };
 
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
@@ -40,6 +41,7 @@ export const ItemCard = memo(function ItemCard({
   isSelected = false,
   onPress,
   onLongPress,
+  onNoteTextChange,
 }: ItemCardProps) {
   const isInteractiveTweet =
     item.type === 'tweet' &&
@@ -54,6 +56,9 @@ export const ItemCard = memo(function ItemCard({
             text={item.text}
             title={hideTitleAndAuthor ? undefined : item.title}
             linkedItem={linkedItem}
+            onMarkdownChange={
+              onNoteTextChange ? (text) => onNoteTextChange(item.id, text) : undefined
+            }
           />
         );
       case 'quote':

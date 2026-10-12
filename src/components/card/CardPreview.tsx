@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ItemCard } from '@/components/cards/ItemCard';
+import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { VinylRecord } from '@/components/effects/VinylRecord';
 import type { LibraryItem } from '@/lib/library/types';
 import { MusicPreviewPlayer } from './MusicPreviewPlayer';
@@ -18,6 +19,7 @@ type CardPreviewProps = {
   onTextBlur: () => void;
   onTextFocus: () => void;
   onDismissEditingTags: () => void;
+  isEditingNote: boolean;
 };
 
 export function CardPreview({
@@ -28,6 +30,7 @@ export function CardPreview({
   onTextBlur,
   onTextFocus,
   onDismissEditingTags,
+  isEditingNote,
 }: CardPreviewProps) {
   const isMusic = item.type === 'music';
   const isNoteOrQuote = item.type === 'note' || item.type === 'quote';
@@ -154,9 +157,10 @@ export function CardPreview({
               />
               <QuoteClose width={18} height={18} />
             </View>
-          ) : (
+          ) : isEditingNote ? (
             <TextInput
               value={editedText}
+              autoFocus
               onChangeText={onTextChange}
               onBlur={onTextBlur}
               onFocus={onTextFocus}
@@ -167,6 +171,8 @@ export function CardPreview({
               style={{ backgroundColor: 'transparent' }}
               underlineColorAndroid="transparent"
             />
+          ) : (
+            <MarkdownNote markdown={editedText} onMarkdownChange={onTextChange} />
           )}
         </View>
       )}

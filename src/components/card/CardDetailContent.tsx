@@ -212,6 +212,7 @@ export function CardDetailContent({
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState(item.note || '');
   const [editedText, setEditedText] = useState(initialText);
+  const [isEditingNote, setIsEditingNote] = useState(false);
   const [isEditingTags, setIsEditingTags] = useState(false);
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -565,6 +566,7 @@ export function CardDetailContent({
     } catch (e) {
       console.warn('Failed to save note text on blur', e);
     }
+    if (item.type === 'note') setIsEditingNote(false);
   };
 
   const handleDelete = () => {
@@ -785,6 +787,7 @@ export function CardDetailContent({
               Keyboard.dismiss();
               if (isEditingTags) setIsEditingTags(false);
             }}
+            isEditingNote={isEditingNote}
           />
 
           {/* SECTION 2: BOTTOM SECTION (INFORMATION ABOUT THE CARD) */}
@@ -1067,6 +1070,10 @@ export function CardDetailContent({
 
         <CardActions
           item={item}
+          onEditNote={() => {
+            setIsEditingNote(true);
+            scrollToTopSection();
+          }}
           onDelete={handleDelete}
           onAddToFolder={() => {
             Keyboard.dismiss();

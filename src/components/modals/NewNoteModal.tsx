@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -26,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
+import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { MusicLyricsPicker } from '@/components/modals/MusicLyricsPicker';
 import { TagsBox } from '@/components/TagsBox';
 
@@ -60,6 +62,7 @@ export function NewNoteModal({
   const tagsInputRef = useRef<TextInput>(null);
 
   const [view, setView] = useState<'editor' | 'info'>('editor');
+  const [isPreviewingMarkdown, setIsPreviewingMarkdown] = useState(false);
   const [text, setText] = useState(initialText ?? '');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -105,6 +108,7 @@ export function NewNoteModal({
     setLyricsSong(null);
     setLyricsSnippet('');
     setView('editor');
+    setIsPreviewingMarkdown(false);
     onClose();
   };
 
@@ -171,6 +175,7 @@ export function NewNoteModal({
       setLyricsSnippet('');
       setIsLyricsPickerOpen(false);
       setView('editor');
+      setIsPreviewingMarkdown(false);
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -264,6 +269,7 @@ export function NewNoteModal({
     setLyricsSnippet(snippet);
     setLinkedItemId(undefined);
     setIsLyricsPickerOpen(false);
+    setIsPreviewingMarkdown(false);
     setView('editor');
   };
 
@@ -287,22 +293,50 @@ export function NewNoteModal({
           className="flex-1 w-full relative"
         >
           {view === 'editor' ? (
-            /* Note Editor Mode: Only the text editor with large font */
-            <Pressable className="flex-1 w-full" onPress={() => inputRef.current?.focus()}>
-              <TextInput
-                ref={inputRef}
-                value={text}
-                onChangeText={setText}
-                placeholder="Type here..."
-                placeholderTextColor="#71717A"
-                multiline
-                autoFocus
-                textAlignVertical="top"
-                className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-8"
-                style={styles.borderlessInput}
-                underlineColorAndroid="transparent"
-              />
-            </Pressable>
+            isPreviewingMarkdown ? (
+              <ScrollView
+                className="flex-1 w-full"
+                contentContainerStyle={{
+                  paddingHorizontal: 32,
+                  paddingTop: 32,
+                  paddingBottom: 24,
+                }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {text.trim() ? (
+                  <MarkdownNote
+                    markdown={text}
+                    onMarkdownChange={setText}
+                    onEdit={() => {
+                      setIsPreviewingMarkdown(false);
+                      setTimeout(() => inputRef.current?.focus(), 100);
+                    }}
+                  />
+                ) : (
+                  <Text className="font-sans text-lg text-zinc-500">
+                    Your Markdown preview will appear here.
+                  </Text>
+                )}
+              </ScrollView>
+            ) : (
+              /* Note Editor Mode: Only the text editor with large font */
+              <Pressable className="flex-1 w-full" onPress={() => inputRef.current?.focus()}>
+                <TextInput
+                  ref={inputRef}
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="Type here..."
+                  placeholderTextColor="#71717A"
+                  multiline
+                  autoFocus
+                  textAlignVertical="top"
+                  className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-8"
+                  style={styles.borderlessInput}
+                  underlineColorAndroid="transparent"
+                />
+              </Pressable>
+            )
           ) : (
             /* Note Info Mode: Title and Tags sections */
             <ScrollView
@@ -434,6 +468,24 @@ export function NewNoteModal({
                     color={lyricsSong ? '#3B82F6' : '#FFFFFF'}
                     weight="bold"
                   />
+                </Pressable>
+              )}
+              {view === 'editor' && (
+                <Pressable
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setIsPreviewingMarkdown((current) => !current);
+                  }}
+                  disabled={saving}
+                  className="px-5 pt-6 pb-10 flex-row items-center justify-center border-r border-zinc-800"
+                  accessibilityRole="button"
+                  accessibilityLabel={isPreviewingMarkdown ? 'Edit markdown' : 'Preview markdown'}
+                >
+                  {isPreviewingMarkdown ? (
+                    <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
+                  ) : (
+                    <TextTIcon size={20} color="#FFFFFF" weight="bold" />
+                  )}
                 </Pressable>
               )}
               {view === 'editor' ? (

@@ -17,6 +17,7 @@ const makeActions = () => ({
   onShare: jest.fn(),
   onOpenLink: jest.fn(),
   onOpenPdf: jest.fn(),
+  onEditNote: jest.fn(),
 });
 
 describe('CardActions', () => {
@@ -30,10 +31,13 @@ describe('CardActions', () => {
     expect(getByLabelText('Delete')).toBeTruthy();
     expect(getByLabelText('Add to folder')).toBeTruthy();
     expect(getByLabelText('Copy')).toBeTruthy();
+    expect(getByLabelText('Edit note')).toBeTruthy();
     expect(queryByLabelText('Share')).toBeNull();
     expect(queryByLabelText('Open link')).toBeNull();
     await fireEvent.press(getByLabelText('Copy'));
     expect(actions.onCopy).toHaveBeenCalledTimes(1);
+    await fireEvent.press(getByLabelText('Edit note'));
+    expect(actions.onEditNote).toHaveBeenCalledTimes(1);
   });
 
   it('adds download action for image cards', async () => {

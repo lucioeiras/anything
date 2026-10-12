@@ -137,6 +137,7 @@ export default function BoardScreen() {
     searchType,
     setSearchQuery,
     clearSearchTag,
+    updateItem,
   } = useLibrary();
   const {
     newNote,
@@ -663,13 +664,21 @@ export default function BoardScreen() {
               : undefined
           }
           isEditing={isEditing}
+          onNoteTextChange={(itemId, text) => {
+            updateItem(itemId, { text } as Partial<LibraryItem>).catch((error) => {
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Could not update note'
+              );
+            });
+          }}
           isSelected={selectedCardIds.has(item.id)}
           onPress={handleCardPress}
           onLongPress={handleCardLongPress}
         />
       </View>
     ),
-    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems]
+    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems, updateItem]
   );
 
   const renderHeader = useCallback(() => {

@@ -569,6 +569,7 @@ export async function addVideoToLibrary(
   jsonFile.create({ intermediates: true, overwrite: true });
   const jsonText = JSON.stringify(item, null, 2);
   jsonFile.write(jsonText);
+
   const mtime = jsonFile.lastModified ?? Date.now();
   upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
   return item;
@@ -852,6 +853,12 @@ export async function addTextItemToLibrary(
   }
   const jsonText = JSON.stringify(item, null, 2);
   jsonFile.write(jsonText);
+
+  if (itemType === 'note') {
+    const markdownFile = new File(root, `${id}.md`);
+    markdownFile.create({ intermediates: true, overwrite: true });
+    markdownFile.write(cleanText);
+  }
 
   // Update SQLite cache immediately with modification time
   const mtime =
@@ -1820,6 +1827,12 @@ export async function updateItemInLibrary(
     id: itemId,
     updatedAt: now,
   };
+
+  if (rawItem.type === 'note' && typeof updatedRaw.text === 'string') {
+    const markdownFile = new File(root, `${itemId}.md`);
+    markdownFile.create({ intermediates: true, overwrite: true });
+    markdownFile.write(updatedRaw.text);
+  }
 
   if (
     rawItem.image &&

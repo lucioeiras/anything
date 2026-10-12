@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 
+import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import type { LinkableItem } from '@/lib/library/links';
 
@@ -7,16 +8,15 @@ type NoteProps = {
   text: string;
   title?: string;
   linkedItem?: LinkableItem;
+  onMarkdownChange?: (markdown: string) => void;
 };
 
-export const NoteCard = ({ text, title, linkedItem }: NoteProps) => {
+export const NoteCard = ({ text, title, linkedItem, onMarkdownChange }: NoteProps) => {
   return (
     <View className="w-full items-center">
       <View className="w-full bg-zinc-900/80 rounded-xl">
         <View className="p-5">
-          <Text className="font-sans text-base leading-[1.8] text-zinc-100" numberOfLines={8}>
-            {text}
-          </Text>
+          <MarkdownNote markdown={text} compact onMarkdownChange={onMarkdownChange} />
         </View>
 
         {linkedItem && (
