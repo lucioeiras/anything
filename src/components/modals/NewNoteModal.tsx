@@ -1,9 +1,21 @@
 import {
+  ArrowLeftIcon,
   CheckIcon,
+  EyeIcon,
   InfoIcon,
   LinkIcon,
+  ListBulletsIcon,
+  ListChecksIcon,
+  ListNumbersIcon,
   MusicNotesIcon,
   NotePencilIcon,
+  ParagraphIcon,
+  QuotesIcon,
+  TextBIcon,
+  TextHOneIcon,
+  TextHThreeIcon,
+  TextHTwoIcon,
+  TextItalicIcon,
   TextTIcon,
   UserIcon,
   XIcon,
@@ -31,6 +43,11 @@ import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { MusicLyricsPicker } from '@/components/modals/MusicLyricsPicker';
+import { NoteRichTextInput } from '@/components/modals/NoteRichTextInput';
+import type {
+  NoteFormattingAction,
+  NoteRichTextInputHandle,
+} from '@/components/modals/NoteRichTextInput.types';
 import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
@@ -38,6 +55,7 @@ import { isLinkableItem } from '@/lib/library/links';
 import { isQuoteText } from '@/lib/library/quotes';
 import type { NoteItem, QuoteItem } from '@/lib/library/types';
 import type { MusicMetadata } from '@/lib/music/itunes';
+import type { NoteLineType, TextSelection } from '@/lib/noteFormatting';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 
 type NewNoteModalProps = {
@@ -60,14 +78,16 @@ export function NewNoteModal({
   const { addMusicItem, addTextItem, updateItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<NoteRichTextInputHandle>(null);
   const titleInputRef = useRef<TextInput>(null);
   const authorInputRef = useRef<TextInput>(null);
   const tagsInputRef = useRef<TextInput>(null);
 
   const [view, setView] = useState<'editor' | 'info'>('editor');
+  const [isFormattingOpen, setIsFormattingOpen] = useState(false);
   const [isPreviewingMarkdown, setIsPreviewingMarkdown] = useState(false);
   const [text, setText] = useState(editingItem?.text ?? initialText ?? '');
+  const [selection, setSelection] = useState<TextSelection>({ start: 0, end: 0 });
   const [title, setTitle] = useState(editingItem?.title ?? '');
   const [author, setAuthor] = useState('');
   const [tags, setTags] = useState<string[]>(editingItem?.tags ?? []);
@@ -113,15 +133,18 @@ export function NewNoteModal({
     setLyricsSnippet('');
     setView('editor');
     setIsPreviewingMarkdown(false);
+    setIsFormattingOpen(false);
     onClose();
   };
 
   const handleSave = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || saving) return;
+    if (saving) return;
 
     setSaving(true);
     try {
+      const trimmed = ((await inputRef.current?.getMarkdown()) ?? text).trim();
+      if (!trimmed) return;
+
       const finalTags = [...tags];
       const pending = tagInput.replace(/^#/, '').trim();
       if (pending && !finalTags.includes(pending)) {
@@ -188,6 +211,7 @@ export function NewNoteModal({
       setIsLyricsPickerOpen(false);
       setView('editor');
       setIsPreviewingMarkdown(false);
+      setIsFormattingOpen(false);
       onSaved?.(item);
       onClose();
     } catch (e) {
@@ -252,6 +276,7 @@ export function NewNoteModal({
 
   const handleSwitchToEditor = () => {
     setView('editor');
+    setIsFormattingOpen(false);
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -284,6 +309,56 @@ export function NewNoteModal({
     setIsPreviewingMarkdown(false);
     setView('editor');
   };
+
+  const applyFormatting = (action: NoteFormattingAction) => {
+    inputRef.current?.format(action, selection);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  };
+
+  const formattingControls: { label: string; type: NoteLineType; icon: React.ReactNode }[] = [
+    {
+      label: 'H1',
+      type: 'heading-1',
+      icon: <TextHOneIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'H2',
+      type: 'heading-2',
+      icon: <TextHTwoIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'H3',
+      type: 'heading-3',
+      icon: <TextHThreeIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'Text',
+      type: 'paragraph',
+      icon: <ParagraphIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'Bullet list',
+      type: 'bullet',
+      icon: <ListBulletsIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'Numbered list',
+      type: 'numbered',
+      icon: <ListNumbersIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'To-do list',
+      type: 'todo',
+      icon: <ListChecksIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+    {
+      label: 'Quote',
+      type: 'quote',
+      icon: <QuotesIcon size={20} color="#FFFFFF" weight="bold" />,
+    },
+  ];
 
   return (
     <Modal
@@ -332,22 +407,16 @@ export function NewNoteModal({
                 )}
               </ScrollView>
             ) : (
-              /* Note Editor Mode: Only the text editor with large font */
-              <Pressable className="flex-1 w-full" onPress={() => inputRef.current?.focus()}>
-                <TextInput
+              <View className="flex-1 w-full">
+                <NoteRichTextInput
                   ref={inputRef}
                   value={text}
-                  onChangeText={setText}
+                  onChangeMarkdown={setText}
+                  onSelectionChange={setSelection}
                   placeholder="Type here..."
                   placeholderTextColor="#71717A"
-                  multiline
-                  autoFocus
-                  textAlignVertical="top"
-                  className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-32"
-                  style={styles.borderlessInput}
-                  underlineColorAndroid="transparent"
                 />
-              </Pressable>
+              </View>
             )
           ) : (
             /* Note Info Mode: Title and Tags sections */
@@ -451,74 +520,120 @@ export function NewNoteModal({
           )}
 
           {/* Action buttons at the bottom */}
-          <ActionFooter bottomInset={insets.bottom} overlay>
-            <Button
-              accessibilityLabel="Cancel"
-              onPress={handleClose}
-              disabled={saving}
-              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-            />
-
-            {view === 'editor' && (
-              <Button
-                accessibilityLabel="Add song lyrics"
-                onPress={() => setIsLyricsPickerOpen(true)}
-                disabled={saving}
-                icon={
-                  <MusicNotesIcon
-                    size={20}
-                    color={lyricsSong ? '#3B82F6' : '#FFFFFF'}
-                    weight="bold"
+          <ActionFooter
+            bottomInset={insets.bottom}
+            overlay
+            horizontalScroll={view === 'editor' && !isPreviewingMarkdown && isFormattingOpen}
+          >
+            {view === 'editor' && !isPreviewingMarkdown && isFormattingOpen ? (
+              <>
+                <Button
+                  accessibilityLabel="Cancel formatting"
+                  onPress={() => setIsFormattingOpen(false)}
+                  disabled={saving}
+                  icon={<ArrowLeftIcon size={20} color="#FFFFFF" weight="bold" />}
+                />
+                <Button
+                  accessibilityLabel="Bold"
+                  onPress={() => applyFormatting('bold')}
+                  disabled={saving}
+                  icon={<TextBIcon size={20} color="#FFFFFF" weight="bold" />}
+                />
+                <Button
+                  accessibilityLabel="Italic"
+                  onPress={() => applyFormatting('italic')}
+                  disabled={saving}
+                  icon={<TextItalicIcon size={20} color="#FFFFFF" weight="bold" />}
+                />
+                {formattingControls.map(({ label, type, icon }) => (
+                  <Button
+                    key={type}
+                    accessibilityLabel={`Change line to ${label}`}
+                    onPress={() => applyFormatting(type)}
+                    disabled={saving}
+                    icon={icon}
                   />
-                }
-              />
-            )}
-            {view === 'editor' && (
-              <Button
-                accessibilityLabel={isPreviewingMarkdown ? 'Edit markdown' : 'Preview markdown'}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setIsPreviewingMarkdown((current) => !current);
-                }}
-                disabled={saving}
-                icon={
-                  isPreviewingMarkdown ? (
-                    <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
-                  ) : (
-                    <TextTIcon size={20} color="#FFFFFF" weight="bold" />
-                  )
-                }
-              />
-            )}
-            {view === 'editor' ? (
-              <Button
-                accessibilityLabel="Note info"
-                onPress={handleSwitchToInfo}
-                icon={<InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />}
-              />
+                ))}
+              </>
             ) : (
-              <Button
-                accessibilityLabel="Back to note editor"
-                onPress={handleSwitchToEditor}
-                icon={<NotePencilIcon size={20} color="#FFFFFF" weight="bold" />}
-                text="Note"
-              />
-            )}
-
-            <Button
-              accessibilityLabel="Save note"
-              variant="primary"
-              onPress={handleSave}
-              disabled={!canSave}
-              icon={
-                saving ? (
-                  <ActivityIndicator size={20} color="#000000" />
+              <>
+                <Button
+                  accessibilityLabel="Cancel"
+                  onPress={handleClose}
+                  disabled={saving}
+                  icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+                />
+                {view === 'editor' && !isPreviewingMarkdown && (
+                  <Button
+                    accessibilityLabel="Open text formatting"
+                    onPress={() => setIsFormattingOpen(true)}
+                    disabled={saving}
+                    icon={<TextTIcon size={20} color="#FFFFFF" weight="bold" />}
+                  />
+                )}
+                {view === 'editor' && (
+                  <Button
+                    accessibilityLabel="Add song lyrics"
+                    onPress={() => setIsLyricsPickerOpen(true)}
+                    disabled={saving}
+                    icon={
+                      <MusicNotesIcon
+                        size={20}
+                        color={lyricsSong ? '#3B82F6' : '#FFFFFF'}
+                        weight="bold"
+                      />
+                    }
+                  />
+                )}
+                {view === 'editor' && (
+                  <Button
+                    accessibilityLabel={isPreviewingMarkdown ? 'Edit markdown' : 'Preview markdown'}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setIsPreviewingMarkdown((current) => !current);
+                    }}
+                    disabled={saving}
+                    icon={
+                      isPreviewingMarkdown ? (
+                        <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
+                      ) : (
+                        <EyeIcon size={20} color="#FFFFFF" weight="bold" />
+                      )
+                    }
+                  />
+                )}
+                {view === 'editor' ? (
+                  <Button
+                    accessibilityLabel="Note info"
+                    onPress={handleSwitchToInfo}
+                    icon={
+                      <InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />
+                    }
+                  />
                 ) : (
-                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
-                )
-              }
-              text="Save"
-            />
+                  <Button
+                    accessibilityLabel="Back to note editor"
+                    onPress={handleSwitchToEditor}
+                    icon={<NotePencilIcon size={20} color="#FFFFFF" weight="bold" />}
+                    text="Note"
+                  />
+                )}
+
+                <Button
+                  accessibilityLabel="Save note"
+                  variant="primary"
+                  onPress={handleSave}
+                  disabled={!canSave}
+                  icon={
+                    saving ? (
+                      <ActivityIndicator size={20} color="#000000" />
+                    ) : (
+                      <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                    )
+                  }
+                />
+              </>
+            )}
           </ActionFooter>
         </View>
       </KeyboardAvoidingView>

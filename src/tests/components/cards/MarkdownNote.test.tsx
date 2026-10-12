@@ -32,6 +32,17 @@ describe('MarkdownNote', () => {
     expect(onMarkdownChange).toHaveBeenCalledWith('## Tasks\n\n- [x] Plan the next release');
   });
 
+  it('renders and toggles the live-editor checkbox format', async () => {
+    const onMarkdownChange = jest.fn();
+    const { getByLabelText, getByText } = await render(
+      <MarkdownNote markdown="☐ Buy milk" onMarkdownChange={onMarkdownChange} />
+    );
+
+    expect(getByText('Buy milk')).toBeTruthy();
+    await fireEvent.press(getByLabelText('Mark task complete'));
+    expect(onMarkdownChange).toHaveBeenCalledWith('☑ Buy milk');
+  });
+
   it('strikes completed tasks and shows them in a softer gray', async () => {
     const { getByTestId } = await render(
       <MarkdownNote markdown={'- [ ] Pending\n- [x] Complete'} />

@@ -43,6 +43,7 @@
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-blob-util": "^0.25.1",
+    "react-native-enriched-markdown": "^1.1.1",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-pdf": "^7.0.5",
     "react-native-reanimated": "4.5.1",
@@ -108,6 +109,12 @@
     ]
   },
   "trustedDependencies": [
-    "llama.rn"
-  ]
+    "llama.rn",
+    "react-native-enriched-markdown"
+  ],
+  "enriched-markdown": {
+    "enableCodeHighlight": false,
+    "enableMath": false,
+    "enableVideo": false
+  }
 }

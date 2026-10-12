@@ -2,6 +2,10 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 
+// The package provides this native-component mock for Jest.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('react-native-enriched-markdown', () => require('react-native-enriched-markdown/jest'));
+
 const mockAddTextItem = jest.fn();
 const mockUpdateItem = jest.fn();
 
@@ -23,6 +27,21 @@ jest.mock('@/lib/tags/autoTags', () => ({
 }));
 
 describe('NewNoteModal', () => {
+  it('switches the footer to formatting controls and back', async () => {
+    const { getByLabelText, queryByLabelText } = await render(
+      <NewNoteModal visible initialText="A note" onClose={jest.fn()} />
+    );
+
+    await fireEvent.press(getByLabelText('Open text formatting'));
+    expect(getByLabelText('Bold')).toBeTruthy();
+    expect(getByLabelText('Change line to H1')).toBeTruthy();
+    expect(queryByLabelText('Add song lyrics')).toBeNull();
+
+    await fireEvent.press(getByLabelText('Cancel formatting'));
+    expect(getByLabelText('Open text formatting')).toBeTruthy();
+    expect(getByLabelText('Add song lyrics')).toBeTruthy();
+  });
+
   it('shows a live Markdown preview and returns to editing', async () => {
     const { getByLabelText, getByPlaceholderText, getByText } = await render(
       <NewNoteModal visible onClose={jest.fn()} />
@@ -68,5 +87,27 @@ describe('NewNoteModal', () => {
     });
     expect(mockAddTextItem).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves task and quote Markdown while editing a note', async () => {
+    const editingItem = {
+      id: 'note-markdown',
+      version: 1 as const,
+      type: 'note' as const,
+      text: '- [ ] task\n> quote',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    mockUpdateItem.mockResolvedValue(editingItem);
+    const { getByLabelText } = await render(
+      <NewNoteModal visible editingItem={editingItem} onClose={jest.fn()} />
+    );
+
+    await fireEvent.press(getByLabelText('Save note'));
+
+    expect(mockUpdateItem).toHaveBeenCalledWith(
+      'note-markdown',
+      expect.objectContaining({ text: '- [ ] task\n> quote' })
+    );
   });
 });

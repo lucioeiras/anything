@@ -70,20 +70,25 @@ export function MarkdownNote({
                   .slice(0, lineIndex)
                   .reduce((offset, previousLine) => offset + previousLine.length + 1, 0);
               const heading = /^(#{1,6})\s+(.*)$/.exec(line);
-              const taskList = /^\s*[-*+]\s+\[([ xX])\]\s+(.*)$/.exec(line);
+              const legacyTaskList = /^\s*[-*+]\s+\[([ xX])\]\s+(.*)$/.exec(line);
+              const symbolTaskList = /^\s*(?:[-*+]\s+)?([☐☑])\s+(.*)$/.exec(line);
+              const taskList = legacyTaskList ?? symbolTaskList;
               const orderedList = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
               const unorderedList = /^\s*[-*+]\s+(.*)$/.exec(line);
               const list = taskList ?? orderedList ?? unorderedList;
               const quote = /^>\s?(.*)$/.exec(line);
               const value =
                 heading?.[2] ??
-                taskList?.[2] ??
+                legacyTaskList?.[2] ??
+                symbolTaskList?.[2] ??
                 orderedList?.[2] ??
                 unorderedList?.[1] ??
                 quote?.[1] ??
                 line;
               const headingStyle = heading ? HEADING_STYLES[heading[1].length - 1] : undefined;
-              const isTaskChecked = Boolean(taskList && taskList[1].trim());
+              const isTaskChecked = Boolean(
+                legacyTaskList ? legacyTaskList[1].trim() : symbolTaskList?.[1] === '☑'
+              );
               const textStyle = {
                 fontSize: compact
                   ? heading
@@ -118,11 +123,12 @@ export function MarkdownNote({
                       <Pressable
                         onPress={(event) => {
                           event.stopPropagation();
-                          const nextMarker = isTaskChecked ? ' ' : 'x';
-                          const updatedLine = line.replace(
-                            /^(\s*[-*+]\s+\[)[ xX](\]\s+)(.*)$/,
-                            `$1${nextMarker}$2$3`
-                          );
+                          const updatedLine = legacyTaskList
+                            ? line.replace(
+                                /^(\s*[-*+]\s+\[)[ xX](\]\s+)(.*)$/,
+                                `$1${isTaskChecked ? ' ' : 'x'}$2$3`
+                              )
+                            : line.replace(/[☐☑]/, isTaskChecked ? '☐' : '☑');
                           onMarkdownChange(
                             markdown.slice(0, currentLineStart) +
                               updatedLine +

@@ -1,0 +1,1 @@
+export { NoteRichTextInput } from './NotePlainTextInput';
