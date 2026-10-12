@@ -211,6 +211,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     Promise.all([getSavedLibrarySource(), getRecentFolders()]).then(([savedSource, recents]) => {
       if (!mounted) return;
+      if (!savedSource && process.env.EXPO_PUBLIC_E2E === 'true') {
+        const e2eSource: LibrarySource = { kind: 'local', name: 'E2E Library' };
+        setSourceInternal(e2eSource);
+        setHasSavedSource(true);
+        setShouldAutoOpenBoard(true);
+        void saveLibrarySource(e2eSource);
+        void saveRecentFolder(e2eSource).then(setRecentFolders);
+      }
       if (savedSource) {
         const resolved = resolveFolderSource(savedSource);
         setSourceInternal(resolved);
