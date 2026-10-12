@@ -1,17 +1,25 @@
-import { ArrowCounterClockwiseIcon } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+
+import { Button } from '@/components/Button';
 
 type RestoreToastProps = {
   visible: boolean;
   count: number;
+  bottomOffset?: number;
   onRestore: () => void;
   onDismiss: () => void;
 };
 
 const DURATION_MS = 5000;
 
-export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreToastProps) {
+export function RestoreToast({
+  visible,
+  count,
+  bottomOffset = 0,
+  onRestore,
+  onDismiss,
+}: RestoreToastProps) {
   const [progress, setProgress] = useState(1);
   const onDismissRef = useRef(onDismiss);
 
@@ -31,7 +39,6 @@ export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreTo
       const elapsed = now - startTime;
       const remaining = Math.max(0, 1 - elapsed / DURATION_MS);
 
-      // Throttle updates to ~30 FPS for silky-smooth performance with minimal overhead
       if (now - lastUpdate >= 30 || remaining <= 0) {
         lastUpdate = now;
         setProgress(remaining);
@@ -46,41 +53,46 @@ export function RestoreToast({ visible, count, onRestore, onDismiss }: RestoreTo
 
     animationFrameId = requestAnimationFrame(tick);
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+    return () => cancelAnimationFrame(animationFrameId);
   }, [visible, count]);
 
   if (!visible) return null;
 
   return (
     <View
-      style={{ bottom: 60 }}
-      className="w-full absolute left-0 right-0 z-40 items-center"
       pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        right: 0,
+        bottom: bottomOffset,
+        left: 0,
+        alignItems: 'center',
+      }}
     >
-      <View className="w-full relative bg-zinc-950 border-t border-b border-zinc-800 flex-row items-center justify-between pl-8 overflow-hidden">
-        {/* Animated countdown progress bar on border top */}
-        <View
-          style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
-          className="absolute top-0 left-0 h-[2px] bg-white z-20"
-        />
-
-        <Text className="font-sans-medium text-base text-zinc-400">
+      <View
+        className="relative flex-row items-center gap-20 overflow-hidden rounded-full border border-white/10 px-2 py-2"
+        style={{ backgroundColor: 'rgba(24, 24, 27, 0.88)' }}
+      >
+        <Text className="pl-2 font-sans-medium text-base text-zinc-300 ml-2">
           You deleted <Text className="font-sans-bold text-white">{count}</Text>{' '}
           {count === 1 ? 'card' : 'cards'}
         </Text>
 
-        <Pressable
-          onPress={onRestore}
-          hitSlop={8}
-          className="flex-row items-center gap-2 bg-zinc-950 active:bg-zinc-900 py-6 px-6 border-l border-zinc-800"
-          accessibilityRole="button"
+        <Button
           accessibilityLabel="Restore deleted cards"
-        >
-          <ArrowCounterClockwiseIcon size={16} color="#FFFFFF" weight="bold" />
-          <Text className="font-sans-bold text-sm text-white">Restore</Text>
-        </Pressable>
+          variant="primary"
+          icon={undefined}
+          text="Restore"
+          onPress={onRestore}
+          shadowColor="#FFFFFF"
+          shadowOpacity={0.16}
+        />
+
+        <View
+          pointerEvents="none"
+          className="absolute bottom-0 left-0 h-[2px] bg-white mx-2"
+          style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
+        />
       </View>
     </View>
   );

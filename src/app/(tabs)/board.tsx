@@ -145,7 +145,7 @@ export default function BoardScreen() {
   } = useLibrary();
   const searchBlurTargetRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
-  const setSearchBarOverlay = useFloatingTabOverlay();
+  const setFloatingTabOverlay = useFloatingTabOverlay();
   const {
     newNote,
     newLink,
@@ -514,7 +514,7 @@ export default function BoardScreen() {
     setSelectedCardIds(new Set());
   }, []);
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = useCallback(async () => {
     const idsToDelete = Array.from(selectedCardIds);
     if (idsToDelete.length === 0) return;
 
@@ -532,9 +532,9 @@ export default function BoardScreen() {
       console.error('Failed to delete cards:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete cards');
     }
-  };
+  }, [deleteItems, selectedCardIds]);
 
-  const handleRestore = async () => {
+  const handleRestore = useCallback(async () => {
     if (!restoreBackup || restoreBackup.length === 0) return;
     try {
       const backups = restoreBackup;
@@ -545,12 +545,12 @@ export default function BoardScreen() {
       console.error('Failed to restore cards:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restore cards');
     }
-  };
+  }, [restoreBackup, restoreItems]);
 
-  const handleDismissToast = () => {
+  const handleDismissToast = useCallback(() => {
     setIsToastVisible(false);
     setRestoreBackup(null);
-  };
+  }, []);
 
   const isSearching = searchQuery.trim().length > 0;
   const folderId = activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : '';
@@ -777,47 +777,64 @@ export default function BoardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setSearchBarOverlay(
-        <SearchBar
-          value={searchQuery}
-          onChangeText={handleSearchChange}
-          blurTarget={searchBlurTargetRef}
-          bottomOffset={48 + insets.bottom}
-          trailingAction={
-            <Button
-              accessibilityLabel="Add new item"
-              variant="primary"
-              shadowColor="#FFFFFF"
-              shadowOpacity={0.24}
-              icon={<PlusIcon size={24} color="#09090B" weight="bold" />}
-              onPress={() => router.push('/add')}
-            />
-          }
-          filters={[
-            ...(activeFolderKind
-              ? [
-                  {
-                    kind: 'folder' as const,
-                    label: folderLabel ?? activeFolderKey ?? '',
-                    status:
-                      activeFolderKind === 'status'
-                        ? (activeFolderKey as MediaProgressStatus)
-                        : undefined,
-                    onRemove: clearFolderFilter,
-                  },
-                ]
-              : []),
-            ...(searchTag
-              ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
-              : []),
-          ]}
-          visible={state.status === 'ready' && !isEditing}
-        />
+      setFloatingTabOverlay(
+        <>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            blurTarget={searchBlurTargetRef}
+            bottomOffset={48 + insets.bottom}
+            trailingAction={
+              <Button
+                accessibilityLabel="Add new item"
+                variant="primary"
+                shadowColor="#FFFFFF"
+                shadowOpacity={0.24}
+                icon={<PlusIcon size={24} color="#09090B" weight="bold" />}
+                onPress={() => router.push('/add')}
+              />
+            }
+            filters={[
+              ...(activeFolderKind
+                ? [
+                    {
+                      kind: 'folder' as const,
+                      label: folderLabel ?? activeFolderKey ?? '',
+                      status:
+                        activeFolderKind === 'status'
+                          ? (activeFolderKey as MediaProgressStatus)
+                          : undefined,
+                      onRemove: clearFolderFilter,
+                    },
+                  ]
+                : []),
+              ...(searchTag
+                ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
+                : []),
+            ]}
+            visible={state.status === 'ready' && !isEditing}
+          />
+          <CardSelectionBar
+            visible={isEditing}
+            selectedCount={selectedCardIds.size}
+            bottomOffset={60 + insets.bottom}
+            onDelete={handleDeleteSelected}
+            onAddToFolder={() => setIsFolderPickerOpen(true)}
+            onCancel={handleCancelEdition}
+          />
+          <RestoreToast
+            visible={isToastVisible && !isEditing}
+            count={restoreBackup?.length ?? 0}
+            bottomOffset={140 + insets.bottom}
+            onRestore={handleRestore}
+            onDismiss={handleDismissToast}
+          />
+        </>
       );
 
-      return () => setSearchBarOverlay(null);
+      return () => setFloatingTabOverlay(null);
     }, [
-      setSearchBarOverlay,
+      setFloatingTabOverlay,
       searchQuery,
       handleSearchChange,
       insets.bottom,
@@ -829,6 +846,13 @@ export default function BoardScreen() {
       clearSearchTag,
       state.status,
       isEditing,
+      selectedCardIds.size,
+      handleDeleteSelected,
+      handleCancelEdition,
+      handleRestore,
+      handleDismissToast,
+      isToastVisible,
+      restoreBackup?.length,
     ])
   );
 
@@ -935,26 +959,11 @@ export default function BoardScreen() {
         onDismiss={handleAddModalDismiss}
       />
 
-      <CardSelectionBar
-        visible={isEditing}
-        selectedCount={selectedCardIds.size}
-        onDelete={handleDeleteSelected}
-        onAddToFolder={() => setIsFolderPickerOpen(true)}
-        onCancel={handleCancelEdition}
-      />
-
       <AddToFolderModal
         visible={isFolderPickerOpen}
         items={selectedItems}
         onClose={() => setIsFolderPickerOpen(false)}
         onAdded={handleCancelEdition}
-      />
-
-      <RestoreToast
-        visible={isToastVisible && !isEditing}
-        count={restoreBackup?.length ?? 0}
-        onRestore={handleRestore}
-        onDismiss={handleDismissToast}
       />
     </View>
   );

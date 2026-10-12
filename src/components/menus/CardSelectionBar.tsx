@@ -1,9 +1,12 @@
 import { FolderPlusIcon, TrashSimpleIcon, XIcon } from 'phosphor-react-native';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+
+import { Button } from '@/components/Button';
 
 type CardSelectionBarProps = {
   visible: boolean;
   selectedCount: number;
+  bottomOffset?: number;
   onDelete: () => void;
   onAddToFolder: () => void;
   onCancel: () => void;
@@ -12,80 +15,73 @@ type CardSelectionBarProps = {
 export function CardSelectionBar({
   visible,
   selectedCount,
+  bottomOffset = 0,
   onDelete,
   onAddToFolder,
   onCancel,
 }: CardSelectionBarProps) {
   if (!visible) return null;
 
+  const hasSelection = selectedCount > 0;
+
   return (
     <View
-      style={{ bottom: 0 }}
-      className="w-full absolute z-40 items-center"
       pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        right: 0,
+        bottom: bottomOffset,
+        left: 0,
+        alignItems: 'center',
+      }}
     >
-      <View className="w-full border-t border-zinc-800 bg-zinc-950">
-        <View className="flex-row items-center justify-center border-b border-zinc-800 py-3">
-          <Text className="font-sans-medium text-base text-white">
-            {selectedCount === 0 ? (
-              <Text className="text-zinc-500">Select cards</Text>
-            ) : (
-              <>
-                <Text className="font-sans-medium text-white">{selectedCount}</Text>
-                {'   '}
-                <Text className="text-zinc-400">selected</Text>
-              </>
-            )}
-          </Text>
-        </View>
+      <View className="items-center gap-3">
+        <Text className="font-sans-medium text-base text-white">
+          {hasSelection ? (
+            <>
+              <Text className="text-white font-sans-bold">
+                {selectedCount}
+                {'  '}
+              </Text>
+              <Text className="text-zinc-400 font-sans-semibold"> selected</Text>
+            </>
+          ) : (
+            <Text className="text-zinc-400">Select cards</Text>
+          )}
+        </Text>
 
-        <View className="flex-row items-stretch">
-          <Pressable
-            onPress={onCancel}
-            hitSlop={8}
-            className="w-1/3 flex-row items-center justify-center gap-2 px-3 py-5 active:bg-zinc-900 border-r border-zinc-800"
-            accessibilityRole="button"
+        <View className="flex-row items-center gap-2">
+          <Button
             accessibilityLabel="Cancel selection"
-          >
-            <XIcon size={16} color="#FFFFFF" weight="bold" />
-            <Text className="font-sans-semibold text-base text-white">Cancel</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={onAddToFolder}
-            disabled={selectedCount === 0}
-            className={`w-1/3 flex-row items-center justify-center gap-2 border-r border-zinc-800 px-3 py-5 bg-violet-950/25 ${selectedCount > 0 ? 'active:bg-zinc-900' : 'opacity-40'}`}
-            accessibilityRole="button"
+            variant="secondary"
+            icon={<XIcon size={24} color="#FFFFFF" weight="bold" />}
+            onPress={onCancel}
+          />
+          <Button
             accessibilityLabel="Add selected cards to folder"
-            accessibilityState={{ disabled: selectedCount === 0 }}
-          >
-            <FolderPlusIcon size={16} color="#C4B5FD" weight="bold" />
-            <Text className="font-sans-semibold text-base text-violet-300">Add to folder</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={onDelete}
-            disabled={selectedCount === 0}
-            hitSlop={8}
-            className={`w-1/3 flex-row items-center justify-center gap-2 px-3 py-5 ${
-              selectedCount > 0 ? 'bg-red-950/40 active:bg-red-950/70' : 'bg-zinc-900 opacity-40'
-            }`}
-            accessibilityRole="button"
+            variant="secondary"
+            contentColor="#FFFFFF"
+            icon={<FolderPlusIcon size={24} color="#FFFFFF" weight="bold" />}
+            disabled={!hasSelection}
+            onPress={onAddToFolder}
+          />
+          <Button
             accessibilityLabel="Delete selected cards"
-          >
-            <TrashSimpleIcon
-              size={16}
-              color={selectedCount > 0 ? '#FB2C36' : '#71717A'}
-              weight="bold"
-            />
-            <Text
-              className={`font-sans-semibold text-base ${
-                selectedCount > 0 ? 'text-red-500' : 'text-zinc-500'
-              }`}
-            >
-              Delete
-            </Text>
-          </Pressable>
+            variant="primary"
+            backgroundColor={hasSelection ? '#7F1D1D' : '#3F3F46'}
+            contentColor={hasSelection ? '#FCA5A5' : '#A1A1AA'}
+            shadowColor="#EF4444"
+            shadowOpacity={hasSelection ? 0.2 : 0}
+            icon={
+              <TrashSimpleIcon
+                size={24}
+                color={hasSelection ? '#FCA5A5' : '#A1A1AA'}
+                weight="bold"
+              />
+            }
+            disabled={!hasSelection}
+            onPress={onDelete}
+          />
         </View>
       </View>
     </View>
