@@ -62,7 +62,7 @@ describe('MarkdownNote', () => {
       (level) => getByTestId(`markdown-heading-${level}`).props.style.fontFamily
     );
     expect(sizes).toEqual([34, 29, 25, 22, 20, 18]);
-    expect(lineHeights).toEqual([48, 42, 37, 33, 30, 28]);
+    expect(lineHeights).toEqual([64, 48, 40, 36, 30, 28]);
     expect(weights).toEqual([
       'InstrumentSans_700Bold',
       'InstrumentSans_700Bold',
@@ -71,6 +71,15 @@ describe('MarkdownNote', () => {
       'InstrumentSans_500Medium',
       'InstrumentSans_500Medium',
     ]);
+  });
+
+  it('uses a smaller body font with a more open line height', async () => {
+    const { getByTestId } = await render(<MarkdownNote markdown="Body text" />);
+
+    expect(getByTestId('markdown-body-text').props.style).toMatchObject({
+      fontSize: 18,
+      lineHeight: 32,
+    });
   });
 
   it('opens the editor when tapped', async () => {

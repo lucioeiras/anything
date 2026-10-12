@@ -10,9 +10,9 @@ type MarkdownNoteProps = {
 
 const HEADING_STYLES = [
   { fontSize: 34, lineHeight: 64, fontFamily: 'InstrumentSans_700Bold', color: '#FFFFFF' },
-  { fontSize: 29, lineHeight: 42, fontFamily: 'InstrumentSans_700Bold', color: '#FFFFFF' },
-  { fontSize: 25, lineHeight: 37, fontFamily: 'InstrumentSans_600SemiBold', color: '#F4F4F5' },
-  { fontSize: 22, lineHeight: 33, fontFamily: 'InstrumentSans_600SemiBold', color: '#F4F4F5' },
+  { fontSize: 29, lineHeight: 48, fontFamily: 'InstrumentSans_700Bold', color: '#FFFFFF' },
+  { fontSize: 25, lineHeight: 40, fontFamily: 'InstrumentSans_600SemiBold', color: '#F4F4F5' },
+  { fontSize: 22, lineHeight: 36, fontFamily: 'InstrumentSans_600SemiBold', color: '#F4F4F5' },
   { fontSize: 20, lineHeight: 30, fontFamily: 'InstrumentSans_500Medium', color: '#E4E4E7' },
   { fontSize: 18, lineHeight: 28, fontFamily: 'InstrumentSans_500Medium', color: '#D4D4D8' },
 ];
@@ -88,15 +88,15 @@ export function MarkdownNote({
                 fontSize: compact
                   ? heading
                     ? Math.max(15, (headingStyle?.fontSize ?? 25) - 10)
-                    : 16
-                  : (headingStyle?.fontSize ?? 20),
+                    : 15
+                  : (headingStyle?.fontSize ?? 18),
                 lineHeight: compact
                   ? heading
                     ? Math.max(20, (headingStyle?.lineHeight ?? 32) - 10)
-                    : 24
-                  : (headingStyle?.lineHeight ?? 30),
+                    : 26
+                  : (headingStyle?.lineHeight ?? 32),
                 fontFamily: headingStyle?.fontFamily ?? 'InstrumentSans_400Regular',
-                color: quote ? '#A1A1AA' : (headingStyle?.color ?? '#FFFFFF'),
+                color: quote ? '#A1A1AA' : (headingStyle?.color ?? '#D4D4D8'),
               };
               if (taskList) {
                 const checkbox = (
@@ -159,7 +159,7 @@ export function MarkdownNote({
               return (
                 <Text
                   key={lineIndex}
-                  testID={heading ? `markdown-heading-${heading[1].length}` : undefined}
+                  testID={heading ? `markdown-heading-${heading[1].length}` : 'markdown-body-text'}
                   className="font-sans text-white"
                   style={{
                     ...textStyle,

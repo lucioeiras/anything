@@ -30,6 +30,7 @@ import { getProgressLabel } from '@/components/cards/ProgressStatus';
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
+import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem } from '@/lib/library/links';
@@ -212,7 +213,7 @@ export function CardDetailContent({
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState(item.note || '');
   const [editedText, setEditedText] = useState(initialText);
-  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [isEditingTags, setIsEditingTags] = useState(false);
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -566,7 +567,6 @@ export function CardDetailContent({
     } catch (e) {
       console.warn('Failed to save note text on blur', e);
     }
-    if (item.type === 'note') setIsEditingNote(false);
   };
 
   const handleDelete = () => {
@@ -787,7 +787,6 @@ export function CardDetailContent({
               Keyboard.dismiss();
               if (isEditingTags) setIsEditingTags(false);
             }}
-            isEditingNote={isEditingNote}
           />
 
           {/* SECTION 2: BOTTOM SECTION (INFORMATION ABOUT THE CARD) */}
@@ -1073,8 +1072,7 @@ export function CardDetailContent({
           item={item}
           bottomInset={insets.bottom}
           onEditNote={() => {
-            setIsEditingNote(true);
-            scrollToTopSection();
+            if (item.type === 'note') setIsNoteEditorOpen(true);
           }}
           onDelete={handleDelete}
           onAddToFolder={() => {
@@ -1100,6 +1098,18 @@ export function CardDetailContent({
           showFeedback('Added to folder');
         }}
       />
+
+      {item.type === 'note' && isNoteEditorOpen && (
+        <NewNoteModal
+          visible={isNoteEditorOpen}
+          editingItem={item}
+          onClose={() => setIsNoteEditorOpen(false)}
+          onSaved={(updated) => {
+            setEditedText(updated.text);
+            setTitle(updated.title ?? '');
+          }}
+        />
+      )}
 
       {item.type === 'pdf' && (
         <CardPdfReader

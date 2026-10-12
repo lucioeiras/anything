@@ -22,7 +22,6 @@ describe('CardPreview', () => {
         onTextBlur={jest.fn()}
         onTextFocus={jest.fn()}
         onDismissEditingTags={jest.fn()}
-        isEditingNote={false}
       />
     );
 

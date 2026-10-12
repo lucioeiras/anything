@@ -19,7 +19,6 @@ type CardPreviewProps = {
   onTextBlur: () => void;
   onTextFocus: () => void;
   onDismissEditingTags: () => void;
-  isEditingNote: boolean;
 };
 
 export function CardPreview({
@@ -30,7 +29,6 @@ export function CardPreview({
   onTextBlur,
   onTextFocus,
   onDismissEditingTags,
-  isEditingNote,
 }: CardPreviewProps) {
   const isMusic = item.type === 'music';
   const isNoteOrQuote = item.type === 'note' || item.type === 'quote';
@@ -157,20 +155,6 @@ export function CardPreview({
               />
               <QuoteClose width={18} height={18} />
             </View>
-          ) : isEditingNote ? (
-            <TextInput
-              value={editedText}
-              autoFocus
-              onChangeText={onTextChange}
-              onBlur={onTextBlur}
-              onFocus={onTextFocus}
-              multiline
-              placeholder="Type note here..."
-              placeholderTextColor="#71717A"
-              className="w-full font-sans text-2xl text-white leading-10 text-left py-2"
-              style={{ backgroundColor: 'transparent' }}
-              underlineColorAndroid="transparent"
-            />
           ) : (
             <MarkdownNote markdown={editedText} onMarkdownChange={onTextChange} />
           )}

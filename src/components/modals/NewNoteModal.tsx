@@ -43,6 +43,7 @@ import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
 type NewNoteModalProps = {
   visible: boolean;
   initialText?: string;
+  editingItem?: NoteItem;
   onClose: () => void;
   onDismiss?: () => void;
   onSaved?: (item: NoteItem | QuoteItem) => void;
@@ -51,11 +52,12 @@ type NewNoteModalProps = {
 export function NewNoteModal({
   visible,
   initialText,
+  editingItem,
   onClose,
   onDismiss,
   onSaved,
 }: NewNoteModalProps) {
-  const { addMusicItem, addTextItem, getTags, state } = useLibrary();
+  const { addMusicItem, addTextItem, updateItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
   const inputRef = useRef<TextInput>(null);
@@ -65,21 +67,21 @@ export function NewNoteModal({
 
   const [view, setView] = useState<'editor' | 'info'>('editor');
   const [isPreviewingMarkdown, setIsPreviewingMarkdown] = useState(false);
-  const [text, setText] = useState(initialText ?? '');
-  const [title, setTitle] = useState('');
+  const [text, setText] = useState(editingItem?.text ?? initialText ?? '');
+  const [title, setTitle] = useState(editingItem?.title ?? '');
   const [author, setAuthor] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(editingItem?.tags ?? []);
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const [linkedItemId, setLinkedItemId] = useState<string>();
+  const [linkedItemId, setLinkedItemId] = useState<string | undefined>(editingItem?.linkedItemId);
   const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
   const [isLyricsPickerOpen, setIsLyricsPickerOpen] = useState(false);
   const [lyricsSong, setLyricsSong] = useState<MusicMetadata | null>(null);
   const [lyricsSnippet, setLyricsSnippet] = useState('');
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedItem = libraryItems.find((item) => item.id === linkedItemId);
-  const [autoTags, setAutoTags] = useState<string[]>([]);
-  const autoTagsRef = useRef<string[]>([]);
+  const [autoTags, setAutoTags] = useState<string[]>(editingItem?.autoTags ?? []);
+  const autoTagsRef = useRef<string[]>(editingItem?.autoTags ?? []);
 
   const existingTags = useMemo(
     () => (visible ? getTags().map((t) => t.tag) : []),
@@ -158,13 +160,21 @@ export function NewNoteModal({
         }
       }
 
-      const item = await addTextItem(trimmed, title.trim() || undefined, {
-        tags: finalTags.length > 0 ? finalTags : undefined,
-        autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
-        linkedItemId: musicId,
-        forceNote: Boolean(lyricsSong),
-        author: isQuoteText(trimmed) && !lyricsSong ? author.trim() || undefined : undefined,
-      });
+      const item = editingItem
+        ? ((await updateItem(editingItem.id, {
+            text: trimmed,
+            title: title.trim() || undefined,
+            tags: finalTags.length > 0 ? finalTags : undefined,
+            autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
+            linkedItemId: musicId,
+          })) as NoteItem | QuoteItem)
+        : await addTextItem(trimmed, title.trim() || undefined, {
+            tags: finalTags.length > 0 ? finalTags : undefined,
+            autoTags: savedAutoTags.length > 0 ? savedAutoTags : undefined,
+            linkedItemId: musicId,
+            forceNote: Boolean(lyricsSong),
+            author: isQuoteText(trimmed) && !lyricsSong ? author.trim() || undefined : undefined,
+          });
       setText('');
       setTitle('');
       setAuthor('');
@@ -301,7 +311,7 @@ export function NewNoteModal({
                 contentContainerStyle={{
                   paddingHorizontal: 32,
                   paddingTop: 32,
-                  paddingBottom: 24,
+                  paddingBottom: 128,
                 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -333,7 +343,7 @@ export function NewNoteModal({
                   multiline
                   autoFocus
                   textAlignVertical="top"
-                  className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-8"
+                  className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-32"
                   style={styles.borderlessInput}
                   underlineColorAndroid="transparent"
                 />
@@ -441,7 +451,7 @@ export function NewNoteModal({
           )}
 
           {/* Action buttons at the bottom */}
-          <ActionFooter bottomInset={insets.bottom}>
+          <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
               accessibilityLabel="Cancel"
               onPress={handleClose}
@@ -537,7 +547,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 20,
-    paddingBottom: 40,
+    paddingBottom: 128,
   },
   borderlessInput: {
     borderWidth: 0,
