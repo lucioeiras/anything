@@ -55,7 +55,7 @@ export function Button({
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        className={`flex-row items-center justify-center gap-2 overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${text ? 'px-5 py-3' : 'p-4'} ${variant === 'secondary' && 'border border-zinc-800'}`}
+        className={`flex-row items-center justify-center gap-3 overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${text ? 'px-6 py-3' : 'p-4'} ${variant === 'secondary' && 'border border-zinc-800'}`}
         style={variant === 'primary' ? { backgroundColor } : undefined}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}

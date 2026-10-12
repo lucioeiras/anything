@@ -8,25 +8,25 @@ import {
 } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-const SearchBarOverlayContext = createContext<Dispatch<SetStateAction<ReactNode>> | null>(null);
+const FloatingTabOverlayContext = createContext<Dispatch<SetStateAction<ReactNode>> | null>(null);
 
-export function SearchBarOverlayProvider({ children }: { children: ReactNode }) {
+export function FloatingTabOverlayProvider({ children }: { children: ReactNode }) {
   const [overlay, setOverlay] = useState<ReactNode>(null);
 
   return (
-    <SearchBarOverlayContext.Provider value={setOverlay}>
+    <FloatingTabOverlayContext.Provider value={setOverlay}>
       <View className="flex-1">{children}</View>
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.overlay]}>
         {overlay}
       </View>
-    </SearchBarOverlayContext.Provider>
+    </FloatingTabOverlayContext.Provider>
   );
 }
 
-export function useSearchBarOverlay() {
-  const setOverlay = useContext(SearchBarOverlayContext);
+export function useFloatingTabOverlay() {
+  const setOverlay = useContext(FloatingTabOverlayContext);
   if (!setOverlay) {
-    throw new Error('useSearchBarOverlay must be used inside SearchBarOverlayProvider');
+    throw new Error('useFloatingTabOverlay must be used inside FloatingTabOverlayProvider');
   }
   return setOverlay;
 }

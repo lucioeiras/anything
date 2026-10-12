@@ -2,13 +2,13 @@ import { Tabs } from 'expo-router';
 import { FolderIcon, NutIcon, SquaresFourIcon } from 'phosphor-react-native';
 
 import { ProgressiveBlur } from '@/components/effects/ProgressiveBlur';
-import { SearchBarOverlayProvider } from '@/components/menus/SearchBarOverlay';
+import { FloatingTabOverlayProvider } from '@/components/menus/FloatingTabOverlay';
 
 const iconSize = 28;
 
 export default function TabLayout() {
   return (
-    <SearchBarOverlayProvider>
+    <FloatingTabOverlayProvider>
       <Tabs
         initialRouteName="board"
         screenOptions={{
@@ -72,6 +72,6 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SearchBarOverlayProvider>
+    </FloatingTabOverlayProvider>
   );
 }

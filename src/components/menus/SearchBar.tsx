@@ -92,18 +92,20 @@ export function SearchBar({
           }}
         >
           <View
-            className="h-full flex-row items-center overflow-hidden rounded-full border border-white/10 px-6 py-4 gap-4"
-            style={{ backgroundColor: 'rgba(39, 39, 42, 0.45)' }}
+            className="h-full flex-row items-center overflow-hidden rounded-full border border-white/15 px-6 py-4 gap-4"
+            style={{ backgroundColor: 'rgba(9, 9, 11, 0.2)' }}
           >
             <BlurView
-              intensity={70}
+              intensity={48}
               tint="dark"
               blurTarget={blurTarget}
               blurMethod="dimezisBlurView"
               pointerEvents="none"
               style={StyleSheet.absoluteFill}
             />
+
             <MagnifyingGlassIcon size={18} color="#E4E4E7" weight="bold" />
+
             <View className="flex-1 flex-row flex-wrap items-center gap-2">
               {filters.map((filter) => {
                 const isTag = filter.kind === 'tag';
@@ -124,7 +126,7 @@ export function SearchBar({
                     <Icon size={16} color={iconColor} weight="bold" />
                     <Text
                       numberOfLines={1}
-                      className={`max-w-[180px] font-sans-medium text-lg ${isTag ? 'text-blue-300' : 'text-violet-300'}`}
+                      className={`max-w-[180px] font-sans-medium text-base ${isTag ? 'text-blue-300' : 'text-violet-300'}`}
                       style={status ? { color: status.color } : undefined}
                     >
                       {filter.label}

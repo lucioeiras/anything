@@ -47,7 +47,7 @@ import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
-import { useSearchBarOverlay } from '@/components/menus/SearchBarOverlay';
+import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewBookModal } from '@/components/modals/NewBookModal';
 import { NewGameModal } from '@/components/modals/NewGameModal';
@@ -145,7 +145,7 @@ export default function BoardScreen() {
   } = useLibrary();
   const searchBlurTargetRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
-  const setSearchBarOverlay = useSearchBarOverlay();
+  const setSearchBarOverlay = useFloatingTabOverlay();
   const {
     newNote,
     newLink,

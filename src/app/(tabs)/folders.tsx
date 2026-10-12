@@ -1,9 +1,11 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { PlusIcon } from 'phosphor-react-native';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/Button';
+import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -14,6 +16,8 @@ export default function OrganizeScreen() {
   const { source, state, setSearchQuery, clearSearchTag, updateItem } = useLibrary();
   const [saved, setSaved] = useState<{ source: string; names: string[] } | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const setFloatingTabOverlay = useFloatingTabOverlay();
+  const insets = useSafeAreaInsets();
   const items = useMemo(() => (state.status === 'ready' ? state.result.items : []), [state]);
   const tagGroups = useMemo(() => getTagGroups(items), [items]);
   const itemsByTag = useMemo(
@@ -22,6 +26,34 @@ export default function OrganizeScreen() {
   );
   const sourceId = getSourceId(source);
   const folderNames = saved?.source === sourceId ? saved.names : [];
+
+  useFocusEffect(
+    useCallback(() => {
+      setFloatingTabOverlay(
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 64 + insets.bottom,
+            alignItems: 'center',
+          }}
+        >
+          <Button
+            accessibilityLabel="Create folder"
+            variant="secondary"
+            icon={<PlusIcon size={20} color="#FFFFFF" weight="bold" />}
+            text="New Folder"
+            disabled={saved?.source !== sourceId}
+            onPress={() => setIsCreateOpen(true)}
+          />
+        </View>
+      );
+
+      return () => setFloatingTabOverlay(null);
+    }, [insets.bottom, saved?.source, setFloatingTabOverlay, sourceId])
+  );
 
   useEffect(() => {
     let active = true;
@@ -112,7 +144,7 @@ export default function OrganizeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-zinc-950" edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerClassName="px-6 pb-12 pt-8" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerClassName="px-6 pb-32 pt-8" showsVerticalScrollIndicator={false}>
         <View className="flex-row flex-wrap">
           {STATUS_FOLDERS.map((folder) => (
             <FolderTile
@@ -134,17 +166,6 @@ export default function OrganizeScreen() {
           ))}
         </View>
       </ScrollView>
-
-      <Pressable
-        onPress={() => setIsCreateOpen(true)}
-        disabled={saved?.source !== sourceId}
-        accessibilityRole="button"
-        accessibilityLabel="Create folder"
-        className="flex-row items-center justify-center gap-4 px-3 py-6 bg-violet-950/20 active:opacity-80 border-t border-zinc-800"
-      >
-        <PlusIcon size={18} color="#C4B5FD" weight="bold" />
-        <Text className="font-sans-semibold text-lg text-violet-300">New Folder</Text>
-      </Pressable>
 
       <NewFolderModal
         visible={isCreateOpen}
