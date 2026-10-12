@@ -1,74 +1,151 @@
-# Welcome to your Expo app 👋
+# Anything
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Anything** é uma biblioteca pessoal para guardar e organizar o que você quer ler, assistir, jogar, ouvir ou consultar depois. O app reúne notas, links e mídias em um board pesquisável, com tags, pastas e arquivos que ficam sob controle do usuário.
 
-## Get started
+O aplicativo é desenvolvido com Expo, React Native, TypeScript e Expo Router. A biblioteca pode ficar no armazenamento local do app ou em uma pasta escolhida pelo usuário; cada item é salvo como JSON e imagens e PDFs ficam em diretórios próprios junto aos dados.
 
-1. Install dependencies
+## Funcionalidades
 
-   ```bash
-   npm install
-   ```
+- **Captura de conteúdo:** notas, citações, tarefas, links, artigos, vídeos do YouTube, publicações do X/Twitter e Reddit, imagens, PDFs, livros, músicas, filmes e jogos.
+- **Board e busca:** grade de cartões, pesquisa de texto, filtros por tipo e tag, seleção de vários itens, exclusão com opção de restaurar e visualização dos detalhes.
+- **Organização:** tags manuais e sugestões automáticas, pastas personalizadas e pastas por andamento — “Want to”, “In progress”, “Completed” e “Abandoned” — para itens compatíveis.
+- **Acompanhamento e avaliações:** progresso de leitura, filmes e jogos; avaliações e comentários; registro de páginas lidas em livros.
+- **Metadados:** leitura de metadados de links, consulta de livros por ISBN, busca de música no iTunes, letras via LRCLIB, filmes via TMDB e jogos via RAWG.
+- **Conteúdo relacionado:** vincule itens da biblioteca entre si.
+- **Arquivos:** importe imagens e PDFs, visualize PDFs e compartilhe itens usando as opções do sistema.
+- **Compartilhamento para o app:** receba texto, links, imagens e PDFs de outros apps e transforme-os em cartões.
+- **IA no dispositivo:** baixe um modelo local para gerar tags de notas e links. Após o download, a geração pode funcionar offline.
+- **Pastas de biblioteca:** use a pasta padrão do app ou escolha uma pasta disponível pelo seletor de documentos. No iOS, o módulo nativo dá suporte a acesso persistente à pasta escolhida e à integração com iCloud Drive quando o container estiver habilitado.
+- **Atalhos do iOS:** controles/App Intents para iniciar a criação de itens compatíveis.
 
-2. Start the app
+## Tipos de cartão
 
-   ```bash
-   npx expo start
-   ```
+| Tipo | Dados e recursos disponíveis |
+| --- | --- |
+| Nota e citação | Texto, título, autor opcional, tags e vínculo a outro item |
+| Link e artigo | URL, metadados, descrição, origem e imagem de prévia |
+| YouTube | URL, título e miniatura |
+| X/Twitter e Reddit | Texto e dados da publicação, com imagens quando disponíveis |
+| Imagem e PDF | Arquivo importado, título e observações |
+| Livro | ISBN, autores, capa, dados editoriais, progresso, avaliações e diário de leitura |
+| Música | Faixa ou álbum, artista, capa e prévia quando disponível |
+| Filme | Dados do catálogo TMDB, andamento, avaliação e comentários |
+| Jogo | Dados do catálogo RAWG, plataformas, andamento e avaliação |
 
-In the output, you'll find options to open the app in a
+Os metadados externos dependem da disponibilidade dos serviços e, em alguns casos, de chaves de API. Os itens já salvos continuam disponíveis na biblioteca local.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Armazenamento da biblioteca
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Cada item é um arquivo `<id>.json` na raiz da biblioteca. Arquivos de mídia locais ficam em `images/` e `pdfs/`; os itens apontam para eles com caminhos relativos, como `images/capa.jpg`. As pastas personalizadas também são gravadas na biblioteca, em `.anything-folders.json`.
 
-## Get a fresh project
+No iOS, as opções de armazenamento incluem a biblioteca do app, **iCloud Drive** (se o container estiver configurado) e uma pasta escolhida no app Arquivos. A biblioteca local do app pode ser acessada pelo app Arquivos em “No Meu iPhone”. O acesso persistente a pastas selecionadas usa um módulo nativo do projeto.
 
-When you're ready, run:
+## Requisitos
+
+- Bun (o repositório inclui `bun.lock`).
+- Node.js compatível com a versão atual do Expo.
+- Xcode para compilar e executar no simulador/dispositivo iOS; Android Studio para Android.
+- Uma development build para testar funcionalidades que dependem de módulos nativos.
+
+## Rodar localmente
 
 ```bash
-npm run reset-project
+git clone https://github.com/lucioeiras/anything.git
+cd anything
+bun install
+bun run start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+O servidor Expo mostra as opções disponíveis para abrir o app. Para iniciar diretamente:
 
-### Other setup steps
+```bash
+bun run ios
+bun run android
+bun run web
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+`bun run ios` e `bun run android` usam `expo run:*` e requerem as ferramentas nativas da plataforma. Os diretórios `ios/` e `android/` são gerados pelo Expo e não devem ser editados manualmente.
 
-## Learn more
+### Expo Go e development build
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
-## Library storage (iCloud / on-device / picked folder)
-
-Items are `*.json` files; local images live in `images/` and local PDFs live in `pdfs/`, referenced by relative path. The library can live in:
-
-| Location                                  | Notes                                                                                                                     |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **iCloud Drive** (default when signed in) | The app's own container, shown as **Anything** in Files › iCloud Drive. Syncs across devices; files can be added by hand. |
-| **This iPhone**                           | `Documents/Library`, visible in Files › On My iPhone › anything.                                                          |
-| **Chosen folder**                         | Any folder picked in Files. Access is remembered across launches (security-scoped bookmark).                              |
-
-The native bits (iCloud container lookup, bookmarks, placeholder downloads) live in the local Expo module `modules/anything-icloud` (iOS only). They need a **development build**, not Expo Go:
+Expo Go serve para testar partes do app compatíveis com o ambiente padrão do Expo. Este projeto também usa módulos nativos locais e bibliotecas nativas, incluindo acesso persistente a pastas e execução de modelo de IA. Para testar o conjunto completo, crie uma development build com EAS:
 
 ```bash
 bunx eas-cli build --profile development --platform ios
+bunx eas-cli build --profile development --platform android
 ```
 
-iCloud requires the `iCloud.com.diegoeiras.anything` container to be enabled for the App ID in your Apple Developer account. EAS normally registers the capability automatically; if the in-app picker says "iCloud unavailable", check it at developer.apple.com › Identifiers.
+O suporte a iCloud depende também de habilitar o container `iCloud.com.diegoeiras.anything` no App ID da conta Apple Developer usada para assinar o app.
+
+## Chaves de API
+
+As chaves abaixo são opcionais para executar o app; elas habilitam consultas aos respectivos catálogos:
+
+| Serviço | Configuração | Uso |
+| --- | --- | --- |
+| RAWG | `EXPO_PUBLIC_RAWG_API_KEY` em `.env` | Busca e detalhes de jogos |
+| TMDB | Chave nas configurações do app ou `EXPO_PUBLIC_TMDB_API_KEY` em `.env` | Busca e detalhes de filmes |
+
+Exemplo de `.env` local:
+
+```dotenv
+EXPO_PUBLIC_RAWG_API_KEY=sua_chave_rawg
+EXPO_PUBLIC_TMDB_API_KEY=sua_chave_tmdb
+```
+
+Não versione `.env` nem credenciais. O arquivo está ignorado pelo Git. A chave TMDB inserida nas configurações é guardada no armazenamento local do app. As buscas de música usam o iTunes e letras usam LRCLIB; esses recursos não exigem uma chave configurada pelo projeto.
+
+## Estrutura do projeto
+
+```text
+src/
+  app/             Rotas e telas Expo Router
+  components/      Cartões, formulários, menus e componentes visuais
+  hooks/           Estado e operações compartilhadas da biblioteca
+  lib/             Persistência, modelos, busca e integrações externas
+modules/           Módulos Expo locais com código nativo
+targets/           Alvos Apple, incluindo controles do iOS
+assets/            Ícones, fontes e imagens do app
+sample-library/    Biblioteca de exemplo
+```
+
+As rotas ficam em `src/app/`. Mantenha componentes e lógica reutilizável fora desse diretório para que não sejam tratados como telas pelo Expo Router.
+
+## Verificações e comandos
+
+```bash
+bun run lint
+bunx tsc --noEmit
+```
+
+Scripts disponíveis em `package.json`:
+
+| Comando | Ação |
+| --- | --- |
+| `bun run start` | Inicia o Expo |
+| `bun run ios` | Inicia no simulador/dispositivo iOS |
+| `bun run android` | Inicia no emulador/dispositivo Android |
+| `bun run web` | Inicia a versão web |
+| `bun run lint` | Executa o lint do Expo |
+| `bun run format` | Formata os arquivos com Prettier |
+
+## Contribuir
+
+1. Consulte as [Issues abertas](https://github.com/lucioeiras/anything/issues) e o [Project do GitHub](https://github.com/lucioeiras/anything/projects) para encontrar histórias, bugs e trabalho em andamento.
+2. Se a ideia ainda não tiver Issue, abra uma descrevendo o problema ou a proposta, o resultado esperado e, quando ajudar, passos para reproduzir ou imagens.
+3. Use o board Kanban para acompanhar a história. Mantenha a Issue ligada ao cartão do Project e atualize seu status conforme o trabalho avança. O board é a visão de fluxo; a Issue mantém contexto, discussão e critérios de conclusão.
+4. Crie uma branch a partir da branch principal e faça uma alteração focada. Use mensagens de commit no padrão Conventional Commits, como `feat: add book filters` ou `fix: preserve selected folder`.
+5. Antes de abrir o pull request, rode `bun run lint` e `bunx tsc --noEmit`. Inclua no PR o contexto, a Issue relacionada e evidências visuais para mudanças de interface.
+6. Ao abrir o PR, referencie a Issue (por exemplo, `Closes #123`) para que o GitHub relacione o código ao trabalho e encerre a Issue quando o PR for integrado.
+
+O repositório usa Expo Router, TypeScript e NativeWind. Siga os padrões existentes, priorize interações mobile e multiplataforma e configure comportamento nativo por `app.json` ou config plugins. Para dependências Expo, use `bunx expo install <pacote>` para selecionar uma versão compatível com o SDK do projeto.
+
+## Planejamento: GitHub Project, Kanban e Issues
+
+O desenvolvimento é acompanhado em um **GitHub Project** com visualização Kanban. As histórias e tarefas são registradas como **Issues** do repositório e podem ser vinculadas aos cartões do Project. Assim, a Issue concentra descrição, critérios de aceitação, conversa e referência a PRs; o board mostra em que etapa cada trabalho está.
+
+Comece por [Issues](https://github.com/lucioeiras/anything/issues) para consultar ou propor trabalho e pelo [Project](https://github.com/lucioeiras/anything/projects) para ver o fluxo geral. Colunas, campos e filtros podem evoluir com o processo; mantenha os cartões ligados às Issues correspondentes e siga os status definidos no próprio board.
+
+## Licença
+
+Consulte [LICENSE](LICENSE) para os termos de uso e distribuição.

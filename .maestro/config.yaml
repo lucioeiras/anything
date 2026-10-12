@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+name: Anything app E2E
+tags:
+  - e2e
+  - mobile

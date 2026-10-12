@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+name: Create and browse a folder
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Folders'
+- assertVisible: 'New Folder'
+- tapOn: 'Create folder'
+- assertVisible: 'Create a new folder'
+- tapOn:
+    text: 'Folder name'
+- inputText: 'Reading list'
+- tapOn: 'Create folder'
+- assertVisible: 'Reading list'
+- tapOn: 'Board'
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- tapOn:
+    text: 'Type here...'
+- inputText: 'A book to read'
+- tapOn: 'Note info'
+- tapOn:
+    text: 'Add tags here...'
+- inputText: 'Reading list,'
+- tapOn: 'Save note'
+- tapOn: 'Folders'
+- assertVisible: 'Reading list, 1 cards'

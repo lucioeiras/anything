@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+name: Open add forms for every content type
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Add'
+- tapOn: 'Link from anywhere'
+- assertVisible: 'Add a new link'
+- tapOn: 'Cancel'
+- tapOn: 'Add'
+- tapOn: 'Book for the library'
+- assertVisible: 'Add a new book'
+- tapOn: 'Cancel'
+- tapOn: 'Add'
+- tapOn: 'A good song or album'
+- assertVisible: 'Add music'
+- tapOn: 'Cancel'
+- tapOn: 'Add'
+- tapOn: 'An amazing movie'
+- assertVisible: 'Add movie'
+- tapOn: 'Cancel'
+- tapOn: 'Add'
+- tapOn: 'A wonderful game'
+- assertVisible: 'Add game'
+- tapOn: 'Cancel'

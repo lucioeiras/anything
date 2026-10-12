@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+name: Create and find a note
+---
+- launchApp:
+    clearState: true
+- assertVisible: 'You can add anything here'
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- assertVisible: 'Type here...'
+- tapOn:
+    text: 'Type here...'
+- inputText: 'E2E note about coffee'
+- tapOn:
+    text: 'Save note'
+- assertVisible: 'E2E note about coffee'
+- tapOn:
+    text: 'Search cards, tags, notes...'
+- inputText: 'coffee'
+- assertVisible: 'E2E note about coffee'

@@ -1,0 +1,17 @@
+appId: ${APP_ID}
+name: Delete and restore a card
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- tapOn:
+    text: 'Type here...'
+- inputText: 'E2E restore candidate'
+- tapOn: 'Save note'
+- longPressOn: 'E2E restore candidate'
+- assertVisible: '1   selected'
+- tapOn: 'Delete selected cards'
+- assertVisible: 'You deleted'
+- tapOn: 'Restore deleted cards'
+- assertVisible: 'E2E restore candidate'

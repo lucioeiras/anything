@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: Navigate tabs and inspect settings
+---
+- launchApp:
+    clearState: true
+- assertVisible: 'You can add anything here'
+- tapOn: 'Folders'
+- assertVisible: 'Want to'
+- tapOn: 'Add'
+- assertVisible: 'Note, quote or to-do'
+- tapOn: 'Settings'
+- assertVisible: 'Current space'
+- assertVisible: 'On-device AI'
+- assertVisible: 'E2E Library'

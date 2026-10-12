@@ -1,0 +1,16 @@
+{
+  "build": {
+    "e2e": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_E2E": "true"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    }
+  }
+}
