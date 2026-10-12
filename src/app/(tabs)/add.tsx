@@ -204,7 +204,8 @@ export default function AddElementScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           flexGrow: 1,
-          paddingVertical: 16,
+          paddingTop: 24,
+          paddingBottom: 200,
         }}
         showsVerticalScrollIndicator={false}
         className="w-full"
