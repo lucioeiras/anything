@@ -94,7 +94,15 @@
       "llama.rn",
       "@config-plugins/react-native-blob-util",
       "@config-plugins/react-native-pdf",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Anything to access your microphone to record audio.",
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

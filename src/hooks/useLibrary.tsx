@@ -11,6 +11,8 @@ import {
   addMusicItemToLibrary,
   addPdfToLibrary,
   addVideoToLibrary,
+  addAudioToLibrary,
+  type PickedAudioAsset,
   addTextItemToLibrary,
   deleteItemsFromLibrary,
   getFolderDisplayName,
@@ -73,6 +75,10 @@ export type LibraryContextValue = {
   addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
   addPdf: (asset: PickedPdfAsset, options?: AddPdfOptions) => Promise<PdfItem>;
   addVideo: (asset: PickedVideoAsset, options?: AddVideoOptions) => Promise<VideoItem>;
+  addAudio: (
+    asset: PickedAudioAsset,
+    options?: { title?: string; note?: string; tags?: string[]; autoTags?: string[] }
+  ) => Promise<import('@/lib/library/types').AudioItem>;
   addTextItem: (
     text: string,
     title?: string,
@@ -374,6 +380,20 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addAudio = useCallback(
+    async (
+      asset: PickedAudioAsset,
+      options?: { title?: string; note?: string; tags?: string[]; autoTags?: string[] }
+    ) => {
+      const targetSource = source ?? { kind: 'local' as const, name: 'App Library' };
+      if (!source) setSource(targetSource);
+      const item = await addAudioToLibrary(targetSource, asset, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const addTextItem = useCallback(
     async (
       text: string,
@@ -621,6 +641,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     addImage,
     addPdf,
     addVideo,
+    addAudio,
     addTextItem,
     addLinkItem,
     addBookItem,

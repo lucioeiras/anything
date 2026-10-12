@@ -20,6 +20,7 @@ import { TweetCard } from './TweetCard';
 import { TikTokCard } from './TikTokCard';
 import { YouTubeCard } from './YouTubeCard';
 import { VideoCard } from './VideoCard';
+import { AudioCard } from './AudioCard';
 
 type ItemCardProps = {
   item: LibraryItem;
@@ -77,6 +78,8 @@ export const ItemCard = memo(function ItemCard({
         );
       case 'video':
         return <VideoCard uri={item.video} title={hideTitleAndAuthor ? undefined : item.title} />;
+      case 'audio':
+        return <AudioCard uri={item.audio} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'link':
         return (
           <LinkCard

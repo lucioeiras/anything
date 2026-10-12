@@ -44,6 +44,7 @@ const cardTypeTags = {
   image: { label: 'Image', icon: ImageIcon },
   pdf: { label: 'PDF', icon: FilePdfIcon },
   video: { label: 'Video', icon: VideoCameraIcon },
+  audio: { label: 'Recorded audio', icon: MusicNotesIcon },
   link: { label: 'Link', icon: LinkIcon },
   article: { label: 'Article', icon: ArticleIcon },
   youtube: { label: 'YouTube', icon: YoutubeLogoIcon },

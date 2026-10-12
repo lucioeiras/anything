@@ -154,6 +154,7 @@ const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {
   image: ['image'],
   pdf: ['pdf'],
   video: ['video'],
+  audio: ['audio'],
   link: ['url', 'siteTitle', 'favicon'],
   article: ['url', 'title', 'thumbnail'],
   youtube: ['url', 'title', 'thumbnail'],

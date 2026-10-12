@@ -75,6 +75,12 @@ export type VideoItem = BaseItem & {
   fileSize?: number;
   title?: string;
 };
+export type AudioItem = BaseItem & {
+  type: 'audio';
+  audio: string;
+  durationMs?: number;
+  title?: string;
+};
 
 export type LinkItem = BaseItem & {
   type: 'link';
@@ -227,6 +233,7 @@ export type LibraryItem =
   | ImageItem
   | PdfItem
   | VideoItem
+  | AudioItem
   | LinkItem
   | ArticleItem
   | YouTubeItem
@@ -246,6 +253,7 @@ export const ITEM_TYPES: readonly LibraryItemType[] = [
   'image',
   'pdf',
   'video',
+  'audio',
   'link',
   'article',
   'youtube',
@@ -264,3 +272,4 @@ export const IMAGES_DIR = 'images';
 /** Name of the sub-folder holding local PDF assets. */
 export const PDFS_DIR = 'pdfs';
 export const VIDEOS_DIR = 'videos';
+export const AUDIOS_DIR = 'audios';

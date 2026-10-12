@@ -8,6 +8,7 @@ type ButtonProps = {
   text?: string;
   onPress: () => void;
   disabled?: boolean;
+  size?: 'default' | 'small';
   variant?: 'primary' | 'secondary';
   backgroundColor?: string;
   contentColor?: string;
@@ -22,6 +23,7 @@ export function Button({
   text,
   onPress,
   disabled = false,
+  size = 'default',
   variant = 'secondary',
   backgroundColor = '#FFFFFF',
   contentColor,
@@ -29,11 +31,12 @@ export function Button({
   shadowOpacity = 0,
 }: ButtonProps) {
   const foreground = contentColor ?? (variant === 'primary' ? '#09090B' : '#FFFFFF');
+  const isSmall = size === 'small';
   const iconElement = isValidElement<{ size?: number; color?: string }>(icon) ? icon : undefined;
   const normalizedIcon =
     iconElement && 'size' in iconElement.props
       ? cloneElement(iconElement as ReactElement<{ size?: number; color?: string }>, {
-          size: 24,
+          size: isSmall ? 20 : 24,
           // color: foreground,
         })
       : icon;
@@ -55,7 +58,7 @@ export function Button({
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        className={`flex-row items-center justify-center gap-3 overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${text ? 'px-6 py-3' : 'p-4'} ${variant === 'secondary' && 'border border-zinc-800'}`}
+        className={`flex-row items-center justify-center overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${isSmall ? 'gap-2' : 'gap-3'} ${text ? (isSmall ? 'px-4 py-2' : 'px-6 py-3') : isSmall ? 'p-3' : 'p-4'} ${variant === 'secondary' && 'border border-zinc-800'}`}
         style={variant === 'primary' ? { backgroundColor } : undefined}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
@@ -88,7 +91,7 @@ export function Button({
           <Text
             numberOfLines={1}
             style={{ color: foreground }}
-            className="font-sans-semibold text-lg"
+            className={`font-sans-semibold ${isSmall ? 'text-sm' : 'text-lg'}`}
           >
             {text}
           </Text>

@@ -17,6 +17,7 @@ import {
   TiktokLogoIcon,
   TwitterLogoIcon,
   VideoCameraIcon,
+  WaveformIcon,
   WarningIcon,
   YoutubeLogoIcon,
 } from 'phosphor-react-native';
@@ -58,6 +59,7 @@ import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { NewVideoModal } from '@/components/modals/NewVideoModal';
+import { NewAudioModal } from '@/components/modals/NewAudioModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
@@ -66,6 +68,7 @@ import type {
   PickedImageAsset,
   PickedPdfAsset,
   PickedVideoAsset,
+  PickedAudioAsset,
 } from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
@@ -76,6 +79,7 @@ const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   image: 'Media',
   pdf: 'PDFs',
   video: 'Videos',
+  audio: 'Recorded audio',
   link: 'Links',
   article: 'Articles',
   youtube: 'YouTube',
@@ -94,6 +98,7 @@ const CARD_TYPE_ICONS = {
   image: ImageIcon,
   pdf: FilePdfIcon,
   video: VideoCameraIcon,
+  audio: WaveformIcon,
   link: LinkIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,
@@ -113,7 +118,17 @@ type BoardGridContextType = {
 };
 
 type AddControlItem =
-  'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'video' | 'all';
+  | 'note'
+  | 'link'
+  | 'book'
+  | 'music'
+  | 'movie'
+  | 'game'
+  | 'image'
+  | 'pdf'
+  | 'video'
+  | 'audio'
+  | 'all';
 
 type AddControlAction = {
   item: AddControlItem;
@@ -164,6 +179,9 @@ export default function BoardScreen() {
     newVideoFileName,
     newVideoFileSize,
     newVideoTimestamp,
+    newAudioUri,
+    newAudioDuration,
+    newAudioTimestamp,
     controlAddItem,
     controlToken,
     folderKind,
@@ -186,6 +204,9 @@ export default function BoardScreen() {
     newVideoFileName?: string;
     newVideoFileSize?: string;
     newVideoTimestamp?: string;
+    newAudioUri?: string;
+    newAudioDuration?: string;
+    newAudioTimestamp?: string;
     controlAddItem?: AddControlItem;
     controlToken?: string;
     folderKind?: 'status' | 'tag';
@@ -203,6 +224,8 @@ export default function BoardScreen() {
   const [pendingPdf, setPendingPdf] = useState<PickedPdfAsset | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [pendingVideo, setPendingVideo] = useState<PickedVideoAsset | null>(null);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
+  const [pendingAudio, setPendingAudio] = useState<PickedAudioAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
@@ -239,6 +262,7 @@ export default function BoardScreen() {
   const lastOpenedImageRef = useRef<string | null>(null);
   const lastOpenedPdfRef = useRef<string | null>(null);
   const lastOpenedVideoRef = useRef<string | null>(null);
+  const lastOpenedAudioRef = useRef<string | null>(null);
   const lastOpenedControlRef = useRef<string | null>(null);
 
   const activeAddModalRef = useRef<Exclude<AddControlItem, 'all'> | null>(null);
@@ -302,6 +326,13 @@ export default function BoardScreen() {
           params: { controlItem: 'video', controlToken: action.token ?? Date.now().toString() },
         });
         break;
+      case 'audio':
+        activeAddModalRef.current = null;
+        router.replace({
+          pathname: '/add',
+          params: { controlItem: 'audio', controlToken: action.token ?? Date.now().toString() },
+        });
+        break;
     }
   }, []);
 
@@ -322,6 +353,7 @@ export default function BoardScreen() {
       setIsImageModalOpen(false);
       setIsPdfModalOpen(false);
       setIsVideoModalOpen(false);
+      setIsAudioModalOpen(false);
     },
     [openControlAction]
   );
@@ -371,8 +403,21 @@ export default function BoardScreen() {
         setIsVideoModalOpen(false);
         setPendingVideo(null);
         break;
+      case 'audio':
+        setIsAudioModalOpen(false);
+        setPendingAudio(null);
+        break;
     }
   }, []);
+
+  useEffect(() => {
+    const token = newAudioTimestamp || newAudioUri;
+    if (!newAudioUri || !token || token === lastOpenedAudioRef.current) return;
+    lastOpenedAudioRef.current = token;
+    activeAddModalRef.current = 'audio';
+    setPendingAudio({ uri: newAudioUri, durationMs: Number(newAudioDuration) || undefined });
+    setIsAudioModalOpen(true);
+  }, [newAudioUri, newAudioDuration, newAudioTimestamp]);
 
   useEffect(() => {
     if (!controlAddItem || !controlToken) return;
@@ -957,6 +1002,11 @@ export default function BoardScreen() {
         videoAsset={pendingVideo}
         onClose={() => closeAddModal('video')}
         onDismiss={handleAddModalDismiss}
+      />
+      <NewAudioModal
+        visible={isAudioModalOpen}
+        asset={pendingAudio}
+        onClose={() => closeAddModal('audio')}
       />
 
       <AddToFolderModal

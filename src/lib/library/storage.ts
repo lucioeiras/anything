@@ -15,6 +15,7 @@ import {
   IMAGES_DIR,
   PDFS_DIR,
   VIDEOS_DIR,
+  AUDIOS_DIR,
   SCHEMA_VERSION,
   type ArticleItem,
   type BookItem,
@@ -29,6 +30,7 @@ import {
   type PdfItem,
   type PdfRef,
   type VideoItem,
+  type AudioItem,
   type QuoteItem,
   type RedditItem,
   type TikTokItem,
@@ -449,6 +451,8 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
       return { ...item, pdf: resolvePdfRef(item.pdf, root) };
     case 'video':
       return { ...item, video: resolvePdfRef(item.video, root) };
+    case 'audio':
+      return { ...item, audio: resolvePdfRef(item.audio, root) };
     case 'link':
       return { ...item, favicon: r(item.favicon) };
     case 'article':
@@ -509,6 +513,63 @@ export function getPdfsDirectory(source: LibrarySource): Directory {
 
 export function getVideosDirectory(source: LibrarySource): Directory {
   return new Directory(getLibraryDirectory(source), VIDEOS_DIR);
+}
+
+export function getAudiosDirectory(source: LibrarySource): Directory {
+  return new Directory(getLibraryDirectory(source), AUDIOS_DIR);
+}
+
+export type PickedAudioAsset = { uri: string; durationMs?: number; fileName?: string };
+
+export async function addAudioToLibrary(
+  source: LibrarySource,
+  asset: PickedAudioAsset,
+  options?: { title?: string; note?: string; tags?: string[]; autoTags?: string[] }
+): Promise<AudioItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) root.create({ intermediates: true, idempotent: true });
+  const dir = getAudiosDirectory(source);
+  if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
+  const id = generateId();
+  const extension = (asset.fileName ?? asset.uri.split(/[?#]/)[0].split('/').pop() ?? '')
+    .split('.')
+    .pop()
+    ?.toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+  const fileName = `${id}.${extension || 'm4a'}`;
+  const destination = new File(dir, fileName);
+  const sourceFile = new File(asset.uri);
+  try {
+    await sourceFile.copy(destination, { overwrite: true });
+  } catch {
+    const buffer = await sourceFile.arrayBuffer();
+    destination.create({ intermediates: true, overwrite: true });
+    destination.write(new Uint8Array(buffer));
+  }
+  const now = new Date().toISOString();
+  const item: AudioItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'audio',
+    audio: `${AUDIOS_DIR}/${fileName}`,
+    ...(options?.title?.trim() ? { title: options.title.trim() } : {}),
+    ...(options?.note?.trim() ? { note: options.note.trim() } : {}),
+    ...(options?.tags?.filter(Boolean).length ? { tags: options.tags.filter(Boolean) } : {}),
+    ...(options?.autoTags?.filter(Boolean).length
+      ? { autoTags: options.autoTags.filter(Boolean) }
+      : {}),
+    ...(asset.durationMs ? { durationMs: asset.durationMs } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const jsonFile = new File(root, `${id}.json`);
+  jsonFile.create({ intermediates: true, overwrite: true });
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+  upsertCachedItems(getSourceId(source), [
+    { id, mtime: jsonFile.lastModified ?? Date.now(), rawJson: jsonText, item },
+  ]);
+  return item;
 }
 
 export type PickedVideoAsset = { uri: string; fileName?: string | null; fileSize?: number | null };
@@ -1314,6 +1375,7 @@ export type DeletedItemBackup = {
   images?: DeletedImageBackup[];
   pdfs?: DeletedPdfBackup[];
   videos?: { fileName: string; bytes: Uint8Array }[];
+  audios?: { fileName: string; bytes: Uint8Array }[];
 };
 
 function extractImageRefsFromItem(item: unknown): string[] {
@@ -1527,9 +1589,12 @@ export async function deleteItemsFromLibrary(
   const pdfsDir = getPdfsDirectory(source);
   const availablePdfFiles: File[] = [];
   const videosDir = getVideosDirectory(source);
+  const audiosDir = getAudiosDirectory(source);
   const pdfFileByName = new Map<string, File>();
   const availableVideoFiles: File[] = [];
   const videoFileByName = new Map<string, File>();
+  const availableAudioFiles: File[] = [];
+  const audioFileByName = new Map<string, File>();
 
   if (pdfsDir.exists) {
     try {
@@ -1557,11 +1622,24 @@ export async function deleteItemsFromLibrary(
       console.warn('Failed to list videos directory:', e);
     }
   }
+  if (audiosDir.exists) {
+    try {
+      for (const entry of audiosDir.list()) {
+        if (entry instanceof File && !entry.name.startsWith('.')) {
+          availableAudioFiles.push(entry);
+          audioFileByName.set(entry.name, entry);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to list audios directory:', e);
+    }
+  }
 
   // Collect file names retained by remaining items so we never delete a file used by another card
   const retainedImageFileNames = new Set<string>();
   const retainedPdfFileNames = new Set<string>();
   const retainedVideoFileNames = new Set<string>();
+  const retainedAudioFileNames = new Set<string>();
   for (const item of toRetain) {
     const fileNames = getItemImageFileNames(item.parsed, availableImageFiles, imagesDir.uri);
     for (const name of fileNames) {
@@ -1575,12 +1653,17 @@ export async function deleteItemsFromLibrary(
     const videoName = decodeURIComponent(videoRef.split('/').pop() ?? '');
     if (videoName && availableVideoFiles.some((file) => file.name === videoName))
       retainedVideoFileNames.add(videoName);
+    const audioRef = typeof item.parsed.audio === 'string' ? item.parsed.audio : '';
+    const audioName = decodeURIComponent(audioRef.split('/').pop() ?? '');
+    if (audioName && availableAudioFiles.some((file) => file.name === audioName))
+      retainedAudioFileNames.add(audioName);
   }
 
   // Track already deleted/backed-up files to handle multiple cards referencing the same file
   const processedImages = new Set<string>();
   const processedPdfs = new Set<string>();
   const processedVideos = new Set<string>();
+  const processedAudios = new Set<string>();
 
   for (const item of toDelete) {
     const itemImageFileNames = getItemImageFileNames(
@@ -1681,6 +1764,29 @@ export async function deleteItemsFromLibrary(
       processedVideos.add(videoName);
     }
 
+    const audioRef = typeof item.parsed.audio === 'string' ? item.parsed.audio : '';
+    const audioName = decodeURIComponent(audioRef.split('/').pop() ?? '');
+    const audioBackups: { fileName: string; bytes: Uint8Array }[] = [];
+    const audioFile = audioFileByName.get(audioName);
+    if (
+      audioFile &&
+      !retainedAudioFileNames.has(audioName) &&
+      audioFile.exists &&
+      !processedAudios.has(audioName)
+    ) {
+      try {
+        audioBackups.push({ fileName: audioName, bytes: await audioFile.bytes() });
+      } catch {
+        /* keep deletion usable if backup read fails */
+      }
+      try {
+        audioFile.delete();
+      } catch (e) {
+        console.warn(`Failed to delete audio file ${audioName}:`, e);
+      }
+      processedAudios.add(audioName);
+    }
+
     // Delete the card's JSON file
     try {
       item.file.delete();
@@ -1694,6 +1800,7 @@ export async function deleteItemsFromLibrary(
       ...(itemImageBackups.length > 0 ? { images: itemImageBackups } : {}),
       ...(itemPdfBackups.length > 0 ? { pdfs: itemPdfBackups } : {}),
       ...(videoBackups.length > 0 ? { videos: videoBackups } : {}),
+      ...(audioBackups.length > 0 ? { audios: audioBackups } : {}),
     });
   }
 
@@ -1720,6 +1827,7 @@ export async function restoreItemsToLibrary(
   const imagesDir = getImagesDirectory(source);
   const pdfsDir = getPdfsDirectory(source);
   const videosDir = getVideosDirectory(source);
+  const audiosDir = getAudiosDirectory(source);
 
   for (const backup of backups) {
     try {
@@ -1784,6 +1892,14 @@ export async function restoreItemsToLibrary(
           const restored = new File(videosDir, video.fileName);
           if (!restored.exists) restored.create({ intermediates: true, overwrite: true });
           restored.write(video.bytes);
+        }
+      }
+      if (backup.audios?.length) {
+        if (!audiosDir.exists) audiosDir.create({ intermediates: true, idempotent: true });
+        for (const audio of backup.audios) {
+          const restored = new File(audiosDir, audio.fileName);
+          if (!restored.exists) restored.create({ intermediates: true, overwrite: true });
+          restored.write(audio.bytes);
         }
       }
     } catch (e) {
