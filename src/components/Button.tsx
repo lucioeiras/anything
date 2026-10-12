@@ -11,6 +11,8 @@ type ButtonProps = {
   variant?: 'primary' | 'secondary';
   backgroundColor?: string;
   contentColor?: string;
+  shadowColor?: string;
+  shadowOpacity?: number;
 };
 
 /** Rounded floating action with optional icon and text. */
@@ -23,6 +25,8 @@ export function Button({
   variant = 'secondary',
   backgroundColor = '#FFFFFF',
   contentColor,
+  shadowColor = '#FFFFFF',
+  shadowOpacity = 0,
 }: ButtonProps) {
   const foreground = contentColor ?? (variant === 'primary' ? '#09090B' : '#FFFFFF');
   const iconElement = isValidElement<{ size?: number; color?: string }>(icon) ? icon : undefined;
@@ -41,6 +45,9 @@ export function Button({
         flexGrow: 0,
         flexShrink: 0,
         flexBasis: 'auto',
+        shadowColor,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity,
         shadowRadius: 8,
         elevation: 6,
       }}

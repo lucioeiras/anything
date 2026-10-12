@@ -1,11 +1,11 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
-import { router, useLocalSearchParams } from 'expo-router';
+import { BlurTargetView } from 'expo-blur';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   ArticleIcon,
   BookOpenIcon,
   FilePdfIcon,
   FilmSlateIcon,
-  VideoCameraIcon,
   GameControllerIcon,
   ImageIcon,
   LinkIcon,
@@ -14,10 +14,11 @@ import {
   PlusIcon,
   QuotesIcon,
   RedditLogoIcon,
+  TiktokLogoIcon,
   TwitterLogoIcon,
+  VideoCameraIcon,
   WarningIcon,
   YoutubeLogoIcon,
-  TiktokLogoIcon,
 } from 'phosphor-react-native';
 import {
   createContext,
@@ -39,11 +40,15 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
+import { useSearchBarOverlay } from '@/components/menus/SearchBarOverlay';
+import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewBookModal } from '@/components/modals/NewBookModal';
 import { NewGameModal } from '@/components/modals/NewGameModal';
 import { NewImageModal } from '@/components/modals/NewImageModal';
@@ -53,23 +58,22 @@ import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { NewVideoModal } from '@/components/modals/NewVideoModal';
-import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
+import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
 import type {
   DeletedItemBackup,
   PickedImageAsset,
   PickedPdfAsset,
   PickedVideoAsset,
 } from '@/lib/library/storage';
-import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
-import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
 import type { MediaProgressStatus } from '@/lib/library/types';
+import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
 
 const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   note: 'Notes',
   quote: 'Quotes',
-  image: 'Images',
+  image: 'Media',
   pdf: 'PDFs',
   video: 'Videos',
   link: 'Links',
@@ -139,6 +143,9 @@ export default function BoardScreen() {
     clearSearchTag,
     updateItem,
   } = useLibrary();
+  const searchBlurTargetRef = useRef<View>(null);
+  const insets = useSafeAreaInsets();
+  const setSearchBarOverlay = useSearchBarOverlay();
   const {
     newNote,
     newLink,
@@ -768,6 +775,63 @@ export default function BoardScreen() {
     clearFolderFilter,
   ]);
 
+  useFocusEffect(
+    useCallback(() => {
+      setSearchBarOverlay(
+        <SearchBar
+          value={searchQuery}
+          onChangeText={handleSearchChange}
+          blurTarget={searchBlurTargetRef}
+          bottomOffset={48 + insets.bottom}
+          trailingAction={
+            <Button
+              accessibilityLabel="Add new item"
+              variant="primary"
+              shadowColor="#FFFFFF"
+              shadowOpacity={0.24}
+              icon={<PlusIcon size={24} color="#09090B" weight="bold" />}
+              onPress={() => router.push('/add')}
+            />
+          }
+          filters={[
+            ...(activeFolderKind
+              ? [
+                  {
+                    kind: 'folder' as const,
+                    label: folderLabel ?? activeFolderKey ?? '',
+                    status:
+                      activeFolderKind === 'status'
+                        ? (activeFolderKey as MediaProgressStatus)
+                        : undefined,
+                    onRemove: clearFolderFilter,
+                  },
+                ]
+              : []),
+            ...(searchTag
+              ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
+              : []),
+          ]}
+          visible={state.status === 'ready' && !isEditing}
+        />
+      );
+
+      return () => setSearchBarOverlay(null);
+    }, [
+      setSearchBarOverlay,
+      searchQuery,
+      handleSearchChange,
+      insets.bottom,
+      activeFolderKind,
+      folderLabel,
+      activeFolderKey,
+      clearFolderFilter,
+      searchTag,
+      clearSearchTag,
+      state.status,
+      isEditing,
+    ])
+  );
+
   return (
     <View className="flex-1 bg-zinc-950">
       {state.status === 'loading' && (
@@ -790,52 +854,34 @@ export default function BoardScreen() {
       {state.status === 'ready' && (
         <View className="flex-1">
           <View className="flex-1">
-            <BoardGridContext.Provider value={gridContextValue}>
-              <FlashList<LibraryItem>
-                data={displayedItems}
-                renderItem={renderItem}
-                keyExtractor={keyExtractor}
-                numColumns={2}
-                masonry
-                optimizeItemArrangement
-                extraData={extraData}
-                CellRendererComponent={CellRenderer}
-                contentContainerStyle={styles.contentContainer}
-                showsVerticalScrollIndicator={false}
-                keyboardDismissMode="on-drag"
-                keyboardShouldPersistTaps="handled"
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
-                }
-                ListHeaderComponent={renderHeader}
-                ListEmptyComponent={renderEmpty}
-              />
-            </BoardGridContext.Provider>
+            <BlurTargetView ref={searchBlurTargetRef} style={{ flex: 1 }}>
+              <BoardGridContext.Provider value={gridContextValue}>
+                <FlashList<LibraryItem>
+                  data={displayedItems}
+                  renderItem={renderItem}
+                  keyExtractor={keyExtractor}
+                  numColumns={2}
+                  masonry
+                  optimizeItemArrangement
+                  extraData={extraData}
+                  CellRendererComponent={CellRenderer}
+                  contentContainerStyle={styles.contentContainer}
+                  showsVerticalScrollIndicator={false}
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps="handled"
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={refresh}
+                      tintColor="#a1a1aa"
+                    />
+                  }
+                  ListHeaderComponent={renderHeader}
+                  ListEmptyComponent={renderEmpty}
+                />
+              </BoardGridContext.Provider>
+            </BlurTargetView>
           </View>
-
-          <SearchBar
-            value={searchQuery}
-            onChangeText={handleSearchChange}
-            filters={[
-              ...(activeFolderKind
-                ? [
-                    {
-                      kind: 'folder' as const,
-                      label: folderLabel ?? activeFolderKey ?? '',
-                      status:
-                        activeFolderKind === 'status'
-                          ? (activeFolderKey as MediaProgressStatus)
-                          : undefined,
-                      onRemove: clearFolderFilter,
-                    },
-                  ]
-                : []),
-              ...(searchTag
-                ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
-                : []),
-            ]}
-            visible={!isEditing}
-          />
         </View>
       )}
 
@@ -1027,7 +1073,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 4,
     paddingTop: 64,
-    paddingBottom: 80,
+    paddingBottom: 200,
     flexGrow: 1,
   },
   cardWrapper: {
