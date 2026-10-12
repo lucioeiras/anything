@@ -2,6 +2,7 @@ import { decodeHTML } from 'entities';
 
 export type ResolvedMetadata =
   | { type: 'youtube'; url: string; title: string; thumbnail: string }
+  | { type: 'tiktok'; url: string; title: string; thumbnail: string }
   | {
       type: 'reddit';
       url: string;
@@ -198,7 +199,7 @@ async function resolveSubredditAvatar(subName: string): Promise<string> {
 
 /**
  * Resolves metadata for a given URL and determines whether it should be
- * saved as a YouTube video, Reddit post, Tweet/X post, Article, or generic Link.
+ * saved as a YouTube/TikTok video, Reddit post, Tweet/X post, Article, or generic Link.
  */
 export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMetadata> {
   const url = normalizeUrl(inputUrl);
@@ -252,6 +253,22 @@ export async function resolveUrlMetadata(inputUrl: string): Promise<ResolvedMeta
       title,
       thumbnail,
     };
+  }
+
+  if (/(?:^|\.)tiktok\.com$/i.test(hostname)) {
+    let title = 'TikTok Video';
+    let thumbnail = '';
+    try {
+      const response = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (typeof data.title === 'string' && data.title.trim()) title = decodeHTML(data.title);
+        if (typeof data.thumbnail_url === 'string') thumbnail = data.thumbnail_url;
+      }
+    } catch {
+      // Keep a usable video card when TikTok metadata is unavailable.
+    }
+    return { type: 'tiktok', url, title, thumbnail };
   }
 
   // 2. Reddit Detection

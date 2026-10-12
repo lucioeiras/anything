@@ -41,6 +41,12 @@ const labels = {
     completed: 'Watched',
     abandoned: 'Abandoned',
   },
+  tiktok: {
+    want: 'Want to watch',
+    'in-progress': 'Watching',
+    completed: 'Watched',
+    abandoned: 'Abandoned',
+  },
 } as const;
 
 const icons = {
@@ -71,7 +77,9 @@ export function ProgressStatus({
   align?: 'center' | 'start';
 }) {
   const currentStatus =
-    (type === 'article' || type === 'youtube') && status === 'abandoned' ? 'want' : status;
+    (type === 'article' || type === 'youtube' || type === 'tiktok') && status === 'abandoned'
+      ? 'want'
+      : status;
   const Icon = icons[currentStatus];
   const color = colors[currentStatus];
 

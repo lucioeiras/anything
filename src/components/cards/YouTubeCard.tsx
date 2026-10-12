@@ -16,7 +16,12 @@ type YouTubeCardProps = {
   progressStatus?: YouTubeItem['progressStatus'];
 };
 
-export const YouTubeCard = ({ videoTitle, thumbnail, progressStatus }: YouTubeCardProps) => {
+export const YouTubeCard = ({
+  videoTitle,
+  thumbnail,
+  progressStatus,
+  platform = 'YouTube',
+}: YouTubeCardProps & { platform?: 'YouTube' | 'TikTok' }) => {
   return (
     <View className="w-full">
       <View className="relative w-full h-32">
@@ -31,11 +36,15 @@ export const YouTubeCard = ({ videoTitle, thumbnail, progressStatus }: YouTubeCa
           {decodeHTML(videoTitle)}
         </Text>
 
-        <ProgressStatus type="youtube" status={progressStatus} align="start" />
+        <ProgressStatus
+          type={platform === 'TikTok' ? 'tiktok' : 'youtube'}
+          status={progressStatus}
+          align="start"
+        />
 
         <View className="flex-row items-center gap-2 mt-2">
           <YoutubeLogoIcon size={14} color="#F43F5E" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-rose-500">YouTube</Text>
+          <Text className="font-sans-semibold text-sm text-rose-500">{platform}</Text>
         </View>
       </View>
     </View>

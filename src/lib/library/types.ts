@@ -95,6 +95,14 @@ export type YouTubeItem = BaseItem & {
   thumbnail: ImageRef;
 };
 
+export type TikTokItem = BaseItem & {
+  type: 'tiktok';
+  progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
+  url: string;
+  title: string;
+  thumbnail: ImageRef;
+};
+
 export type TweetVideo = {
   url: string;
   thumbnail?: ImageRef;
@@ -215,6 +223,7 @@ export type LibraryItem =
   | LinkItem
   | ArticleItem
   | YouTubeItem
+  | TikTokItem
   | TweetItem
   | RedditItem
   | BookItem
@@ -232,6 +241,7 @@ export const ITEM_TYPES: readonly LibraryItemType[] = [
   'link',
   'article',
   'youtube',
+  'tiktok',
   'tweet',
   'reddit',
   'book',

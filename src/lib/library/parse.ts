@@ -153,6 +153,7 @@ const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {
   link: ['url', 'siteTitle', 'favicon'],
   article: ['url', 'title', 'thumbnail'],
   youtube: ['url', 'title', 'thumbnail'],
+  tiktok: ['url', 'title', 'thumbnail'],
   tweet: ['author', 'avatar', 'text'],
   reddit: ['subreddit', 'subredditAvatar', 'title'],
   book: ['isbn', 'title'],

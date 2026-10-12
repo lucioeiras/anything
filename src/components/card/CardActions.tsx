@@ -32,7 +32,7 @@ export function CardActions({
   onOpenLink: handleOpenLink,
   onOpenPdf: handleOpenPdf,
 }: CardActionsProps) {
-  const isLink = ['link', 'article', 'youtube', 'tweet', 'reddit'].includes(item.type);
+  const isLink = ['link', 'article', 'youtube', 'tiktok', 'tweet', 'reddit'].includes(item.type);
   const isImage = item.type === 'image';
   const isPdf = item.type === 'pdf';
   const isMusic = item.type === 'music';

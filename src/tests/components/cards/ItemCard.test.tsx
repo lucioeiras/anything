@@ -54,6 +54,17 @@ const examples: [LibraryItem, string][] = [
   [
     {
       ...base,
+      id: 'tiktok',
+      type: 'tiktok',
+      url: 'https://www.tiktok.com/@person/video/123',
+      title: 'A TikTok video',
+      thumbnail: 'tiktok.jpg',
+    },
+    'A TikTok video',
+  ],
+  [
+    {
+      ...base,
       id: 'tweet',
       type: 'tweet',
       url: 'https://x.com/user/status/1',

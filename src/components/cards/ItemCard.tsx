@@ -95,6 +95,15 @@ export const ItemCard = memo(function ItemCard({
             progressStatus={item.progressStatus}
           />
         );
+      case 'tiktok':
+        return (
+          <YouTubeCard
+            videoTitle={item.title}
+            thumbnail={item.thumbnail}
+            progressStatus={item.progressStatus}
+            platform="TikTok"
+          />
+        );
       case 'tweet':
         return (
           <TweetCard

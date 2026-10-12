@@ -16,6 +16,7 @@ import {
   TwitterLogoIcon,
   WarningIcon,
   YoutubeLogoIcon,
+  VideoCameraIcon,
 } from 'phosphor-react-native';
 import {
   createContext,
@@ -66,6 +67,7 @@ const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   link: 'Links',
   article: 'Articles',
   youtube: 'YouTube',
+  tiktok: 'TikTok',
   tweet: 'Tweets',
   reddit: 'Reddit',
   book: 'Books',
@@ -82,6 +84,7 @@ const CARD_TYPE_ICONS = {
   link: LinkIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,
+  tiktok: VideoCameraIcon,
   tweet: TwitterLogoIcon,
   reddit: RedditLogoIcon,
   book: BookOpenIcon,

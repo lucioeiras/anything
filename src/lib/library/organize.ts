@@ -26,6 +26,7 @@ export function getItemArtwork(item: LibraryItem): string | undefined {
       return item.cover;
     case 'article':
     case 'youtube':
+    case 'tiktok':
       return item.thumbnail;
     case 'tweet':
       return item.images?.[0] ?? item.video?.thumbnail;

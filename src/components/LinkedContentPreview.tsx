@@ -26,6 +26,7 @@ function getPreviewImage(item: LinkableItem): string | undefined {
   switch (item.type) {
     case 'article':
     case 'youtube':
+    case 'tiktok':
       return item.thumbnail;
     case 'link':
       return item.favicon;
@@ -44,6 +45,7 @@ function getPreviewSubtitle(item: LinkableItem): string | undefined {
     case 'article':
       return item.origin;
     case 'youtube':
+    case 'tiktok':
       return undefined;
     case 'link':
       return item.description || item.url;
@@ -68,6 +70,7 @@ function getInitialAspectRatio(item: LinkableItem): number {
       return item.coverAspectRatio && item.coverAspectRatio > 0 ? item.coverAspectRatio : 2 / 3;
     case 'article':
     case 'youtube':
+    case 'tiktok':
     case 'game':
       return 16 / 9;
     case 'link':

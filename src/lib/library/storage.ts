@@ -29,6 +29,7 @@ import {
   type PdfRef,
   type QuoteItem,
   type RedditItem,
+  type TikTokItem,
   type TweetItem,
   type YouTubeItem,
 } from './types';
@@ -448,6 +449,7 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
       return { ...item, favicon: r(item.favicon) };
     case 'article':
     case 'youtube':
+    case 'tiktok':
       return { ...item, thumbnail: r(item.thumbnail) };
     case 'tweet':
       return {
@@ -790,7 +792,8 @@ export async function addTextItemToLibrary(
   return item;
 }
 
-export type LinkUploadItem = LinkItem | ArticleItem | YouTubeItem | RedditItem | TweetItem;
+export type LinkUploadItem =
+  LinkItem | ArticleItem | YouTubeItem | TikTokItem | RedditItem | TweetItem;
 
 /**
  * Loads metadata for the given URL and saves it as a link, youtube, reddit,
@@ -823,6 +826,19 @@ export async function addLinkItemToLibrary(
         id,
         version: SCHEMA_VERSION,
         type: 'youtube',
+        progressStatus: 'want',
+        url: metadata.url,
+        title: metadata.title,
+        thumbnail: metadata.thumbnail,
+        createdAt: now,
+        updatedAt: now,
+      };
+      break;
+    case 'tiktok':
+      item = {
+        id,
+        version: SCHEMA_VERSION,
+        type: 'tiktok',
         progressStatus: 'want',
         url: metadata.url,
         title: metadata.title,

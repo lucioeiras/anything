@@ -53,12 +53,13 @@ function isLinkType(type: LibraryItem['type']): boolean {
     type === 'link' ||
     type === 'article' ||
     type === 'youtube' ||
+    type === 'tiktok' ||
     type === 'tweet' ||
     type === 'reddit'
   );
 }
 
-type TrackableItemType = 'book' | 'movie' | 'game' | 'article' | 'youtube';
+type TrackableItemType = 'book' | 'movie' | 'game' | 'article' | 'youtube' | 'tiktok';
 
 function isTrackableItem(
   item: LibraryItem
@@ -68,12 +69,13 @@ function isTrackableItem(
     item.type === 'movie' ||
     item.type === 'game' ||
     item.type === 'article' ||
-    item.type === 'youtube'
+    item.type === 'youtube' ||
+    item.type === 'tiktok'
   );
 }
 
 function getAllowedProgressStatuses(type: TrackableItemType): readonly MediaProgressStatus[] {
-  return type === 'article' || type === 'youtube'
+  return type === 'article' || type === 'youtube' || type === 'tiktok'
     ? MEDIA_PROGRESS_STATUSES.slice(0, -1)
     : MEDIA_PROGRESS_STATUSES;
 }
