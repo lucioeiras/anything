@@ -25,9 +25,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
+import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { LinkedContentPicker } from '@/components/LinkedContentPicker';
 import { LinkedContentPreview } from '@/components/LinkedContentPreview';
-import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { MusicLyricsPicker } from '@/components/modals/MusicLyricsPicker';
 import { TagsBox } from '@/components/TagsBox';
 
@@ -439,101 +441,75 @@ export function NewNoteModal({
           )}
 
           {/* Action buttons at the bottom */}
-          <View pointerEvents="box-none">
-            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
-              {/* Cancel Button */}
-              <Pressable
-                onPress={handleClose}
-                disabled={saving}
-                hitSlop={12}
-                className="flex-1 pt-6 pb-10 flex-row gap-2.5 items-center justify-center border-r border-zinc-800"
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <XIcon size={20} color="#FFFFFF" weight="bold" />
-                <Text className="font-sans-bold text-lg text-white">Cancel</Text>
-              </Pressable>
+          <ActionFooter bottomInset={insets.bottom}>
+            <Button
+              accessibilityLabel="Cancel"
+              onPress={handleClose}
+              disabled={saving}
+              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+            />
 
-              {/* Info / Note Switcher Button */}
-              {view === 'editor' && (
-                <Pressable
-                  onPress={() => setIsLyricsPickerOpen(true)}
-                  disabled={saving}
-                  className="px-8 pt-6 pb-10 flex-row gap-1.5 items-center justify-center border-r border-zinc-800"
-                  accessibilityRole="button"
-                  accessibilityLabel="Add song lyrics"
-                >
+            {view === 'editor' && (
+              <Button
+                accessibilityLabel="Add song lyrics"
+                onPress={() => setIsLyricsPickerOpen(true)}
+                disabled={saving}
+                icon={
                   <MusicNotesIcon
                     size={20}
                     color={lyricsSong ? '#3B82F6' : '#FFFFFF'}
                     weight="bold"
                   />
-                </Pressable>
-              )}
-              {view === 'editor' && (
-                <Pressable
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setIsPreviewingMarkdown((current) => !current);
-                  }}
-                  disabled={saving}
-                  className="px-5 pt-6 pb-10 flex-row items-center justify-center border-r border-zinc-800"
-                  accessibilityRole="button"
-                  accessibilityLabel={isPreviewingMarkdown ? 'Edit markdown' : 'Preview markdown'}
-                >
-                  {isPreviewingMarkdown ? (
+                }
+              />
+            )}
+            {view === 'editor' && (
+              <Button
+                accessibilityLabel={isPreviewingMarkdown ? 'Edit markdown' : 'Preview markdown'}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setIsPreviewingMarkdown((current) => !current);
+                }}
+                disabled={saving}
+                icon={
+                  isPreviewingMarkdown ? (
                     <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
                   ) : (
                     <TextTIcon size={20} color="#FFFFFF" weight="bold" />
-                  )}
-                </Pressable>
-              )}
-              {view === 'editor' ? (
-                <Pressable
-                  onPress={handleSwitchToInfo}
-                  hitSlop={12}
-                  className="px-8 pt-6 pb-10 flex-row gap-2.5 items-center justify-center border-r border-zinc-800"
-                  accessibilityRole="button"
-                  accessibilityLabel="Note info"
-                >
-                  <InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />
-                </Pressable>
-              ) : (
-                <Pressable
-                  onPress={handleSwitchToEditor}
-                  hitSlop={12}
-                  className="flex-1 pt-6 pb-10 flex-row gap-2.5 items-center justify-center border-r border-zinc-800"
-                  accessibilityRole="button"
-                  accessibilityLabel="Back to note editor"
-                >
-                  <NotePencilIcon size={20} color="#FFFFFF" weight="bold" />
-                  <Text className="font-sans-bold text-lg text-white">Note</Text>
-                </Pressable>
-              )}
+                  )
+                }
+              />
+            )}
+            {view === 'editor' ? (
+              <Button
+                accessibilityLabel="Note info"
+                onPress={handleSwitchToInfo}
+                icon={<InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />}
+              />
+            ) : (
+              <Button
+                accessibilityLabel="Back to note editor"
+                onPress={handleSwitchToEditor}
+                icon={<NotePencilIcon size={20} color="#FFFFFF" weight="bold" />}
+                text="Note"
+              />
+            )}
 
-              {/* Save Button */}
-              <Pressable
-                onPress={handleSave}
-                disabled={!canSave}
-                hitSlop={12}
-                className="flex-1 pt-6 pb-10 items-center justify-center flex-row gap-2.5"
-                accessibilityRole="button"
-                accessibilityLabel="Save note"
-              >
-                {saving ? (
-                  <ActivityIndicator size={20} color={canSave ? '#000000' : '#FFFFFF'} />
+            <Button
+              accessibilityLabel="Save note"
+              variant="primary"
+              onPress={handleSave}
+              disabled={!canSave}
+              icon={
+                saving ? (
+                  <ActivityIndicator size={20} color="#000000" />
                 ) : (
-                  <CheckIcon size={20} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
-                )}
-
-                <Text
-                  className={`font-sans-bold text-lg ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
-                >
-                  Save
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                )
+              }
+              text="Save"
+            />
+          </ActionFooter>
         </View>
       </KeyboardAvoidingView>
       <LinkedContentPicker

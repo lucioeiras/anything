@@ -795,7 +795,8 @@ export function CardDetailContent({
             onLayout={(e) => {
               section2Y.current = e.nativeEvent.layout.y;
             }}
-            className="w-full flex-1 bg-zinc-950 border-t border-zinc-800 pb-16"
+            className="w-full flex-1 bg-zinc-950 border-t border-zinc-800"
+            style={{ paddingBottom: 140 }}
           >
             <Pressable
               onPress={() => {
@@ -1070,6 +1071,7 @@ export function CardDetailContent({
 
         <CardActions
           item={item}
+          bottomInset={insets.bottom}
           onEditNote={() => {
             setIsEditingNote(true);
             scrollToTopSection();

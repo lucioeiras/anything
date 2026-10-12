@@ -21,6 +21,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
 import { BookCover } from '@/components/effects/BookCover';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -429,44 +431,29 @@ export function NewBookModal({ visible, onClose, onDismiss, onSaved }: NewBookMo
           </ScrollView>
 
           {/* Action buttons at the bottom */}
-          <View pointerEvents="box-none">
-            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
-              <Pressable
-                onPress={handleClose}
-                disabled={saving}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <XIcon size={24} color="#FFFFFF" weight="bold" />
-                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSave}
-                disabled={!canSave}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
-                accessibilityRole="button"
-                accessibilityLabel="Save book"
-              >
-                {saving ? (
-                  <ActivityIndicator size={24} color={canSave ? '#F59E0B' : '#71717A'} />
+          <ActionFooter bottomInset={insets.bottom}>
+            <Button
+              accessibilityLabel="Cancel"
+              onPress={handleClose}
+              disabled={saving}
+              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+              text="Cancel"
+            />
+            <Button
+              accessibilityLabel="Save book"
+              variant="primary"
+              onPress={handleSave}
+              disabled={!canSave}
+              icon={
+                saving ? (
+                  <ActivityIndicator size={20} color="#FFFFFF" />
                 ) : (
-                  <CheckIcon size={24} color={canSave ? '#F59E0B' : '#71717A'} weight="bold" />
-                )}
-
-                <Text
-                  className={`font-sans-semibold text-xl ${
-                    canSave ? 'text-amber-500' : 'text-zinc-500'
-                  }`}
-                >
-                  Save book
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                )
+              }
+              text="Save book"
+            />
+          </ActionFooter>
         </View>
       </KeyboardAvoidingView>
     </Modal>

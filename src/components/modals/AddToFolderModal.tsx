@@ -1,8 +1,10 @@
 import { PlusIcon, XIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -180,34 +182,29 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
           )}
         </ScrollView>
 
-        <View className="w-full flex-row border-t border-zinc-800 bg-zinc-950">
-          <Pressable
+        <ActionFooter bottomInset={insets.bottom}>
+          <Button
+            accessibilityLabel="Cancel"
             onPress={handleClose}
             disabled={saving}
-            className="w-1/2 flex-row items-center justify-center gap-3 px-2 pt-6 pb-10 active:bg-zinc-900"
-            accessibilityRole="button"
-            accessibilityLabel="Cancel"
-            accessibilityState={{ disabled: saving }}
-          >
-            {saving ? (
-              <ActivityIndicator size={20} color="#A1A1AA" />
-            ) : (
-              <XIcon size={20} color="#FFFFFF" weight="bold" />
-            )}
-            <Text className="font-sans-bold text-lg text-white">Cancel</Text>
-          </Pressable>
-          <Pressable
+            icon={
+              saving ? (
+                <ActivityIndicator size={20} color="#A1A1AA" />
+              ) : (
+                <XIcon size={20} color="#FFFFFF" weight="bold" />
+              )
+            }
+            text="Cancel"
+          />
+          <Button
+            accessibilityLabel="Create folder"
+            variant="primary"
             onPress={() => setIsCreateOpen(true)}
             disabled={saving}
-            className="w-1/2 flex-row items-center justify-center gap-3 border-l border-zinc-800 px-2 pt-6 pb-12 active:bg-zinc-900"
-            accessibilityRole="button"
-            accessibilityLabel="Create folder"
-            accessibilityState={{ disabled: saving }}
-          >
-            <PlusIcon size={20} color="#C4B5FD" weight="bold" />
-            <Text className="font-sans-semibold text-lg text-violet-300">New Folder</Text>
-          </Pressable>
-        </View>
+            icon={<PlusIcon size={20} color="#C4B5FD" weight="bold" />}
+            text="New Folder"
+          />
+        </ActionFooter>
       </View>
       <NewFolderModal
         visible={isCreateOpen}
