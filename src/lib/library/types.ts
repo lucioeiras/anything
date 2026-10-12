@@ -68,6 +68,13 @@ export type PdfItem = BaseItem & {
   title?: string;
   note?: string;
 };
+export type VideoItem = BaseItem & {
+  type: 'video';
+  video: string;
+  originalFileName?: string;
+  fileSize?: number;
+  title?: string;
+};
 
 export type LinkItem = BaseItem & {
   type: 'link';
@@ -219,6 +226,7 @@ export type LibraryItem =
   | QuoteItem
   | ImageItem
   | PdfItem
+  | VideoItem
   | LinkItem
   | ArticleItem
   | YouTubeItem
@@ -237,6 +245,7 @@ export const ITEM_TYPES: readonly LibraryItemType[] = [
   'quote',
   'image',
   'pdf',
+  'video',
   'link',
   'article',
   'youtube',
@@ -254,3 +263,4 @@ export const IMAGES_DIR = 'images';
 
 /** Name of the sub-folder holding local PDF assets. */
 export const PDFS_DIR = 'pdfs';
+export const VIDEOS_DIR = 'videos';

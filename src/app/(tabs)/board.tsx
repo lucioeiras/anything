@@ -5,6 +5,7 @@ import {
   BookOpenIcon,
   FilePdfIcon,
   FilmSlateIcon,
+  VideoCameraIcon,
   GameControllerIcon,
   ImageIcon,
   LinkIcon,
@@ -51,10 +52,16 @@ import { NewMovieModal } from '@/components/modals/NewMovieModal';
 import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
+import { NewVideoModal } from '@/components/modals/NewVideoModal';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
-import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
+import type {
+  DeletedItemBackup,
+  PickedImageAsset,
+  PickedPdfAsset,
+  PickedVideoAsset,
+} from '@/lib/library/storage';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
 import type { MediaProgressStatus } from '@/lib/library/types';
@@ -64,6 +71,7 @@ const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   quote: 'Quotes',
   image: 'Images',
   pdf: 'PDFs',
+  video: 'Videos',
   link: 'Links',
   article: 'Articles',
   youtube: 'YouTube',
@@ -81,6 +89,7 @@ const CARD_TYPE_ICONS = {
   quote: QuotesIcon,
   image: ImageIcon,
   pdf: FilePdfIcon,
+  video: VideoCameraIcon,
   link: LinkIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,
@@ -100,7 +109,7 @@ type BoardGridContextType = {
 };
 
 type AddControlItem =
-  'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'all';
+  'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'video' | 'all';
 
 type AddControlAction = {
   item: AddControlItem;
@@ -143,6 +152,10 @@ export default function BoardScreen() {
     newPdfUri,
     newPdfFileName,
     newPdfTimestamp,
+    newVideoUri,
+    newVideoFileName,
+    newVideoFileSize,
+    newVideoTimestamp,
     controlAddItem,
     controlToken,
     folderKind,
@@ -161,6 +174,10 @@ export default function BoardScreen() {
     newPdfUri?: string;
     newPdfFileName?: string;
     newPdfTimestamp?: string;
+    newVideoUri?: string;
+    newVideoFileName?: string;
+    newVideoFileSize?: string;
+    newVideoTimestamp?: string;
     controlAddItem?: AddControlItem;
     controlToken?: string;
     folderKind?: 'status' | 'tag';
@@ -176,6 +193,8 @@ export default function BoardScreen() {
   const [pendingImage, setPendingImage] = useState<PickedImageAsset | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pendingPdf, setPendingPdf] = useState<PickedPdfAsset | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [pendingVideo, setPendingVideo] = useState<PickedVideoAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
@@ -211,6 +230,7 @@ export default function BoardScreen() {
   const lastOpenedGameRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
   const lastOpenedPdfRef = useRef<string | null>(null);
+  const lastOpenedVideoRef = useRef<string | null>(null);
   const lastOpenedControlRef = useRef<string | null>(null);
 
   const activeAddModalRef = useRef<Exclude<AddControlItem, 'all'> | null>(null);
@@ -267,6 +287,13 @@ export default function BoardScreen() {
         setPendingPdf(action.pdfAsset ?? null);
         setIsPdfModalOpen(true);
         break;
+      case 'video':
+        activeAddModalRef.current = null;
+        router.replace({
+          pathname: '/add',
+          params: { controlItem: 'video', controlToken: action.token ?? Date.now().toString() },
+        });
+        break;
     }
   }, []);
 
@@ -286,6 +313,7 @@ export default function BoardScreen() {
       setIsGameModalOpen(false);
       setIsImageModalOpen(false);
       setIsPdfModalOpen(false);
+      setIsVideoModalOpen(false);
     },
     [openControlAction]
   );
@@ -330,6 +358,10 @@ export default function BoardScreen() {
       case 'pdf':
         setIsPdfModalOpen(false);
         setPendingPdf(null);
+        break;
+      case 'video':
+        setIsVideoModalOpen(false);
+        setPendingVideo(null);
         break;
     }
   }, []);
@@ -409,6 +441,19 @@ export default function BoardScreen() {
       });
     }
   }, [newImageUri, newImageFileName, newImageMimeType, newImageTimestamp, requestControlAction]);
+
+  useEffect(() => {
+    const token = newVideoTimestamp || newVideoUri;
+    if (!newVideoUri || !token || token === lastOpenedVideoRef.current) return;
+    lastOpenedVideoRef.current = token;
+    activeAddModalRef.current = 'video';
+    setPendingVideo({
+      uri: newVideoUri,
+      fileName: newVideoFileName,
+      fileSize: Number(newVideoFileSize) || undefined,
+    });
+    setIsVideoModalOpen(true);
+  }, [newVideoUri, newVideoFileName, newVideoFileSize, newVideoTimestamp]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -825,6 +870,13 @@ export default function BoardScreen() {
         visible={isPdfModalOpen}
         pdfAsset={pendingPdf}
         onClose={() => closeAddModal('pdf')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewVideoModal
+        key={pendingVideo?.uri ?? 'empty-video'}
+        visible={isVideoModalOpen}
+        videoAsset={pendingVideo}
+        onClose={() => closeAddModal('video')}
         onDismiss={handleAddModalDismiss}
       />
 

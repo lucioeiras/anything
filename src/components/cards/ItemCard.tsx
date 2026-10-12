@@ -19,6 +19,7 @@ import { RedditCard } from './RedditCard';
 import { TweetCard } from './TweetCard';
 import { TikTokCard } from './TikTokCard';
 import { YouTubeCard } from './YouTubeCard';
+import { VideoCard } from './VideoCard';
 
 type ItemCardProps = {
   item: LibraryItem;
@@ -69,6 +70,8 @@ export const ItemCard = memo(function ItemCard({
         return (
           <PdfCard url={item.pdf} title={item.title} hideTitleAndAuthor={hideTitleAndAuthor} />
         );
+      case 'video':
+        return <VideoCard uri={item.video} title={hideTitleAndAuthor ? undefined : item.title} />;
       case 'link':
         return (
           <LinkCard

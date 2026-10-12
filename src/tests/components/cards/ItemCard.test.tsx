@@ -4,6 +4,13 @@ import { ItemCard } from '@/components/cards/ItemCard';
 import type { LibraryItem } from '@/lib/library/types';
 
 jest.mock('@/components/PdfPreview', () => ({ PdfPreview: () => null }));
+jest.mock('@/components/cards/VideoCard', () => ({
+  VideoCard: ({ title }: { title?: string }) => {
+    const mockReact = jest.requireActual('react');
+    const { Text: MockText } = jest.requireActual('react-native');
+    return title ? mockReact.createElement(MockText, null, title) : null;
+  },
+}));
 
 const base = {
   version: 1 as const,
@@ -16,6 +23,10 @@ const examples: [LibraryItem, string][] = [
   [{ ...base, id: 'quote', type: 'quote', text: 'A quote', title: 'Quote source' }, 'A quote'],
   [{ ...base, id: 'image', type: 'image', image: 'image.jpg', title: 'An image' }, 'An image'],
   [{ ...base, id: 'pdf', type: 'pdf', pdf: 'files/report.pdf', title: 'A report' }, 'A report'],
+  [
+    { ...base, id: 'video', type: 'video', video: 'videos/clip.mp4', title: 'A local video' },
+    'A local video',
+  ],
   [
     {
       ...base,

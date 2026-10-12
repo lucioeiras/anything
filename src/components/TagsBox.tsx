@@ -22,6 +22,7 @@ import {
   TiktokLogoIcon,
   XIcon,
   YoutubeLogoIcon,
+  VideoCameraIcon,
 } from 'phosphor-react-native';
 import { useRef, useState } from 'react';
 import {
@@ -42,6 +43,7 @@ const cardTypeTags = {
   quote: { label: 'Quote', icon: QuotesIcon },
   image: { label: 'Image', icon: ImageIcon },
   pdf: { label: 'PDF', icon: FilePdfIcon },
+  video: { label: 'Video', icon: VideoCameraIcon },
   link: { label: 'Link', icon: LinkIcon },
   article: { label: 'Article', icon: ArticleIcon },
   youtube: { label: 'YouTube', icon: YoutubeLogoIcon },

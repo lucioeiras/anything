@@ -6,7 +6,7 @@ import {
   FilePdfIcon,
   FilmSlateIcon,
   GameControllerIcon,
-  ImageSquareIcon,
+  ImagesSquareIcon,
   LinkIcon,
   MusicNotesIcon,
   NotePencilIcon,
@@ -20,25 +20,18 @@ export default function AddElementScreen() {
     controlItem?: string;
     controlToken?: string;
   }>();
-  const [isPicking, setIsPicking] = useState(false);
-
+  const [isPickingMedia, setIsPickingMedia] = useState(false);
+  const [isPickingPdf, setIsPickingPdf] = useState(false);
   const handlePickImage = async () => {
-    if (isPicking) return;
-
+    if (isPickingMedia) return;
     try {
-      setIsPicking(true);
+      setIsPickingMedia(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: false,
         quality: 1,
       });
-
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-
+      if (result.canceled || !result.assets?.length) return;
       const asset = result.assets[0];
-
       router.replace({
         pathname: '/board',
         params: {
@@ -48,15 +41,50 @@ export default function AddElementScreen() {
           newImageTimestamp: Date.now().toString(),
         },
       });
-    } catch (e) {
-      console.error('Failed to pick image:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to pick image');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to pick image');
     } finally {
-      setIsPicking(false);
+      setIsPickingMedia(false);
     }
   };
-
-  const [isPickingPdf, setIsPickingPdf] = useState(false);
+  const handlePickMedia = async () => {
+    if (isPickingMedia) return;
+    try {
+      setIsPickingMedia(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: false,
+        quality: 1,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      const asset = result.assets[0];
+      if (asset.type === 'video') {
+        router.replace({
+          pathname: '/board',
+          params: {
+            newVideoUri: asset.uri,
+            newVideoFileName: asset.fileName ?? '',
+            newVideoFileSize: asset.fileSize?.toString() ?? '',
+            newVideoTimestamp: Date.now().toString(),
+          },
+        });
+      } else {
+        router.replace({
+          pathname: '/board',
+          params: {
+            newImageUri: asset.uri,
+            newImageFileName: asset.fileName ?? '',
+            newImageMimeType: asset.mimeType ?? '',
+            newImageTimestamp: Date.now().toString(),
+          },
+        });
+      }
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to pick media');
+    } finally {
+      setIsPickingMedia(false);
+    }
+  };
 
   const handlePickPdf = async () => {
     if (isPickingPdf) return;
@@ -146,6 +174,9 @@ export default function AddElementScreen() {
         case 'image':
           void handlePickImage();
           break;
+        case 'video':
+          void handlePickMedia();
+          break;
         case 'book':
           handleOpenBook();
           break;
@@ -220,16 +251,16 @@ export default function AddElementScreen() {
             </Pressable>
 
             <Pressable
-              onPress={handlePickImage}
-              disabled={isPicking}
+              onPress={handlePickMedia}
+              disabled={isPickingMedia}
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
-              {isPicking ? (
+              {isPickingMedia ? (
                 <ActivityIndicator size={24} color="#fff" />
               ) : (
-                <ImageSquareIcon size={24} color="#fff" weight="duotone" />
+                <ImagesSquareIcon size={24} color="#fff" weight="duotone" />
               )}
-              <Text className="font-sans-semibold text-lg text-white">Image from gallery</Text>
+              <Text className="font-sans-semibold text-lg text-white">Media from gallery</Text>
             </Pressable>
           </View>
 

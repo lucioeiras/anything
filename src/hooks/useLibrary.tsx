@@ -10,6 +10,7 @@ import {
   addMovieItemToLibrary,
   addMusicItemToLibrary,
   addPdfToLibrary,
+  addVideoToLibrary,
   addTextItemToLibrary,
   deleteItemsFromLibrary,
   getFolderDisplayName,
@@ -28,6 +29,7 @@ import {
   updateItemInLibrary,
   type AddGameOptions,
   type AddImageOptions,
+  type AddVideoOptions,
   type AddMovieOptions,
   type AddPdfOptions,
   type DeletedItemBackup,
@@ -36,6 +38,7 @@ import {
   type LoadResult,
   type PickedImageAsset,
   type PickedPdfAsset,
+  type PickedVideoAsset,
   type SavedFolder,
 } from '@/lib/library/storage';
 import type {
@@ -47,6 +50,7 @@ import type {
   MusicItem,
   NoteItem,
   PdfItem,
+  VideoItem,
   QuoteItem,
 } from '@/lib/library/types';
 
@@ -68,6 +72,7 @@ export type LibraryContextValue = {
   removeRecentFolder: (id: string) => Promise<void>;
   addImage: (asset: PickedImageAsset, options?: AddImageOptions) => Promise<ImageItem>;
   addPdf: (asset: PickedPdfAsset, options?: AddPdfOptions) => Promise<PdfItem>;
+  addVideo: (asset: PickedVideoAsset, options?: AddVideoOptions) => Promise<VideoItem>;
   addTextItem: (
     text: string,
     title?: string,
@@ -358,6 +363,17 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addVideo = useCallback(
+    async (asset: PickedVideoAsset, options?: AddVideoOptions) => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      if (!source) setSource(targetSource);
+      const item = await addVideoToLibrary(targetSource, asset, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const addTextItem = useCallback(
     async (
       text: string,
@@ -604,6 +620,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     removeRecentFolder,
     addImage,
     addPdf,
+    addVideo,
     addTextItem,
     addLinkItem,
     addBookItem,

@@ -14,6 +14,7 @@ import {
 import {
   IMAGES_DIR,
   PDFS_DIR,
+  VIDEOS_DIR,
   SCHEMA_VERSION,
   type ArticleItem,
   type BookItem,
@@ -27,6 +28,7 @@ import {
   type NoteItem,
   type PdfItem,
   type PdfRef,
+  type VideoItem,
   type QuoteItem,
   type RedditItem,
   type TikTokItem,
@@ -445,6 +447,8 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
       return { ...item, image: r(item.image) };
     case 'pdf':
       return { ...item, pdf: resolvePdfRef(item.pdf, root) };
+    case 'video':
+      return { ...item, video: resolvePdfRef(item.video, root) };
     case 'link':
       return { ...item, favicon: r(item.favicon) };
     case 'article':
@@ -501,6 +505,73 @@ export function getImagesDirectory(source: LibrarySource): Directory {
 
 export function getPdfsDirectory(source: LibrarySource): Directory {
   return new Directory(getLibraryDirectory(source), PDFS_DIR);
+}
+
+export function getVideosDirectory(source: LibrarySource): Directory {
+  return new Directory(getLibraryDirectory(source), VIDEOS_DIR);
+}
+
+export type PickedVideoAsset = { uri: string; fileName?: string | null; fileSize?: number | null };
+
+export type AddVideoOptions = {
+  title?: string;
+  note?: string;
+  tags?: string[];
+  autoTags?: string[];
+};
+
+export async function addVideoToLibrary(
+  source: LibrarySource,
+  asset: PickedVideoAsset,
+  options?: AddVideoOptions
+): Promise<VideoItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) root.create({ intermediates: true, idempotent: true });
+  const dir = getVideosDirectory(source);
+  if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
+  const id = generateId();
+  const ext =
+    asset.fileName
+      ?.split('.')
+      .pop()
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]/g, '') || 'mp4';
+  const fileName = `${id}.${ext}`;
+  const destination = new File(dir, fileName);
+  const sourceFile = new File(asset.uri);
+  try {
+    await sourceFile.copy(destination, { overwrite: true });
+  } catch {
+    const buffer = await sourceFile.arrayBuffer();
+    destination.create({ intermediates: true, overwrite: true });
+    destination.write(new Uint8Array(buffer));
+  }
+  const now = new Date().toISOString();
+  const item: VideoItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'video',
+    video: `${VIDEOS_DIR}/${fileName}`,
+    ...(asset.fileName ? { originalFileName: asset.fileName } : {}),
+    ...(options?.title?.trim() || asset.fileName?.replace(/\.[^.]+$/, '')
+      ? { title: options?.title?.trim() || asset.fileName?.replace(/\.[^.]+$/, '') }
+      : {}),
+    ...(options?.note?.trim() ? { note: options.note.trim() } : {}),
+    ...(options?.tags?.filter(Boolean).length ? { tags: options.tags.filter(Boolean) } : {}),
+    ...(options?.autoTags?.filter(Boolean).length
+      ? { autoTags: options.autoTags.filter(Boolean) }
+      : {}),
+    ...(asset.fileSize ? { fileSize: asset.fileSize } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const jsonFile = new File(root, `${id}.json`);
+  jsonFile.create({ intermediates: true, overwrite: true });
+  const jsonText = JSON.stringify(item, null, 2);
+  jsonFile.write(jsonText);
+  const mtime = jsonFile.lastModified ?? Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
+  return item;
 }
 
 export function generateId(): string {
@@ -1235,6 +1306,7 @@ export type DeletedItemBackup = {
   jsonText: string;
   images?: DeletedImageBackup[];
   pdfs?: DeletedPdfBackup[];
+  videos?: { fileName: string; bytes: Uint8Array }[];
 };
 
 function extractImageRefsFromItem(item: unknown): string[] {
@@ -1447,7 +1519,10 @@ export async function deleteItemsFromLibrary(
 
   const pdfsDir = getPdfsDirectory(source);
   const availablePdfFiles: File[] = [];
+  const videosDir = getVideosDirectory(source);
   const pdfFileByName = new Map<string, File>();
+  const availableVideoFiles: File[] = [];
+  const videoFileByName = new Map<string, File>();
 
   if (pdfsDir.exists) {
     try {
@@ -1463,9 +1538,23 @@ export async function deleteItemsFromLibrary(
     }
   }
 
+  if (videosDir.exists) {
+    try {
+      for (const entry of videosDir.list()) {
+        if (entry instanceof File && !entry.name.startsWith('.')) {
+          availableVideoFiles.push(entry);
+          videoFileByName.set(entry.name, entry);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to list videos directory:', e);
+    }
+  }
+
   // Collect file names retained by remaining items so we never delete a file used by another card
   const retainedImageFileNames = new Set<string>();
   const retainedPdfFileNames = new Set<string>();
+  const retainedVideoFileNames = new Set<string>();
   for (const item of toRetain) {
     const fileNames = getItemImageFileNames(item.parsed, availableImageFiles, imagesDir.uri);
     for (const name of fileNames) {
@@ -1475,11 +1564,16 @@ export async function deleteItemsFromLibrary(
     for (const name of pdfNames) {
       retainedPdfFileNames.add(name);
     }
+    const videoRef = typeof item.parsed.video === 'string' ? item.parsed.video : '';
+    const videoName = decodeURIComponent(videoRef.split('/').pop() ?? '');
+    if (videoName && availableVideoFiles.some((file) => file.name === videoName))
+      retainedVideoFileNames.add(videoName);
   }
 
   // Track already deleted/backed-up files to handle multiple cards referencing the same file
   const processedImages = new Set<string>();
   const processedPdfs = new Set<string>();
+  const processedVideos = new Set<string>();
 
   for (const item of toDelete) {
     const itemImageFileNames = getItemImageFileNames(
@@ -1557,6 +1651,29 @@ export async function deleteItemsFromLibrary(
       }
     }
 
+    const videoRef = typeof item.parsed.video === 'string' ? item.parsed.video : '';
+    const videoName = decodeURIComponent(videoRef.split('/').pop() ?? '');
+    const videoBackups: { fileName: string; bytes: Uint8Array }[] = [];
+    const videoFile = videoFileByName.get(videoName);
+    if (
+      videoFile &&
+      !retainedVideoFileNames.has(videoName) &&
+      videoFile.exists &&
+      !processedVideos.has(videoName)
+    ) {
+      try {
+        videoBackups.push({ fileName: videoName, bytes: await videoFile.bytes() });
+      } catch {
+        /* keep deletion usable if backup read fails */
+      }
+      try {
+        videoFile.delete();
+      } catch (e) {
+        console.warn(`Failed to delete video file ${videoName}:`, e);
+      }
+      processedVideos.add(videoName);
+    }
+
     // Delete the card's JSON file
     try {
       item.file.delete();
@@ -1569,6 +1686,7 @@ export async function deleteItemsFromLibrary(
       jsonText: item.text,
       ...(itemImageBackups.length > 0 ? { images: itemImageBackups } : {}),
       ...(itemPdfBackups.length > 0 ? { pdfs: itemPdfBackups } : {}),
+      ...(videoBackups.length > 0 ? { videos: videoBackups } : {}),
     });
   }
 
@@ -1594,6 +1712,7 @@ export async function restoreItemsToLibrary(
 
   const imagesDir = getImagesDirectory(source);
   const pdfsDir = getPdfsDirectory(source);
+  const videosDir = getVideosDirectory(source);
 
   for (const backup of backups) {
     try {
@@ -1649,6 +1768,15 @@ export async function restoreItemsToLibrary(
           } catch (pdfErr) {
             console.error(`Failed to restore pdf ${pdf.fileName}:`, pdfErr);
           }
+        }
+      }
+
+      if (backup.videos?.length) {
+        if (!videosDir.exists) videosDir.create({ intermediates: true, idempotent: true });
+        for (const video of backup.videos) {
+          const restored = new File(videosDir, video.fileName);
+          if (!restored.exists) restored.create({ intermediates: true, overwrite: true });
+          restored.write(video.bytes);
         }
       }
     } catch (e) {

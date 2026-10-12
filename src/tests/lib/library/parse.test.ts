@@ -17,6 +17,7 @@ describe('parseItem', () => {
       quote: { text: 'text' },
       image: { image: 'image.jpg' },
       pdf: { pdf: 'file.pdf' },
+      video: { video: 'videos/clip.mp4' },
       link: { url: 'url', siteTitle: 'siteTitle', favicon: 'favicon' },
       article: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
       youtube: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
