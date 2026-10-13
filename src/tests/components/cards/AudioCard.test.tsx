@@ -36,4 +36,15 @@ describe('AudioCard', () => {
     expect(mockPlayer.setPlaybackRate).toHaveBeenLastCalledWith(1.25);
     expect(mockPlayer.play).toHaveBeenCalledTimes(1);
   });
+
+  it('places pinned playback controls below the waveform and centered', async () => {
+    const { getByTestId, getByLabelText } = await render(
+      <AudioCard uri="file:///audio.m4a" compactWaveform stackedControls />
+    );
+
+    expect(getByTestId('audio-stacked-controls').props.className).toContain('items-center');
+    expect(getByTestId('audio-playback-button-wrapper').props.className).toContain('items-center');
+    expect(getByLabelText('Play audio')).toBeTruthy();
+    expect(getByTestId('audio-waveform')).toBeTruthy();
+  });
 });

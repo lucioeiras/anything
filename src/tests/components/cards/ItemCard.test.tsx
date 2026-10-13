@@ -171,6 +171,41 @@ describe('ItemCard', () => {
     expect(getByTestId('item-card-fixed-height').props.style).toMatchObject({ height: 100 });
   });
 
+  it.each([
+    ['article', 'article-thumbnail'],
+    ['youtube', 'youtube-thumbnail-container'],
+    ['tiktok', 'video-thumbnail-container'],
+  ] as const)(
+    '%s pinned preview splits its height evenly between thumbnail and title',
+    async (type, thumbnailTestId) => {
+      const item = examples.find(([candidate]) => candidate.type === type)?.[0];
+      if (!item) throw new Error(`Missing ${type} test item`);
+
+      const { getByTestId } = await render(<ItemCard item={item} fixedHeight={100} />);
+      expect(getByTestId(thumbnailTestId).props.style).toMatchObject({ height: 50 });
+      expect(getByTestId('pinned-title-container').props.style).toMatchObject({ height: 50 });
+    }
+  );
+
+  it('keeps game covers square', async () => {
+    const game = examples.find(([item]) => item.type === 'game')?.[0];
+    if (!game) throw new Error('Missing game test item');
+
+    const { getByTestId } = await render(<ItemCard item={game} />);
+    expect(getByTestId('game-cover-container').props.style).toMatchObject({ aspectRatio: 1 });
+  });
+
+  it('allows the music vinyl shadow to extend past normal and pinned card content', async () => {
+    const music = examples.find(([item]) => item.type === 'music')?.[0];
+    if (!music) throw new Error('Missing music test item');
+
+    const boardCard = await render(<ItemCard item={music} />);
+    expect(boardCard.getByTestId('item-card-content').props.style.overflow).toBe('visible');
+
+    const pinnedCard = await render(<ItemCard item={music} fixedHeight={100} />);
+    expect(pinnedCard.getByTestId('item-card-content').props.style.overflow).toBe('visible');
+  });
+
   it('keeps author identity and text while hiding media for pinned X and Reddit cards', async () => {
     const tweet: LibraryItem = {
       ...base,

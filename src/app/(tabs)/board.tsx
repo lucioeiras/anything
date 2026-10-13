@@ -1,7 +1,8 @@
-import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
+import { FlashList, type FlashListRef, type ListRenderItemInfo } from '@shopify/flash-list';
 import { BlurTargetView } from 'expo-blur';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { PlusIcon, WarningIcon } from 'phosphor-react-native';
+import Sortable from 'react-native-sortables';
 import {
   createContext,
   forwardRef,
@@ -37,7 +38,7 @@ import { CARD_TYPE_LABELS, matchesAddedDay, parseDayKey } from '@/lib/library/ac
 import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
-import { getPinnedItems, MAX_PINNED_ITEMS } from '@/lib/library/pinned';
+import { getPinnedItems, MAX_PINNED_ITEMS, movePinnedItem } from '@/lib/library/pinned';
 import type {
   DeletedItemBackup,
   PickedAudioAsset,
@@ -81,6 +82,7 @@ const BoardGridContext = createContext<BoardGridContextType>({
 });
 
 export default function BoardScreen() {
+  const boardListRef = useRef<FlashListRef<LibraryItem>>(null);
   const {
     state,
     refresh,
@@ -94,6 +96,7 @@ export default function BoardScreen() {
     setSearchQuery,
     clearSearchTag,
     updateItem,
+    updateItems,
     setItemsPinned,
   } = useLibrary();
   const searchBlurTargetRef = useRef<View>(null);
@@ -176,6 +179,7 @@ export default function BoardScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
+  const [optimisticPinnedOrder, setOptimisticPinnedOrder] = useState<string[] | null>(null);
   const [restoreBackup, setRestoreBackup] = useState<DeletedItemBackup[] | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<{
@@ -625,10 +629,19 @@ export default function BoardScreen() {
     [state, selectedCardIds]
   );
 
-  const pinnedItems = useMemo(
+  const persistedPinnedItems = useMemo(
     () => (state.status === 'ready' ? getPinnedItems(state.result.items) : []),
     [state]
   );
+  const pinnedItems = useMemo(() => {
+    if (!optimisticPinnedOrder) return persistedPinnedItems;
+    const itemsById = new Map(persistedPinnedItems.map((item) => [item.id, item]));
+    const reordered = optimisticPinnedOrder
+      .map((itemId) => itemsById.get(itemId))
+      .filter((item): item is LibraryItem => Boolean(item));
+    const includedIds = new Set(reordered.map((item) => item.id));
+    return [...reordered, ...persistedPinnedItems.filter((item) => !includedIds.has(item.id))];
+  }, [optimisticPinnedOrder, persistedPinnedItems]);
 
   const selectedPinnedCount = selectedItems.filter((item) => item.pinnedAt).length;
   const selectedUnpinnedCount = selectedItems.length - selectedPinnedCount;
@@ -648,13 +661,57 @@ export default function BoardScreen() {
         pinActionLabel === 'Pin selected cards'
       );
       if (!succeeded) Alert.alert('Could not update pinned cards');
+      else if (pinActionLabel === 'Pin selected cards') {
+        handleCancelEdition();
+        boardListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }
     } catch (error) {
       Alert.alert(
         'Error',
         error instanceof Error ? error.message : 'Could not update pinned cards'
       );
     }
-  }, [pinActionLabel, selectedCardIds, setItemsPinned]);
+  }, [handleCancelEdition, pinActionLabel, selectedCardIds, setItemsPinned]);
+
+  const handleReorderPinnedItem = useCallback(
+    async (itemId: string, targetIndex: number) => {
+      const reordered = movePinnedItem(pinnedItems, itemId, targetIndex);
+      if (reordered.every((item, index) => item.id === pinnedItems[index]?.id)) return;
+      setOptimisticPinnedOrder(reordered.map((item) => item.id));
+      const firstPinnedAt = Date.now();
+      try {
+        await updateItems(
+          reordered.map((item, index) => ({
+            itemId: item.id,
+            updates: { pinnedAt: new Date(firstPinnedAt + index).toISOString() },
+          }))
+        );
+      } catch (error) {
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Could not reorder pinned cards'
+        );
+      } finally {
+        setOptimisticPinnedOrder(null);
+      }
+    },
+    [pinnedItems, updateItems]
+  );
+
+  const handleRemovePinnedItem = useCallback(
+    async (itemId: string) => {
+      try {
+        const succeeded = await setItemsPinned([itemId], false);
+        if (!succeeded) Alert.alert('Could not remove pinned card');
+      } catch (error) {
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Could not remove pinned card'
+        );
+      }
+    },
+    [setItemsPinned]
+  );
 
   const reportItemCol = useCallback(
     (index: number, col: number) => {
@@ -747,16 +804,19 @@ export default function BoardScreen() {
     const hasDownloads = state.result.pendingDownloads > 0;
 
     return (
-      <View className="pb-2">
+      <View className="pb-2" style={{ zIndex: 100, elevation: 100 }}>
+        <BoardTypeFilters selectedType={activeType} onSelect={handleTypeFilter} />
+
         {!hasActiveFilter && pinnedItems.length > 0 && (
           <BoardPinnedItems
             items={pinnedItems}
             isEditing={isEditing}
             onPress={handleCardPress}
-            onLongPress={handleCardLongPress}
+            onReorder={handleReorderPinnedItem}
+            onRemove={handleRemovePinnedItem}
           />
         )}
-        <BoardTypeFilters selectedType={activeType} onSelect={handleTypeFilter} />
+
         {hasIssues && (
           <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
             <WarningIcon size={16} color="#fbbf24" weight="fill" />
@@ -782,7 +842,8 @@ export default function BoardScreen() {
     pinnedItems,
     isEditing,
     handleCardPress,
-    handleCardLongPress,
+    handleReorderPinnedItem,
+    handleRemovePinnedItem,
   ]);
 
   const renderEmpty = useCallback(() => {
@@ -950,85 +1011,92 @@ export default function BoardScreen() {
   );
 
   return (
-    <View className="flex-1 bg-zinc-950">
-      {state.status === 'loading' && (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#a1a1aa" />
-        </View>
-      )}
+    <View style={{ flex: 1 }} collapsable={false}>
+      <Sortable.PortalProvider>
+        <View className="flex-1 bg-zinc-950">
+          {state.status === 'loading' && (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator color="#a1a1aa" />
+            </View>
+          )}
 
-      {state.status === 'error' && (
-        <Centered title="Couldn't open the library" message={state.error}>
-          <Pressable
-            onPress={goBack}
-            className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
-          >
-            <Text className="font-sans-medium text-sm text-zinc-200">Choose another folder</Text>
-          </Pressable>
-        </Centered>
-      )}
+          {state.status === 'error' && (
+            <Centered title="Couldn't open the library" message={state.error}>
+              <Pressable
+                onPress={goBack}
+                className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
+              >
+                <Text className="font-sans-medium text-sm text-zinc-200">
+                  Choose another folder
+                </Text>
+              </Pressable>
+            </Centered>
+          )}
 
-      {state.status === 'ready' && (
-        <View className="flex-1">
-          <View className="flex-1">
-            <BlurTargetView ref={searchBlurTargetRef} style={{ flex: 1 }}>
-              <BoardGridContext.Provider value={gridContextValue}>
-                <FlashList<LibraryItem>
-                  data={displayedItems}
-                  renderItem={renderItem}
-                  keyExtractor={keyExtractor}
-                  numColumns={2}
-                  masonry
-                  optimizeItemArrangement
-                  extraData={extraData}
-                  CellRendererComponent={CellRenderer}
-                  contentContainerStyle={styles.contentContainer}
-                  showsVerticalScrollIndicator={false}
-                  keyboardDismissMode="on-drag"
-                  keyboardShouldPersistTaps="handled"
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={refreshing}
-                      onRefresh={refresh}
-                      tintColor="#a1a1aa"
+          {state.status === 'ready' && (
+            <View className="flex-1">
+              <View className="flex-1">
+                <BlurTargetView ref={searchBlurTargetRef} style={{ flex: 1 }}>
+                  <BoardGridContext.Provider value={gridContextValue}>
+                    <FlashList<LibraryItem>
+                      ref={boardListRef}
+                      data={displayedItems}
+                      renderItem={renderItem}
+                      keyExtractor={keyExtractor}
+                      numColumns={2}
+                      masonry
+                      optimizeItemArrangement
+                      extraData={extraData}
+                      CellRendererComponent={CellRenderer}
+                      contentContainerStyle={styles.contentContainer}
+                      showsVerticalScrollIndicator={false}
+                      keyboardDismissMode="on-drag"
+                      keyboardShouldPersistTaps="handled"
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={refreshing}
+                          onRefresh={refresh}
+                          tintColor="#a1a1aa"
+                        />
+                      }
+                      ListHeaderComponent={renderHeader}
+                      ListEmptyComponent={renderEmpty}
                     />
-                  }
-                  ListHeaderComponent={renderHeader}
-                  ListEmptyComponent={renderEmpty}
-                />
-              </BoardGridContext.Provider>
-            </BlurTargetView>
-          </View>
-        </View>
-      )}
+                  </BoardGridContext.Provider>
+                </BlurTargetView>
+              </View>
+            </View>
+          )}
 
-      <BoardAddModals
-        isNoteDrawerOpen={isNoteDrawerOpen}
-        isLinkModalOpen={isLinkModalOpen}
-        isBookModalOpen={isBookModalOpen}
-        isMusicModalOpen={isMusicModalOpen}
-        isMovieModalOpen={isMovieModalOpen}
-        isGameModalOpen={isGameModalOpen}
-        isEntertainmentModalOpen={isEntertainmentModalOpen}
-        isImageModalOpen={isImageModalOpen}
-        isPdfModalOpen={isPdfModalOpen}
-        isVideoModalOpen={isVideoModalOpen}
-        isAudioModalOpen={isAudioModalOpen}
-        isFolderPickerOpen={isFolderPickerOpen}
-        pendingImage={pendingImage}
-        pendingPdf={pendingPdf}
-        pendingVideo={pendingVideo}
-        pendingAudio={pendingAudio}
-        selectedItems={selectedItems}
-        onClose={closeAddModal}
-        onDismiss={handleAddModalDismiss}
-        onCloseEntertainment={() => {
-          if (!queuedControlActionRef.current) activeAddModalRef.current = null;
-          setIsEntertainmentModalOpen(false);
-        }}
-        onCloseFolderPicker={() => setIsFolderPickerOpen(false)}
-        onAddedToFolder={handleCancelEdition}
-      />
+          <BoardAddModals
+            isNoteDrawerOpen={isNoteDrawerOpen}
+            isLinkModalOpen={isLinkModalOpen}
+            isBookModalOpen={isBookModalOpen}
+            isMusicModalOpen={isMusicModalOpen}
+            isMovieModalOpen={isMovieModalOpen}
+            isGameModalOpen={isGameModalOpen}
+            isEntertainmentModalOpen={isEntertainmentModalOpen}
+            isImageModalOpen={isImageModalOpen}
+            isPdfModalOpen={isPdfModalOpen}
+            isVideoModalOpen={isVideoModalOpen}
+            isAudioModalOpen={isAudioModalOpen}
+            isFolderPickerOpen={isFolderPickerOpen}
+            pendingImage={pendingImage}
+            pendingPdf={pendingPdf}
+            pendingVideo={pendingVideo}
+            pendingAudio={pendingAudio}
+            selectedItems={selectedItems}
+            onClose={closeAddModal}
+            onDismiss={handleAddModalDismiss}
+            onCloseEntertainment={() => {
+              if (!queuedControlActionRef.current) activeAddModalRef.current = null;
+              setIsEntertainmentModalOpen(false);
+            }}
+            onCloseFolderPicker={() => setIsFolderPickerOpen(false)}
+            onAddedToFolder={handleCancelEdition}
+          />
+        </View>
+      </Sortable.PortalProvider>
     </View>
   );
 }

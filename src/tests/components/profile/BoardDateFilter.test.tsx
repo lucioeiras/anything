@@ -1,8 +1,8 @@
+import BoardScreen from '@/app/(tabs)/board';
+import type { LibraryItem } from '@/lib/library/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useEffect as mockUseEffect } from 'react';
 import { Pressable as MockPressable, Text as MockText, View as MockView } from 'react-native';
-import BoardScreen from '@/app/(tabs)/board';
-import type { LibraryItem } from '@/lib/library/types';
 
 let mockParams: Record<string, string> = {};
 const mockSetParams = jest.fn();
@@ -11,6 +11,8 @@ let mockQuery = '';
 let mockTag: string | null = null;
 const mockSetQuery = jest.fn();
 const mockClearTag = jest.fn();
+const mockSetItemsPinned = jest.fn();
+const mockScrollToOffset = jest.fn();
 const mockItems: LibraryItem[] = [
   {
     id: 'today',
@@ -44,6 +46,7 @@ jest.mock('@/hooks/useLibrary', () => ({
     searchType: null,
     setSearchQuery: mockSetQuery,
     clearSearchTag: mockClearTag,
+    setItemsPinned: (...args: unknown[]) => mockSetItemsPinned(...args),
     searchItems: ({ type, searchQuery }: { type?: string; searchQuery?: string }) =>
       mockItems.filter(
         (item) =>
@@ -55,22 +58,52 @@ jest.mock('@/hooks/useLibrary', () => ({
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
+jest.mock('react-native-reanimated', () => ({
+  useAnimatedRef: () => ({ current: null }),
+}));
+jest.mock('react-native-sortables', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  const { Pressable: TestPressable, View: TestView } =
+    jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    __esModule: true,
+    default: {
+      PortalProvider: ({ children }: { children: React.ReactNode }) => children,
+      Flex: ({ children }: { children: React.ReactNode }) => <TestView>{children}</TestView>,
+      Touchable: ({ children, onTap }: { children: React.ReactNode; onTap?: () => void }) => (
+        <TestPressable onPress={onTap}>{children}</TestPressable>
+      ),
+    },
+  };
+});
 jest.mock('@/components/menus/FloatingTabOverlay', () => ({
   useFloatingTabOverlay: () => mockOverlay,
 }));
 jest.mock('@shopify/flash-list', () => ({
-  FlashList: ({ data, renderItem, ListHeaderComponent, ListEmptyComponent }: any) => (
-    <MockView>
-      <ListHeaderComponent />
-      {data.length ? (
-        data.map((item: LibraryItem) => (
-          <MockView key={item.id}>{renderItem({ item, index: 0 })}</MockView>
-        ))
-      ) : (
-        <ListEmptyComponent />
-      )}
-    </MockView>
-  ),
+  FlashList: (() => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    const MockFlashList = React.forwardRef(
+      ({ data, renderItem, ListHeaderComponent, ListEmptyComponent }: any, ref: any) => {
+        React.useImperativeHandle(ref, () => ({
+          scrollToOffset: (...args: unknown[]) => mockScrollToOffset(...args),
+        }));
+        return (
+          <MockView>
+            <ListHeaderComponent />
+            {data.length ? (
+              data.map((item: LibraryItem) => (
+                <MockView key={item.id}>{renderItem({ item, index: 0 })}</MockView>
+              ))
+            ) : (
+              <ListEmptyComponent />
+            )}
+          </MockView>
+        );
+      }
+    );
+    MockFlashList.displayName = 'MockFlashList';
+    return MockFlashList;
+  })(),
 }));
 jest.mock('@/components/cards/ItemCard', () => ({
   ItemCard: ({
@@ -95,8 +128,27 @@ jest.mock('@/components/cards/ItemCard', () => ({
   ),
 }));
 jest.mock('@/components/menus/CardSelectionBar', () => ({
-  CardSelectionBar: ({ visible, selectedCount }: { visible: boolean; selectedCount: number }) =>
-    visible ? <MockText>{`${selectedCount} selected`}</MockText> : null,
+  CardSelectionBar: ({
+    visible,
+    selectedCount,
+    pinActionLabel,
+    onTogglePin,
+  }: {
+    visible: boolean;
+    selectedCount: number;
+    pinActionLabel?: string;
+    onTogglePin?: () => void;
+  }) =>
+    visible ? (
+      <>
+        <MockText>{`${selectedCount} selected`}</MockText>
+        {pinActionLabel ? (
+          <MockPressable testID="pin-selected-cards" onPress={onTogglePin}>
+            <MockText>{pinActionLabel}</MockText>
+          </MockPressable>
+        ) : null}
+      </>
+    ) : null,
 }));
 jest.mock('@/components/menus/RestoreToast', () => ({ RestoreToast: () => null }));
 jest.mock('@/components/modals/AddToFolderModal', () => ({ AddToFolderModal: () => null }));
@@ -119,6 +171,7 @@ beforeEach(() => {
   mockParams = { addedOn: '2026-10-13', activityToken: '1' };
   mockQuery = '';
   mockTag = null;
+  mockSetItemsPinned.mockResolvedValue(true);
 });
 it('filters loaded cards by the selected day', async () => {
   await render(<BoardScreen />);
@@ -182,4 +235,18 @@ it('keeps the pinned row visible but excludes it from card selection', async () 
   await fireEvent(pinnedCardWhileSelecting, 'longPress');
   await fireEvent.press(pinnedCardWhileSelecting);
   expect(screen.getByTestId('card-today-selected')).toBeTruthy();
+});
+
+it('exits selection and scrolls to the top after pinning selected cards', async () => {
+  mockParams = {};
+  await render(<BoardScreen />);
+
+  await fireEvent(screen.getByTestId('card-yesterday-not-selected'), 'longPress');
+  const overlayView = await render(mockOverlay.mock.calls.at(-1)?.[0]);
+  await fireEvent.press(overlayView.getByTestId('pin-selected-cards'));
+
+  expect(mockSetItemsPinned).toHaveBeenCalledWith(['yesterday'], true);
+  expect(mockScrollToOffset).toHaveBeenCalledWith({ offset: 0, animated: true });
+  await overlayView.rerender(mockOverlay.mock.calls.at(-1)?.[0]);
+  expect(overlayView.queryByTestId('pin-selected-cards')).toBeNull();
 });

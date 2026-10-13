@@ -10,22 +10,30 @@ type MusicCardProps = {
   artist: string;
   cover: string;
   hideTitleAndAuthor?: boolean;
+  subtleVinylShadow?: boolean;
 };
 
-export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: MusicCardProps) => {
+export const MusicCard = ({
+  title,
+  artist,
+  cover,
+  hideTitleAndAuthor = false,
+  subtleVinylShadow = false,
+}: MusicCardProps) => {
   const [containerWidth, setContainerWidth] = useState(() =>
     Math.round((Dimensions.get('window').width - 32) / 2)
   );
 
   const sleeveSize = Math.max(100, Math.round(containerWidth * 0.78));
   const discSize = Math.max(90, Math.round(sleeveSize * 0.94));
-  const discLeft = Math.max(0, containerWidth - discSize - 12);
+  const discLeft = Math.max(0, containerWidth - discSize);
   const discTop = Math.round((sleeveSize - discSize) / 2);
 
   return (
     <View className="w-full items-center">
       {/* Vinyl Peek Container (Album jacket on left, vinyl sliding out to the right) */}
       <View
+        testID="music-showcase-container"
         onLayout={(e) => {
           const w = e.nativeEvent.layout.width;
           if (w > 0 && Math.abs(w - containerWidth) > 2) {
@@ -36,6 +44,7 @@ export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: 
       >
         {/* Vinyl Record (Layered behind jacket, emerging to the right) */}
         <View
+          testID="music-vinyl-wrapper"
           style={[
             styles.discWrapper,
             {
@@ -44,17 +53,22 @@ export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: 
             },
           ]}
         >
-          <VinylRecord size={discSize} coverUri={cover} />
+          <VinylRecord
+            size={discSize}
+            coverUri={cover}
+            style={subtleVinylShadow ? styles.subtleVinylShadow : undefined}
+          />
         </View>
 
         {/* Album Jacket Sleeve (Layered in front on the left) */}
         <View
+          testID="music-album-sleeve"
           style={[
             styles.sleeve,
             {
               width: sleeveSize,
               height: sleeveSize,
-              left: 8,
+              left: 0,
               top: 0,
             },
           ]}
@@ -96,11 +110,18 @@ export const MusicCard = ({ title, artist, cover, hideTitleAndAuthor = false }: 
 };
 
 const styles = StyleSheet.create({
+  subtleVinylShadow: {
+    shadowColor: '#71717a',
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 0.55,
+    shadowRadius: 4,
+    elevation: 8,
+  },
   showcaseContainer: {
     width: '100%',
     position: 'relative',
-    backgroundColor: '#0c0c0e',
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    overflow: 'visible',
   },
   discWrapper: {
     position: 'absolute',

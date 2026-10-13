@@ -28,14 +28,17 @@ type ItemCardProps = {
   hideTitleAndAuthor?: boolean;
   showAudioPlaybackRate?: boolean;
   compactAudioWaveform?: boolean;
+  stackedAudioControls?: boolean;
   compactTikTokThumbnail?: boolean;
   compactMedia?: boolean;
   fixedHeight?: number;
+  fixedHeightBackgroundColor?: string;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
   onLongPress?: (item: LibraryItem) => void;
   onNoteTextChange?: (itemId: string, text: string) => void;
+  onPinnedAspectRatioChange?: (ratio: number) => void;
 };
 
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
@@ -45,14 +48,17 @@ export const ItemCard = memo(function ItemCard({
   hideTitleAndAuthor = false,
   showAudioPlaybackRate = false,
   compactAudioWaveform = false,
+  stackedAudioControls = false,
   compactTikTokThumbnail = false,
   compactMedia = false,
   fixedHeight,
+  fixedHeightBackgroundColor,
   isEditing = false,
   isSelected = false,
   onPress,
   onLongPress,
   onNoteTextChange,
+  onPinnedAspectRatioChange,
 }: ItemCardProps) {
   const isInteractiveTweet =
     item.type === 'tweet' &&
@@ -81,7 +87,13 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'image':
-        return <ImageCard url={item.image} title={hideTitleAndAuthor ? undefined : item.title} />;
+        return (
+          <ImageCard
+            url={item.image}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            onAspectRatioChange={onPinnedAspectRatioChange}
+          />
+        );
       case 'pdf':
         return (
           <PdfCard url={item.pdf} title={item.title} hideTitleAndAuthor={hideTitleAndAuthor} />
@@ -96,6 +108,7 @@ export const ItemCard = memo(function ItemCard({
             waveform={item.waveform}
             showPlaybackRate={showAudioPlaybackRate}
             compactWaveform={compactAudioWaveform}
+            stackedControls={stackedAudioControls}
           />
         );
       case 'link':
@@ -115,6 +128,7 @@ export const ItemCard = memo(function ItemCard({
             thumbnail={item.thumbnail}
             origin={item.origin}
             progressStatus={item.progressStatus}
+            compactHeight={fixedHeight}
           />
         );
       case 'youtube':
@@ -123,6 +137,7 @@ export const ItemCard = memo(function ItemCard({
             videoTitle={item.title}
             thumbnail={item.thumbnail}
             progressStatus={item.progressStatus}
+            compactHeight={fixedHeight}
           />
         );
       case 'tiktok':
@@ -131,6 +146,7 @@ export const ItemCard = memo(function ItemCard({
             videoTitle={item.title}
             thumbnail={item.thumbnail}
             compactThumbnail={compactTikTokThumbnail}
+            compactHeight={fixedHeight}
           />
         );
       case 'tweet':
@@ -177,6 +193,7 @@ export const ItemCard = memo(function ItemCard({
             artist={item.artist}
             cover={item.cover}
             hideTitleAndAuthor={hideTitleAndAuthor}
+            subtleVinylShadow={!fixedHeight}
           />
         );
       case 'movie':
@@ -190,6 +207,7 @@ export const ItemCard = memo(function ItemCard({
             genres={item.genres}
             runtime={item.runtime}
             progressStatus={item.progressStatus}
+            onAspectRatioChange={onPinnedAspectRatioChange}
           />
         );
       case 'game':
@@ -226,8 +244,14 @@ export const ItemCard = memo(function ItemCard({
       }
     >
       <View
-        className="w-full overflow-hidden"
-        style={fixedHeight ? { height: '100%', backgroundColor: '#18181b' } : undefined}
+        testID="item-card-content"
+        className={item.type === 'music' && !fixedHeight ? 'w-full' : 'w-full overflow-hidden'}
+        style={{
+          ...(fixedHeight
+            ? { height: '100%', backgroundColor: fixedHeightBackgroundColor ?? '#18181b' }
+            : {}),
+          overflow: item.type === 'music' ? 'visible' : 'hidden',
+        }}
       >
         {renderCardContent()}
       </View>

@@ -52,6 +52,7 @@ export function VinylRecord({ size, coverUri, isSpinning = false, style }: Vinyl
 
   return (
     <Animated.View
+      testID="vinyl-record"
       style={[
         styles.discContainer,
         {

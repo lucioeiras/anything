@@ -10,15 +10,27 @@ type TikTokCardProps = {
   videoTitle: string;
   thumbnail: string;
   compactThumbnail?: boolean;
+  compactHeight?: number;
 };
 
-export function TikTokCard({ videoTitle, thumbnail, compactThumbnail = false }: TikTokCardProps) {
+export function TikTokCard({
+  videoTitle,
+  thumbnail,
+  compactThumbnail = false,
+  compactHeight,
+}: TikTokCardProps) {
+  const compact = compactHeight !== undefined;
+
   return (
-    <View className="w-full">
+    <View className="w-full" style={compact ? { height: compactHeight } : undefined}>
       <View
         testID="video-thumbnail-container"
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: compactThumbnail ? 3 / 4 : 9 / 16 }}
+        style={
+          compact
+            ? { height: compactHeight / 2 }
+            : { aspectRatio: compactThumbnail ? 3 / 4 : 9 / 16 }
+        }
       >
         <ExpoImage
           source={{ uri: thumbnail }}
@@ -26,19 +38,32 @@ export function TikTokCard({ videoTitle, thumbnail, compactThumbnail = false }: 
           contentFit="cover"
         />
         <View className="absolute inset-0 bg-black/50 items-center justify-center">
-          <PlayIcon size={36} color="#FFFFFF" weight="fill" />
+          <PlayIcon size={compact ? 24 : 36} color="#FFFFFF" weight="fill" />
         </View>
       </View>
 
-      <View className="w-full p-5 gap-3 bg-cyan-950/30 rounded-b-xl">
-        <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
+      <View
+        testID={compact ? 'pinned-title-container' : undefined}
+        className={`w-full bg-cyan-950/30 rounded-b-xl ${compact ? 'justify-center px-3' : 'p-5 gap-3'}`}
+        style={compact ? { height: compactHeight / 2 } : undefined}
+      >
+        <Text
+          className={
+            compact
+              ? 'font-sans-medium text-lg leading-6 text-zinc-50'
+              : 'font-sans-medium text-lg leading-[1.6] text-zinc-50'
+          }
+          numberOfLines={compact ? 2 : 3}
+        >
           {decodeHTML(videoTitle)}
         </Text>
 
-        <View className="flex-row items-center gap-2 mt-2">
-          <TiktokLogoIcon size={14} color="#25F4EE" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-cyan-300">TikTok</Text>
-        </View>
+        {!compact && (
+          <View className="flex-row items-center gap-2 mt-2">
+            <TiktokLogoIcon size={14} color="#25F4EE" weight="fill" />
+            <Text className="font-sans-semibold text-sm text-cyan-300">TikTok</Text>
+          </View>
+        )}
       </View>
     </View>
   );

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { act, render, waitFor } from '@testing-library/react-native';
 import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
-import { loadLibrary, setRelatedItemsInLibrary } from '@/lib/library/storage';
+import { loadLibrary, setRelatedItemsInLibrary, updateItemInLibrary } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({}));
@@ -14,6 +14,7 @@ jest.mock('@/lib/library/storage', () => ({
   getLibraryDirectory: () => ({ exists: false }),
   getFolderDisplayName: () => 'Library',
   loadLibrary: jest.fn(),
+  updateItemInLibrary: jest.fn(),
   setRelatedItemsInLibrary: jest.fn(),
 }));
 const a: LibraryItem = {
@@ -81,5 +82,68 @@ it('reloads actual disk state and rejects when persistence fails', async () => {
   expect(library.state).toMatchObject({
     status: 'ready',
     result: { items: [{ id: 'a', relatedItemIds: ['b'] }, { id: 'b' }] },
+  });
+});
+
+it('publishes a batch of item updates together after persistence succeeds', async () => {
+  jest.mocked(updateItemInLibrary).mockImplementation(
+    async (_source, itemId, updates) =>
+      ({
+        ...(itemId === 'a' ? a : b),
+        ...updates,
+      }) as LibraryItem
+  );
+  await open();
+
+  await act(async () => {
+    await library.updateItems([
+      { itemId: 'a', updates: { pinnedAt: '2026-01-01T00:00:00.000Z' } },
+      { itemId: 'b', updates: { pinnedAt: '2026-01-01T00:00:00.001Z' } },
+    ]);
+  });
+
+  expect(updateItemInLibrary).toHaveBeenCalledTimes(2);
+  expect(library.state).toMatchObject({
+    status: 'ready',
+    result: {
+      items: [
+        { id: 'a', pinnedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'b', pinnedAt: '2026-01-01T00:00:00.001Z' },
+      ],
+    },
+  });
+});
+
+it('puts newly pinned cards first and preserves the existing pinned order', async () => {
+  const existingPinned = { ...a, pinnedAt: '2026-01-01T00:00:00.000Z' };
+  jest.mocked(loadLibrary).mockResolvedValue(result([existingPinned, b]));
+  jest
+    .mocked(updateItemInLibrary)
+    .mockImplementation(
+      async (_source, itemId, updates) =>
+        ({ ...(itemId === 'a' ? existingPinned : b), ...updates }) as LibraryItem
+    );
+  await open();
+
+  await act(async () => {
+    await expect(library.setItemsPinned(['b'], true)).resolves.toBe(true);
+  });
+
+  const persistedPinnedAt = jest.mocked(updateItemInLibrary).mock.calls.map((call) => ({
+    itemId: call[1],
+    pinnedAt: call[2].pinnedAt,
+  }));
+  expect(persistedPinnedAt.map(({ itemId }) => itemId)).toEqual(['b', 'a']);
+  expect(Date.parse(persistedPinnedAt[0].pinnedAt!)).toBeLessThan(
+    Date.parse(persistedPinnedAt[1].pinnedAt!)
+  );
+  expect(library.state).toMatchObject({
+    status: 'ready',
+    result: {
+      items: [
+        { id: 'a', pinnedAt: persistedPinnedAt[1].pinnedAt },
+        { id: 'b', pinnedAt: persistedPinnedAt[0].pinnedAt },
+      ],
+    },
   });
 });

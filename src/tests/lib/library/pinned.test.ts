@@ -1,4 +1,11 @@
-import { canPinItem, getPinnedItems, MAX_PINNED_ITEMS, nextPinnedAt } from '@/lib/library/pinned';
+import {
+  canPinItem,
+  getPinnedItems,
+  MAX_PINNED_ITEMS,
+  movePinnedItem,
+  nextPinnedAt,
+  shouldPreservePinnedAspectRatio,
+} from '@/lib/library/pinned';
 import type { LibraryItem } from '@/lib/library/types';
 
 function note(id: string, pinnedAt?: string): LibraryItem {
@@ -39,5 +46,30 @@ describe('pinned cards', () => {
     expect(nextPinnedAt(cards, Date.parse('2026-01-01T00:00:00.000Z'))).toBe(
       '2026-01-01T00:00:00.001Z'
     );
+  });
+
+  it('moves a pinned card to a bounded target position', () => {
+    const cards = [note('first'), note('second'), note('third')];
+
+    expect(movePinnedItem(cards, 'third', 0).map((item) => item.id)).toEqual([
+      'third',
+      'first',
+      'second',
+    ]);
+    expect(movePinnedItem(cards, 'first', 99).map((item) => item.id)).toEqual([
+      'second',
+      'third',
+      'first',
+    ]);
+    expect(movePinnedItem(cards, 'missing', 0)).toBe(cards);
+  });
+
+  it('preserves media aspect ratios in pinned previews', () => {
+    expect(
+      ['image', 'music', 'book', 'movie', 'game'].map((type) =>
+        shouldPreservePinnedAspectRatio(type as LibraryItem['type'])
+      )
+    ).toEqual([true, true, true, true, true]);
+    expect(shouldPreservePinnedAspectRatio('note')).toBe(false);
   });
 });

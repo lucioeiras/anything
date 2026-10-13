@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
-import { MAX_PINNED_ITEMS, nextPinnedAt } from '@/lib/library/pinned';
+import { getPinnedItems, MAX_PINNED_ITEMS } from '@/lib/library/pinned';
 import {
   addBookItemToLibrary,
   addGameItemToLibrary,
@@ -50,6 +50,7 @@ import type {
   GameItem,
   ImageItem,
   LibraryItemType,
+  LibraryItem,
   MovieItem,
   MusicItem,
   NoteItem,
@@ -163,6 +164,9 @@ export type LibraryContextValue = {
     itemId: string,
     updates: Partial<import('@/lib/library/types').LibraryItem>
   ) => Promise<import('@/lib/library/types').LibraryItem>;
+  updateItems: (
+    updates: { itemId: string; updates: Partial<LibraryItem> }[]
+  ) => Promise<LibraryItem[]>;
   setItemsPinned: (itemIds: string[], pinned: boolean) => Promise<boolean>;
   setRelatedItems: (itemId: string, relatedIds: string[]) => Promise<void>;
   getTags: () => { tag: string; count: number }[];
@@ -616,6 +620,37 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source]
   );
 
+  const updateItems = useCallback(
+    async (
+      updates: { itemId: string; updates: Partial<LibraryItem> }[]
+    ): Promise<LibraryItem[]> => {
+      const targetSource = source ?? { kind: 'local', name: 'App Library' };
+      const updatedItems: LibraryItem[] = [];
+      for (const entry of updates) {
+        updatedItems.push(await updateItemInLibrary(targetSource, entry.itemId, entry.updates));
+      }
+
+      const updatesById = new Map(updatedItems.map((item) => [item.id, item]));
+      setLoaded((prev) => {
+        if (prev && prev.state.status === 'ready') {
+          return {
+            ...prev,
+            state: {
+              ...prev.state,
+              result: {
+                ...prev.state.result,
+                items: prev.state.result.items.map((item) => updatesById.get(item.id) ?? item),
+              },
+            },
+          };
+        }
+        return prev;
+      });
+      return updatedItems;
+    },
+    [source]
+  );
+
   const setItemsPinned = useCallback(
     async (itemIds: string[], pinned: boolean): Promise<boolean> => {
       let currentItems = loaded?.state.status === 'ready' ? loaded.state.result.items : [];
@@ -630,17 +665,24 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      for (const item of itemsToChange) {
-        const updated = await updateItem(item.id, {
-          pinnedAt: pinned ? nextPinnedAt(currentItems) : undefined,
-        });
-        currentItems = currentItems.map((candidate) =>
-          candidate.id === updated.id ? updated : candidate
+      if (pinned) {
+        if (itemsToChange.length === 0) return true;
+
+        const orderedItems = [...itemsToChange, ...getPinnedItems(currentItems)];
+        const firstPinnedAt = Date.now();
+        await updateItems(
+          orderedItems.map((item, index) => ({
+            itemId: item.id,
+            updates: { pinnedAt: new Date(firstPinnedAt + index).toISOString() },
+          }))
         );
+        return true;
       }
+
+      for (const item of itemsToChange) await updateItem(item.id, { pinnedAt: undefined });
       return true;
     },
-    [loaded, updateItem]
+    [loaded, updateItem, updateItems]
   );
 
   const setRelatedItems = useCallback(
@@ -715,6 +757,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     deleteItems,
     restoreItems,
     updateItem,
+    updateItems,
     setItemsPinned,
     setRelatedItems,
     getTags,

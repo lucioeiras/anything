@@ -13,6 +13,7 @@ import { DarkTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import '@/global.css';
 import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
@@ -153,10 +154,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={CustomDarkTheme}>
-      <LibraryProvider>
-        <RootNavigator />
-      </LibraryProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={CustomDarkTheme}>
+        <LibraryProvider>
+          <RootNavigator />
+        </LibraryProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
