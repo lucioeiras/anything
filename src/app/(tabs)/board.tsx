@@ -873,7 +873,10 @@ export default function BoardScreen() {
                 ? [
                     {
                       kind: 'date' as const,
-                      label: parseDayKey(activeDay)!.toLocaleDateString(),
+                      label: parseDayKey(activeDay)!.toLocaleDateString(undefined, {
+                        day: 'numeric',
+                        month: 'numeric',
+                      }),
                       onRemove: clearDateFilter,
                     },
                   ]
