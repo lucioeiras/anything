@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decodeHTML } from 'entities';
 import * as Clipboard from 'expo-clipboard';
 import { File } from 'expo-file-system';
@@ -43,7 +42,7 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { transcribeAudio } from '@/lib/ai/transcribeAudio';
 import { isLinkableItem } from '@/lib/library/links';
 import { getRelatedItems } from '@/lib/library/related';
-import { getSourceId } from '@/lib/library/storage';
+import { getLibraryFolders, getSourceId } from '@/lib/library/storage';
 import {
   MEDIA_PROGRESS_STATUSES,
   type BookReadingLog,
@@ -141,15 +140,12 @@ export function CardDetailContent({
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(folderStorageKey)
-      .then((value) => {
+    getLibraryFolders(source)
+      .then((names) => {
         if (!active) return;
-        const parsed: unknown = value ? JSON.parse(value) : [];
         setSavedFolders({
           key: folderStorageKey,
-          names: Array.isArray(parsed)
-            ? parsed.filter((name): name is string => typeof name === 'string')
-            : [],
+          names,
         });
       })
       .catch(() => {
@@ -158,7 +154,7 @@ export function CardDetailContent({
     return () => {
       active = false;
     };
-  }, [folderStorageKey]);
+  }, [folderStorageKey, source]);
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedContent =
     item.type === 'note' || item.type === 'quote'
