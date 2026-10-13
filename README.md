@@ -14,7 +14,7 @@ O aplicativo é desenvolvido com Expo, React Native, TypeScript e Expo Router. A
 - **Conteúdo relacionado:** vincule itens da biblioteca entre si.
 - **Arquivos:** importe imagens e PDFs, visualize PDFs e compartilhe itens usando as opções do sistema.
 - **Compartilhamento para o app:** receba texto, links, imagens e PDFs de outros apps e transforme-os em cartões.
-- **IA no dispositivo:** baixe um modelo local para gerar tags de notas e links. Após o download, a geração pode funcionar offline.
+- **IA no dispositivo:** baixe modelos locais para gerar tags de notas e links ou transcrever áudios. Após o download, esses recursos podem funcionar offline.
 - **Pastas de biblioteca:** use a pasta padrão do app ou escolha uma pasta disponível pelo seletor de documentos. No iOS, o módulo nativo dá suporte a acesso persistente à pasta escolhida e à integração com iCloud Drive quando o container estiver habilitado.
 - **Atalhos do iOS:** controles/App Intents para iniciar a criação de itens compatíveis.
 

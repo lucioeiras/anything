@@ -90,7 +90,7 @@ export function RestoreToast({
 
         <View
           pointerEvents="none"
-          className="absolute bottom-0 left-0 h-[2px] bg-white mx-2"
+          className="absolute bottom-0 left-0 h-[2px] bg-white"
           style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
         />
       </View>

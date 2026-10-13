@@ -27,7 +27,7 @@ export function useLocalAI() {
   const downloadModel = useCallback(async () => {
     try {
       await localModelManager.downloadModel();
-      setIsDownloaded(true);
+      setIsDownloaded(localModelManager.isModelDownloaded());
     } catch (e) {
       console.warn('Download model error:', e);
     }

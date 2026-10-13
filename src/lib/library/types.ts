@@ -80,6 +80,7 @@ export type AudioItem = BaseItem & {
   audio: string;
   durationMs?: number;
   waveform?: number[];
+  transcript?: string;
   title?: string;
 };
 

@@ -5,6 +5,7 @@ import {
   ExportIcon,
   FilePdfIcon,
   FolderPlusIcon,
+  MicrophoneIcon,
   NotePencilIcon,
   TrashSimpleIcon,
 } from 'phosphor-react-native';
@@ -25,6 +26,9 @@ type CardActionsProps = {
   onOpenLink: () => void;
   onOpenPdf: () => void;
   onEditNote: () => void;
+  onTranscribeAudio?: () => void;
+  isTranscribingAudio?: boolean;
+  showTranscribeAudio?: boolean;
 };
 
 export function CardActions({
@@ -38,6 +42,9 @@ export function CardActions({
   onOpenLink,
   onOpenPdf,
   onEditNote,
+  onTranscribeAudio,
+  isTranscribingAudio = false,
+  showTranscribeAudio,
 }: CardActionsProps) {
   const isLink = ['link', 'article', 'youtube', 'tiktok', 'tweet', 'reddit'].includes(item.type);
   const isImage = item.type === 'image';
@@ -62,6 +69,18 @@ export function CardActions({
             accessibilityLabel: 'Download image',
             icon: <DownloadSimpleIcon size={24} color="#FFFFFF" />,
             onPress: onDownload,
+          },
+        ]
+      : []),
+    ...((showTranscribeAudio ?? (item.type === 'audio' && !item.transcript?.trim())) &&
+    item.type === 'audio' &&
+    onTranscribeAudio &&
+    !isTranscribingAudio
+      ? [
+          {
+            accessibilityLabel: 'Transcribe audio',
+            icon: <MicrophoneIcon size={24} color="#FFFFFF" />,
+            onPress: onTranscribeAudio,
           },
         ]
       : []),

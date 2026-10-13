@@ -18,6 +18,7 @@ const makeActions = () => ({
   onOpenLink: jest.fn(),
   onOpenPdf: jest.fn(),
   onEditNote: jest.fn(),
+  onTranscribeAudio: jest.fn(),
 });
 
 describe('CardActions', () => {
@@ -81,5 +82,21 @@ describe('CardActions', () => {
     expect(actions.onOpenLink).toHaveBeenCalledTimes(1);
     expect(getByLabelText('Share')).toBeTruthy();
     expect(queryByLabelText('Copy')).toBeNull();
+  });
+
+  it('shows a manual transcription action for audio without a transcript', async () => {
+    const actions = makeActions();
+    const item: LibraryItem = { ...base, id: 'audio', type: 'audio', audio: 'audio.m4a' };
+    const { getByLabelText, queryByLabelText } = await render(
+      <CardActions item={item} {...actions} />
+    );
+
+    await fireEvent.press(getByLabelText('Transcribe audio'));
+    expect(actions.onTranscribeAudio).toHaveBeenCalledTimes(1);
+
+    const transcribedItem: LibraryItem = { ...item, transcript: 'A saved transcript' };
+    const withTranscript = await render(<CardActions item={transcribedItem} {...actions} />);
+    expect(withTranscript.queryByLabelText('Transcribe audio')).toBeNull();
+    expect(queryByLabelText('Transcribe audio')).toBeTruthy();
   });
 });

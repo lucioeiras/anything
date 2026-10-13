@@ -36,20 +36,6 @@ export function CardSelectionBar({
       }}
     >
       <View className="items-center gap-3">
-        <Text className="font-sans-medium text-base text-white">
-          {hasSelection ? (
-            <>
-              <Text className="text-white font-sans-bold">
-                {selectedCount}
-                {'  '}
-              </Text>
-              <Text className="text-zinc-400 font-sans-semibold"> selected</Text>
-            </>
-          ) : (
-            <Text className="text-zinc-400">Select cards</Text>
-          )}
-        </Text>
-
         <View className="flex-row items-center gap-2">
           <Button
             accessibilityLabel="Cancel selection"
@@ -67,15 +53,13 @@ export function CardSelectionBar({
           />
           <Button
             accessibilityLabel="Delete selected cards"
-            variant="primary"
-            backgroundColor={hasSelection ? '#7F1D1D' : '#3F3F46'}
-            contentColor={hasSelection ? '#FCA5A5' : '#A1A1AA'}
+            variant="secondary"
             shadowColor="#EF4444"
             shadowOpacity={hasSelection ? 0.2 : 0}
             icon={
               <TrashSimpleIcon
                 size={24}
-                color={hasSelection ? '#FCA5A5' : '#A1A1AA'}
+                color={hasSelection ? '#EF4444' : '#A1A1AA'}
                 weight="bold"
               />
             }
@@ -83,6 +67,20 @@ export function CardSelectionBar({
             onPress={onDelete}
           />
         </View>
+
+        <Text className="font-sans-medium text-base text-white">
+          {hasSelection ? (
+            <>
+              <Text className="text-white font-sans-bold">
+                {selectedCount}
+                {'  '}
+              </Text>
+              <Text className="text-zinc-400 font-sans-semibold"> selected</Text>
+            </>
+          ) : (
+            <Text className="text-zinc-400">Select cards</Text>
+          )}
+        </Text>
       </View>
     </View>
   );

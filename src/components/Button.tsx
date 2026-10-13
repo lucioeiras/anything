@@ -67,7 +67,7 @@ export function Button({
         {variant === 'secondary' && (
           <>
             <BlurView
-              intensity={32}
+              intensity={48}
               tint="dark"
               pointerEvents="none"
               style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}

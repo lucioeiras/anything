@@ -149,6 +149,11 @@ export function parseItem(raw: unknown): LibraryItem {
     const waveform = parseAudioWaveform(item.waveform);
     if (waveform) item.waveform = waveform;
     else delete item.waveform;
+    if (typeof item.transcript === 'string') {
+      item.transcript = decodeHTML(item.transcript);
+    } else {
+      delete item.transcript;
+    }
   }
 
   return item as unknown as LibraryItem;

@@ -85,6 +85,24 @@ describe('parseItem', () => {
     expect(invalid).not.toHaveProperty('waveform');
   });
 
+  it('keeps valid audio transcripts and discards malformed transcript values', () => {
+    const audio = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      transcript: 'Olá &amp; bem-vindo.',
+    });
+    expect(audio).toMatchObject({ transcript: 'Olá & bem-vindo.' });
+
+    const invalid = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      transcript: ['not', 'text'],
+    });
+    expect(invalid).not.toHaveProperty('transcript');
+  });
+
   it('normalizes quote authors and filters malformed book reading logs', () => {
     const quote = parseItem({ ...base, type: 'quote', text: 'Words', author: 'A &amp; B' });
     expect(quote).toMatchObject({ author: 'A & B' });

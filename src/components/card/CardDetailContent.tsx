@@ -7,9 +7,17 @@ import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as WebBrowser from 'expo-web-browser';
-import { LinkIcon, NotePencilIcon, TextTIcon, UserIcon, XIcon } from 'phosphor-react-native';
+import {
+  LinkIcon,
+  NotePencilIcon,
+  SubtitlesIcon,
+  TextTIcon,
+  UserIcon,
+  XIcon,
+} from 'phosphor-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Keyboard,
@@ -33,6 +41,7 @@ import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
+import { transcribeAudio } from '@/lib/ai/transcribeAudio';
 import { isLinkableItem } from '@/lib/library/links';
 import { getSourceId } from '@/lib/library/storage';
 import {
@@ -212,41 +221,55 @@ export function CardDetailContent({
   }, [item, progressStatus, reviewRating, reviewComments, updateItem]);
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState(item.note || '');
+  const [transcript, setTranscript] = useState(
+    item.type === 'audio' ? (item.transcript ?? '') : ''
+  );
   const [editedText, setEditedText] = useState(initialText);
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [isEditingTags, setIsEditingTags] = useState(false);
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isTranscribingAudio, setIsTranscribingAudio] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const transcriptionInFlightRef = useRef(false);
+  const transcriptionAttemptedRef = useRef(false);
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const tagInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
+  const transcriptInputRef = useRef<TextInput>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const section2Y = useRef(350);
+  const transcriptY = useRef(100);
   const tagsY = useRef(140);
   const notesY = useRef(280);
-  const activeInputRef = useRef<'top' | 'title' | 'tags' | 'notes' | null>(null);
+  const activeInputRef = useRef<'top' | 'title' | 'transcript' | 'tags' | 'notes' | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const performScroll = useCallback((target?: 'top' | 'title' | 'tags' | 'notes' | null) => {
-    if (!scrollViewRef.current || !target) return;
-    if (target === 'notes') {
-      scrollViewRef.current.scrollToEnd({ animated: true });
-      return;
-    }
-    let targetY = 0;
-    if (target === 'top') {
-      targetY = 0;
-    } else if (target === 'title') {
-      targetY = Math.max(0, section2Y.current - 20);
-    } else if (target === 'tags') {
-      targetY = Math.max(0, section2Y.current + tagsY.current - 30);
-    }
-    scrollViewRef.current.scrollTo({ y: targetY, animated: true });
-  }, []);
+  const performScroll = useCallback(
+    (target?: 'top' | 'title' | 'transcript' | 'tags' | 'notes' | null) => {
+      if (!scrollViewRef.current || !target) return;
+      if (target === 'notes') {
+        scrollViewRef.current.scrollToEnd({ animated: true });
+        return;
+      }
+      let targetY = 0;
+      if (target === 'top') {
+        targetY = 0;
+      } else if (target === 'title') {
+        targetY = Math.max(0, section2Y.current - 20);
+      } else if (target === 'transcript') {
+        targetY = Math.max(0, section2Y.current + transcriptY.current - 30);
+      } else if (target === 'tags') {
+        targetY = Math.max(0, section2Y.current + tagsY.current - 30);
+      }
+      scrollViewRef.current.scrollTo({ y: targetY, animated: true });
+    },
+    []
+  );
 
   const scrollToTopSection = () => {
     activeInputRef.current = 'top';
@@ -264,6 +287,13 @@ export function CardDetailContent({
     activeInputRef.current = 'tags';
     if (keyboardHeight > 0) {
       performScroll('tags');
+    }
+  };
+
+  const scrollToTranscript = () => {
+    activeInputRef.current = 'transcript';
+    if (keyboardHeight > 0) {
+      performScroll('transcript');
     }
   };
 
@@ -401,6 +431,18 @@ export function CardDetailContent({
       await updateItem(item.id, { note: cleanNote || undefined });
     } catch (e) {
       console.warn('Failed to save note', e);
+    }
+  };
+
+  const handleSaveTranscript = async () => {
+    if (item.type !== 'audio') return;
+    const cleanTranscript = transcript.trim();
+    if ((item.transcript ?? '') === cleanTranscript) return;
+    try {
+      await updateItem(item.id, { transcript: cleanTranscript || undefined });
+      setTranscriptionError(null);
+    } catch (e) {
+      console.warn('Failed to save audio transcript', e);
     }
   };
 
@@ -739,6 +781,38 @@ export function CardDetailContent({
 
   const isNoteOrQuote = item.type === 'note' || item.type === 'quote';
 
+  const handleTranscribeAudio = useCallback(
+    async (showError = true) => {
+      if (item.type !== 'audio' || transcriptionInFlightRef.current) return;
+      transcriptionAttemptedRef.current = true;
+      transcriptionInFlightRef.current = true;
+      setIsTranscribingAudio(true);
+      setTranscriptionError(null);
+      try {
+        const result = await transcribeAudio(item.audio);
+        setTranscript(result);
+        await updateItem(item.id, { transcript: result });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not transcribe this audio.';
+        setTranscriptionError(message);
+        if (showError) Alert.alert('Audio transcription failed', message);
+      } finally {
+        transcriptionInFlightRef.current = false;
+        setIsTranscribingAudio(false);
+      }
+    },
+    [item, updateItem]
+  );
+
+  const savedTranscript = item.type === 'audio' ? item.transcript : undefined;
+  useEffect(() => {
+    if (item.type !== 'audio' || savedTranscript?.trim() || transcriptionAttemptedRef.current)
+      return;
+    void handleTranscribeAudio(false);
+  }, [handleTranscribeAudio, item.type, savedTranscript]);
+
+  const handleTranscribeAudioManually = () => void handleTranscribeAudio(true);
+
   return (
     <View className="flex-1 w-full">
       {/* Action Feedback Toast */}
@@ -816,6 +890,12 @@ export function CardDetailContent({
                   if (isEditingTags) setIsEditingTags(false);
                 }}
                 onBlur={handleSaveTitle}
+                returnKeyType="next"
+                onSubmitEditing={() =>
+                  item.type === 'audio'
+                    ? transcriptInputRef.current?.focus()
+                    : tagInputRef.current?.focus()
+                }
                 placeholder="Add a title here..."
                 placeholderTextColor="#71717A"
                 className="flex-1 font-sans text-xl text-white leading-tight"
@@ -823,6 +903,58 @@ export function CardDetailContent({
                 underlineColorAndroid="transparent"
               />
             </View>
+
+            {item.type === 'audio' && (
+              <View
+                onLayout={(event) => {
+                  transcriptY.current = event.nativeEvent.layout.y;
+                }}
+                className="py-6 px-6 border-b border-zinc-800 gap-4"
+              >
+                <View className="flex-row items-center gap-2">
+                  <SubtitlesIcon size={14} color="#E4E4E7" />
+                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                    Transcript
+                  </Text>
+                  {isTranscribingAudio && <ActivityIndicator size="small" color="#A1A1AA" />}
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    if (isEditingTags) setIsEditingTags(false);
+                    transcriptInputRef.current?.focus();
+                  }}
+                  className="w-full"
+                >
+                  <TextInput
+                    ref={transcriptInputRef}
+                    value={transcript}
+                    onChangeText={setTranscript}
+                    onFocus={() => {
+                      scrollToTranscript();
+                      if (isEditingTags) setIsEditingTags(false);
+                    }}
+                    onBlur={handleSaveTranscript}
+                    placeholder={
+                      isTranscribingAudio ? 'Transcribing audio…' : 'Transcript will appear here...'
+                    }
+                    placeholderTextColor="#71717A"
+                    multiline
+                    textAlignVertical="top"
+                    className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[72px]"
+                    style={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                    underlineColorAndroid="transparent"
+                    accessibilityLabel="Audio transcript"
+                  />
+                </Pressable>
+
+                {transcriptionError && (
+                  <Text className="font-sans text-sm leading-relaxed text-zinc-500">
+                    Automatic transcription failed. Use the microphone action below to try again.
+                  </Text>
+                )}
+              </View>
+            )}
 
             {item.type === 'quote' && (
               <View className="flex-row items-center gap-4 py-5 px-6 border-b border-zinc-800">
@@ -1084,6 +1216,9 @@ export function CardDetailContent({
           onShare={handleShare}
           onOpenLink={handleOpenLink}
           onOpenPdf={handleOpenPdf}
+          onTranscribeAudio={handleTranscribeAudioManually}
+          isTranscribingAudio={isTranscribingAudio}
+          showTranscribeAudio={item.type === 'audio' && !transcript.trim()}
         />
       </KeyboardAvoidingView>
 
