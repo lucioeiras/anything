@@ -5,6 +5,7 @@ import {
   ExportIcon,
   FilePdfIcon,
   FolderPlusIcon,
+  LinkIcon,
   MicrophoneIcon,
   NotePencilIcon,
   TrashSimpleIcon,
@@ -20,6 +21,7 @@ type CardActionsProps = {
   bottomInset?: number;
   onDelete: () => void;
   onAddToFolder: () => void;
+  onManageRelatedCards: () => void;
   onDownload: () => void;
   onCopy: () => void;
   onShare: () => void;
@@ -36,6 +38,7 @@ export function CardActions({
   bottomInset = 0,
   onDelete,
   onAddToFolder,
+  onManageRelatedCards,
   onDownload,
   onCopy,
   onShare,
@@ -62,6 +65,11 @@ export function CardActions({
       accessibilityLabel: 'Add to folder',
       icon: <FolderPlusIcon size={24} color="#FFFFFF" />,
       onPress: onAddToFolder,
+    },
+    {
+      accessibilityLabel: 'Manage related cards',
+      icon: <LinkIcon size={24} color="#FFFFFF" />,
+      onPress: onManageRelatedCards,
     },
     ...(isImage
       ? [

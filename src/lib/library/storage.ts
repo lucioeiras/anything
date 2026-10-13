@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
+import { normalizeRelatedIds } from './related';
 import { parseAudioWaveform } from './audioWaveform';
 import { isQuoteText } from './quotes';
 import { resolveUrlMetadata, type ResolvedMetadata } from './metadata';
@@ -2033,4 +2034,101 @@ export async function updateItemInLibrary(
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+// Serialize relationship batches so overlapping edits read the latest files.
+let relatedWriteQueue: Promise<unknown> = Promise.resolve();
+
+export function setRelatedItemsInLibrary(
+  source: LibrarySource,
+  itemId: string,
+  relatedIds: string[]
+): Promise<LibraryItem[]> {
+  const operation = relatedWriteQueue.then(async () => {
+    const root = getLibraryDirectory(source);
+    if (!root.exists) throw new Error('Library directory not found');
+    const records: { file: File; text: string; raw: Record<string, unknown>; item: LibraryItem }[] =
+      [];
+    for (const file of root.list()) {
+      if (!(file instanceof File) || !file.name.endsWith('.json') || file.name.startsWith('.'))
+        continue;
+      const text = await file.text();
+      let raw: Record<string, unknown>;
+      let item: LibraryItem;
+      try {
+        raw = JSON.parse(text);
+        item = parseItem(raw);
+      } catch {
+        // Unrelated invalid cards must not prevent access to valid local data.
+        continue;
+      }
+      if (file.name !== `${item.id}.json`) continue;
+      records.push({ file, text, raw, item });
+    }
+    const current = records.find((record) => record.item.id === itemId);
+    if (!current) throw new Error('Card not found');
+    const available = new Set(records.map((record) => record.item.id));
+    const selected = new Set(normalizeRelatedIds(relatedIds, itemId));
+    for (const id of selected) {
+      if (!available.has(id)) throw new Error('A selected card is no longer available');
+    }
+    // Keep dangling references for delete/restore compatibility.
+    const currentIds = [
+      ...selected,
+      ...(current.item.relatedItemIds ?? []).filter((id) => !available.has(id)),
+    ];
+    const changes = records.flatMap((record) => {
+      const previous = record.item.relatedItemIds ?? [];
+      const next =
+        record === current
+          ? currentIds
+          : selected.has(record.item.id)
+            ? [...new Set([...previous, itemId])]
+            : previous.filter((id) => id !== itemId);
+      if (previous.length === next.length && previous.every((id) => next.includes(id))) return [];
+      const raw: Record<string, unknown> = { ...record.raw, updatedAt: new Date().toISOString() };
+      if (next.length) raw.relatedItemIds = next;
+      else delete raw.relatedItemIds;
+      return [{ ...record, updatedRaw: raw, updatedText: JSON.stringify(raw, null, 2) }];
+    });
+    const attempted: typeof changes = [];
+    try {
+      for (const change of changes) {
+        attempted.push(change);
+        change.file.write(change.updatedText);
+      }
+      upsertCachedItems(
+        getSourceId(source),
+        changes.map((change) => ({
+          id: change.item.id,
+          mtime: change.file.lastModified ?? Date.now(),
+          rawJson: change.updatedText,
+          item: parseItem(change.updatedRaw),
+        }))
+      );
+    } catch {
+      let restored = true;
+      for (const change of attempted.reverse()) {
+        try {
+          change.file.write(change.text);
+        } catch {
+          restored = false;
+        }
+      }
+      // Force the subsequent reload to rebuild the cache from the actual files.
+      try {
+        clearSourceCache(getSourceId(source));
+      } catch {
+        restored = false;
+      }
+      throw new Error(
+        restored
+          ? 'Could not save related cards. Please try again.'
+          : 'Could not save all related cards or restore every change. Review the current relationships and try again.'
+      );
+    }
+    return changes.map((change) => resolveImages(parseItem(change.updatedRaw), root));
+  });
+  relatedWriteQueue = operation.catch(() => undefined);
+  return operation;
 }

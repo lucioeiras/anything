@@ -1,7 +1,7 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
 import { CardActions } from '@/components/card/CardActions';
-import type { LibraryItem } from '@/lib/library/types';
+import { ITEM_TYPES, type LibraryItem } from '@/lib/library/types';
 
 const base = {
   version: 1 as const,
@@ -12,6 +12,7 @@ const base = {
 const makeActions = () => ({
   onDelete: jest.fn(),
   onAddToFolder: jest.fn(),
+  onManageRelatedCards: jest.fn(),
   onDownload: jest.fn(),
   onCopy: jest.fn(),
   onShare: jest.fn(),
@@ -22,6 +23,14 @@ const makeActions = () => ({
 });
 
 describe('CardActions', () => {
+  it.each(ITEM_TYPES)('offers related cards for %s', async (type) => {
+    const actions = makeActions();
+    const item = { ...base, id: type, type } as LibraryItem;
+    const screen = await render(<CardActions item={item} {...actions} />);
+    await fireEvent.press(screen.getByLabelText('Manage related cards'));
+    expect(actions.onManageRelatedCards).toHaveBeenCalledTimes(1);
+  });
+
   it('shows common and text-card actions', async () => {
     const actions = makeActions();
     const item: LibraryItem = { ...base, id: 'note', type: 'note', text: 'Body' };
@@ -29,6 +38,8 @@ describe('CardActions', () => {
       <CardActions item={item} {...actions} />
     );
 
+    await fireEvent.press(getByLabelText('Manage related cards'));
+    expect(actions.onManageRelatedCards).toHaveBeenCalledTimes(1);
     expect(getByLabelText('Delete')).toBeTruthy();
     expect(getByLabelText('Add to folder')).toBeTruthy();
     expect(getByLabelText('Copy')).toBeTruthy();

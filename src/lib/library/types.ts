@@ -32,6 +32,8 @@ type BaseItem = {
   updatedAt: string;
   tags?: string[];
   autoTags?: string[];
+  /** User-selected, bidirectional relationships with other cards. */
+  relatedItemIds?: string[];
   note?: string;
 };
 

@@ -52,6 +52,9 @@ import {
   type MediaProgressStatus,
 } from '@/lib/library/types';
 import { CardActions } from './CardActions';
+import { RelatedCardsSection } from './RelatedCardsSection';
+import { RelatedCardsPicker } from './RelatedCardsPicker';
+import { getRelatedItems } from '@/lib/library/related';
 import { CardInfo } from './CardInfo';
 import { CardMediaDetails } from './CardMediaDetails';
 import { CardPdfReader } from './CardPdfReader';
@@ -131,7 +134,8 @@ export function CardDetailContent({
   onSelectFolder,
   onSelectType,
 }: CardDetailContentProps) {
-  const { addTextItem, deleteItem, updateItem, state, source } = useLibrary();
+  const { addTextItem, deleteItem, updateItem, setRelatedItems, searchItems, state, source } =
+    useLibrary();
   const folderStorageKey = `anything:folders:${getSourceId(source)}`;
   const [savedFolders, setSavedFolders] = useState<{ key: string; names: string[] } | null>(null);
   const folderTags = savedFolders?.key === folderStorageKey ? savedFolders.names : [];
@@ -168,6 +172,7 @@ export function CardDetailContent({
           candidate.linkedItemId === item.id
       )
     : [];
+  const [isRelatedPickerOpen, setIsRelatedPickerOpen] = useState(false);
   const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
   const handleUpdateLinkedItem = (linkedItemId?: string) => {
     updateItem(item.id, { linkedItemId }).catch((e) => {
@@ -253,7 +258,10 @@ export function CardDetailContent({
     (target?: 'top' | 'title' | 'transcript' | 'tags' | 'notes' | null) => {
       if (!scrollViewRef.current || !target) return;
       if (target === 'notes') {
-        scrollViewRef.current.scrollToEnd({ animated: true });
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, section2Y.current + notesY.current - 30),
+          animated: true,
+        });
         return;
       }
       let targetY = 0;
@@ -1197,6 +1205,8 @@ export function CardDetailContent({
             <CardMediaDetails item={item} />
 
             <CardInfo item={item} />
+
+            <RelatedCardsSection item={item} items={libraryItems} />
           </View>
         </ScrollView>
 
@@ -1211,6 +1221,10 @@ export function CardDetailContent({
             Keyboard.dismiss();
             setIsFolderPickerOpen(true);
           }}
+          onManageRelatedCards={() => {
+            Keyboard.dismiss();
+            setIsRelatedPickerOpen(true);
+          }}
           onDownload={handleDownload}
           onCopy={handleCopy}
           onShare={handleShare}
@@ -1221,6 +1235,17 @@ export function CardDetailContent({
           showTranscribeAudio={item.type === 'audio' && !transcript.trim()}
         />
       </KeyboardAvoidingView>
+
+      {isRelatedPickerOpen && (
+        <RelatedCardsPicker
+          itemId={item.id}
+          items={libraryItems}
+          selectedIds={getRelatedItems(item, libraryItems).map((card) => card.id)}
+          searchItems={(query) => searchItems({ searchQuery: query })}
+          onSave={(ids) => setRelatedItems(item.id, ids)}
+          onClose={() => setIsRelatedPickerOpen(false)}
+        />
+      )}
 
       <AddToFolderModal
         visible={isFolderPickerOpen}

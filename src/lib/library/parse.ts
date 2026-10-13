@@ -1,6 +1,7 @@
 import { decodeHTML } from 'entities';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
 import { parseAudioWaveform } from './audioWaveform';
+import { normalizeRelatedIds } from './related';
 
 /**
  * Lightweight runtime validation for item JSON. Files on disk can be edited by
@@ -30,6 +31,10 @@ export function parseItem(raw: unknown): LibraryItem {
     updatedAt: createdAt,
     ...raw,
   };
+
+  const relatedIds = normalizeRelatedIds(item.relatedItemIds, id);
+  if (relatedIds.length) item.relatedItemIds = relatedIds;
+  else delete item.relatedItemIds;
 
   if (typeof item.title === 'string') {
     item.title = decodeHTML(item.title);

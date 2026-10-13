@@ -29,6 +29,7 @@ import {
   saveLibrarySource,
   saveRecentFolder,
   updateItemInLibrary,
+  setRelatedItemsInLibrary,
   type AddGameOptions,
   type AddImageOptions,
   type AddVideoOptions,
@@ -161,6 +162,7 @@ export type LibraryContextValue = {
     itemId: string,
     updates: Partial<import('@/lib/library/types').LibraryItem>
   ) => Promise<import('@/lib/library/types').LibraryItem>;
+  setRelatedItems: (itemId: string, relatedIds: string[]) => Promise<void>;
   getTags: () => { tag: string; count: number }[];
   searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
   searchQuery: string;
@@ -612,6 +614,38 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source]
   );
 
+  const setRelatedItems = useCallback(
+    async (itemId: string, relatedIds: string[]) => {
+      const targetSource = source ?? { kind: 'local' as const, name: 'App Library' };
+      try {
+        const updated = await setRelatedItemsInLibrary(targetSource, itemId, relatedIds);
+        const byId = new Map(updated.map((item) => [item.id, item]));
+        setLoaded((prev) => {
+          if (
+            !prev ||
+            getSourceId(prev.source) !== getSourceId(targetSource) ||
+            prev.state.status !== 'ready'
+          )
+            return prev;
+          return {
+            ...prev,
+            state: {
+              ...prev.state,
+              result: {
+                ...prev.state.result,
+                items: prev.state.result.items.map((item) => byId.get(item.id) ?? item),
+              },
+            },
+          };
+        });
+      } catch (error) {
+        await load(targetSource);
+        throw error;
+      }
+    },
+    [source, load]
+  );
+
   const getTags = useCallback(() => {
     const targetSource = source ?? { kind: 'local', name: 'App Library' };
     return getDistinctTags(getSourceId(targetSource));
@@ -652,6 +686,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     deleteItems,
     restoreItems,
     updateItem,
+    setRelatedItems,
     getTags,
     searchItems,
     searchQuery,
