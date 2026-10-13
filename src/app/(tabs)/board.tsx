@@ -17,8 +17,8 @@ import {
   TiktokLogoIcon,
   TwitterLogoIcon,
   VideoCameraIcon,
-  WaveformIcon,
   WarningIcon,
+  WaveformIcon,
   YoutubeLogoIcon,
 } from 'phosphor-react-native';
 import {
@@ -46,13 +46,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
+import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
-import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
+import { NewAudioModal } from '@/components/modals/NewAudioModal';
 import { NewBookModal } from '@/components/modals/NewBookModal';
-import { NewGameModal } from '@/components/modals/NewGameModal';
 import { NewEntertainmentModal } from '@/components/modals/NewEntertainmentModal';
+import { NewGameModal } from '@/components/modals/NewGameModal';
 import { NewImageModal } from '@/components/modals/NewImageModal';
 import { NewLinkModal } from '@/components/modals/NewLinkModal';
 import { NewMovieModal } from '@/components/modals/NewMovieModal';
@@ -60,17 +61,16 @@ import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { NewVideoModal } from '@/components/modals/NewVideoModal';
-import { NewAudioModal } from '@/components/modals/NewAudioModal';
 import { useLibrary } from '@/hooks/useLibrary';
+import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
-import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import type {
   DeletedItemBackup,
+  PickedAudioAsset,
   PickedImageAsset,
   PickedPdfAsset,
   PickedVideoAsset,
-  PickedAudioAsset,
 } from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
@@ -898,7 +898,7 @@ export default function BoardScreen() {
           <RestoreToast
             visible={isToastVisible && !isEditing}
             count={restoreBackup?.length ?? 0}
-            bottomOffset={140 + insets.bottom}
+            bottomOffset={130 + insets.bottom}
             onRestore={handleRestore}
             onDismiss={handleDismissToast}
           />

@@ -70,7 +70,7 @@ export function RestoreToast({
       }}
     >
       <View
-        className="relative flex-row items-center gap-20 overflow-hidden rounded-full border border-white/10 px-2 py-2"
+        className="relative flex-row items-center gap-32 overflow-hidden rounded-full border border-white/10 px-2 py-2"
         style={{ backgroundColor: 'rgba(24, 24, 27, 0.88)' }}
       >
         <Text className="pl-2 font-sans-medium text-base text-zinc-300 ml-2">
