@@ -195,6 +195,7 @@ export function CardDetailContent({
   const [progressStatus, setProgressStatus] = useState<MediaProgressStatus>(
     isTrackableItem(item) ? getCurrentProgressStatus(item.type, item.progressStatus) : 'want'
   );
+  const [bookLogRequest, setBookLogRequest] = useState(0);
   const [reviewRating, setReviewRating] = useState(
     item.type === 'book' || item.type === 'movie' || item.type === 'game'
       ? (item.review?.rating ?? null)
@@ -1106,8 +1107,10 @@ export function CardDetailContent({
               (progressStatus === 'in-progress' ||
                 (progressStatus === 'completed' && (item.readingLogs?.length ?? 0) > 0)) && (
                 <BookLogs
+                  key={bookLogRequest}
                   book={item}
                   readOnly={progressStatus === 'completed'}
+                  openOnMount={bookLogRequest > 0}
                   onSave={handleSaveReadingLog}
                   onDelete={handleDeleteReadingLog}
                   getNoteText={(noteId) => {
@@ -1209,6 +1212,8 @@ export function CardDetailContent({
           onTranscribeAudio={handleTranscribeAudioManually}
           isTranscribingAudio={isTranscribingAudio}
           showTranscribeAudio={item.type === 'audio' && !transcript.trim()}
+          showLogReading={item.type === 'book' && progressStatus === 'in-progress'}
+          onLogReading={() => setBookLogRequest((request) => request + 1)}
         />
       </KeyboardAvoidingView>
 

@@ -1,5 +1,6 @@
 import {
   ArrowSquareOutIcon,
+  BookOpenTextIcon,
   BookmarkSimpleIcon,
   CopyIcon,
   DownloadSimpleIcon,
@@ -33,6 +34,8 @@ type CardActionsProps = {
   onTranscribeAudio?: () => void;
   isTranscribingAudio?: boolean;
   showTranscribeAudio?: boolean;
+  showLogReading?: boolean;
+  onLogReading?: () => void;
 };
 
 export function CardActions({
@@ -51,6 +54,8 @@ export function CardActions({
   onTranscribeAudio,
   isTranscribingAudio = false,
   showTranscribeAudio,
+  showLogReading = false,
+  onLogReading,
 }: CardActionsProps) {
   const isLink = ['link', 'article', 'youtube', 'tiktok', 'tweet', 'reddit'].includes(item.type);
   const isImage = item.type === 'image';
@@ -104,13 +109,7 @@ export function CardActions({
           },
         ]
       : []),
-    ...(isImage ||
-    isNoteOrQuote ||
-    isPdf ||
-    isMusic ||
-    isGame ||
-    item.type === 'movie' ||
-    item.type === 'book'
+    ...(isImage || isNoteOrQuote || isPdf || isMusic || isGame || item.type === 'movie'
       ? [
           {
             accessibilityLabel: 'Copy',
@@ -162,6 +161,17 @@ export function CardActions({
             accessibilityLabel: 'Open PDF',
             icon: <FilePdfIcon size={24} color="#FFFFFF" weight="duotone" />,
             onPress: onOpenPdf,
+          },
+        ]
+      : []),
+    ...(showLogReading && onLogReading
+      ? [
+          {
+            accessibilityLabel: 'Log reading',
+            icon: <BookOpenTextIcon size={24} weight="duotone" />,
+            onPress: onLogReading,
+            variant: 'primary' as const,
+            backgroundColor: '#FBBF24',
           },
         ]
       : []),
