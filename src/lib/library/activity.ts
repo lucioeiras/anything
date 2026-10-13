@@ -6,10 +6,10 @@ export type TrackableType = (typeof TRACKABLE_TYPES)[number];
 export const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   note: 'Notes',
   quote: 'Quotes',
-  image: 'Media',
-  pdf: 'PDFs',
+  image: 'Images',
   video: 'Videos',
-  audio: 'Recorded audio',
+  pdf: 'PDFs',
+  audio: 'Records',
   link: 'Links',
   article: 'Articles',
   youtube: 'YouTube',

@@ -13,6 +13,7 @@ const mockSetQuery = jest.fn();
 const mockClearTag = jest.fn();
 const mockSetItemsPinned = jest.fn();
 const mockScrollToOffset = jest.fn();
+const mockFlashListProps = jest.fn();
 const mockItems: LibraryItem[] = [
   {
     id: 'today',
@@ -83,7 +84,17 @@ jest.mock('@shopify/flash-list', () => ({
   FlashList: (() => {
     const React = jest.requireActual<typeof import('react')>('react');
     const MockFlashList = React.forwardRef(
-      ({ data, renderItem, ListHeaderComponent, ListEmptyComponent }: any, ref: any) => {
+      (
+        {
+          data,
+          renderItem,
+          ListHeaderComponent,
+          ListEmptyComponent,
+          maintainVisibleContentPosition,
+        }: any,
+        ref: any
+      ) => {
+        mockFlashListProps({ maintainVisibleContentPosition });
         React.useImperativeHandle(ref, () => ({
           scrollToOffset: (...args: unknown[]) => mockScrollToOffset(...args),
         }));
@@ -177,6 +188,19 @@ it('filters loaded cards by the selected day', async () => {
   await render(<BoardScreen />);
   expect(screen.getByText('Today note')).toBeTruthy();
   expect(screen.queryByText('Yesterday note')).toBeNull();
+});
+it('preserves the board scroll offset when search results change', async () => {
+  mockParams = {};
+  const view = await render(<BoardScreen />);
+
+  mockQuery = 'Today';
+  await view.rerender(<BoardScreen />);
+  mockQuery = '';
+  await view.rerender(<BoardScreen />);
+
+  expect(mockFlashListProps).toHaveBeenLastCalledWith({
+    maintainVisibleContentPosition: { disabled: true },
+  });
 });
 it('ignores invalid dates', async () => {
   mockParams.addedOn = '2026-02-31';

@@ -266,10 +266,10 @@ export type LibraryItemType = LibraryItem['type'];
 export const ITEM_TYPES: readonly LibraryItemType[] = [
   'note',
   'quote',
-  'image',
-  'pdf',
-  'video',
   'audio',
+  'image',
+  'video',
+  'pdf',
   'link',
   'article',
   'youtube',

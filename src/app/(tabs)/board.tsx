@@ -1046,6 +1046,7 @@ export default function BoardScreen() {
                       numColumns={2}
                       masonry
                       optimizeItemArrangement
+                      maintainVisibleContentPosition={{ disabled: true }}
                       extraData={extraData}
                       CellRendererComponent={CellRenderer}
                       contentContainerStyle={styles.contentContainer}
