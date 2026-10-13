@@ -28,6 +28,9 @@ type ItemCardProps = {
   hideTitleAndAuthor?: boolean;
   showAudioPlaybackRate?: boolean;
   compactAudioWaveform?: boolean;
+  compactTikTokThumbnail?: boolean;
+  compactMedia?: boolean;
+  fixedHeight?: number;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
@@ -42,6 +45,9 @@ export const ItemCard = memo(function ItemCard({
   hideTitleAndAuthor = false,
   showAudioPlaybackRate = false,
   compactAudioWaveform = false,
+  compactTikTokThumbnail = false,
+  compactMedia = false,
+  fixedHeight,
   isEditing = false,
   isSelected = false,
   onPress,
@@ -120,7 +126,13 @@ export const ItemCard = memo(function ItemCard({
           />
         );
       case 'tiktok':
-        return <TikTokCard videoTitle={item.title} thumbnail={item.thumbnail} />;
+        return (
+          <TikTokCard
+            videoTitle={item.title}
+            thumbnail={item.thumbnail}
+            compactThumbnail={compactTikTokThumbnail}
+          />
+        );
       case 'tweet':
         return (
           <TweetCard
@@ -129,6 +141,7 @@ export const ItemCard = memo(function ItemCard({
             text={item.text}
             images={item.images}
             video={item.video}
+            hideMedia={compactMedia}
             onPress={isInteractiveTweet && onPress ? () => onPress(item) : undefined}
             onLongPress={isInteractiveTweet && onLongPress ? () => onLongPress(item) : undefined}
           />
@@ -138,9 +151,10 @@ export const ItemCard = memo(function ItemCard({
           <RedditCard
             subredditAvatar={item.subredditAvatar}
             subredditName={item.subreddit}
-            postTitle={item.title}
+            postTitle={hideTitleAndAuthor ? '' : item.title}
             text={item.text}
             image={item.image}
+            hideMedia={compactMedia}
           />
         );
       case 'book':
@@ -192,20 +206,31 @@ export const ItemCard = memo(function ItemCard({
 
   const cardBody = (
     <View
+      testID={fixedHeight ? 'item-card-fixed-height' : undefined}
       className="w-full relative"
       style={
-        isSelected
+        fixedHeight || isSelected
           ? {
-              shadowColor: '#3b82f6',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
-              elevation: 8,
+              ...(fixedHeight ? { height: fixedHeight } : {}),
+              ...(isSelected
+                ? {
+                    shadowColor: '#3b82f6',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 8,
+                    elevation: 8,
+                  }
+                : {}),
             }
           : undefined
       }
     >
-      <View className="w-full overflow-hidden">{renderCardContent()}</View>
+      <View
+        className="w-full overflow-hidden"
+        style={fixedHeight ? { height: '100%', backgroundColor: '#18181b' } : undefined}
+      >
+        {renderCardContent()}
+      </View>
 
       {isSelected && (
         <View

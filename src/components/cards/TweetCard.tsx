@@ -61,6 +61,7 @@ type TweetProps = {
     aspectRatio?: number;
   };
   isDetail?: boolean;
+  hideMedia?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
 };
@@ -72,6 +73,7 @@ export const TweetCard = ({
   images = [],
   video,
   isDetail = false,
+  hideMedia = false,
   onPress,
   onLongPress,
 }: TweetProps) => {
@@ -111,13 +113,13 @@ export const TweetCard = ({
       </Pressable>
 
       {/* Video */}
-      {video?.url ? (
+      {!hideMedia && video?.url ? (
         <TweetVideoPlayer
           videoUrl={video.url}
           aspectRatio={video.aspectRatio}
           isDetail={isDetail}
         />
-      ) : video?.thumbnail ? (
+      ) : !hideMedia && video?.thumbnail ? (
         <ExpoImage
           source={{ uri: video.thumbnail }}
           className="w-full rounded-xl"
@@ -131,7 +133,7 @@ export const TweetCard = ({
       ) : null}
 
       {/* Single Image */}
-      {!video && images.length === 1 && (
+      {!hideMedia && !video && images.length === 1 && (
         <Pressable
           onPress={onPress}
           onLongPress={onLongPress}
@@ -159,7 +161,7 @@ export const TweetCard = ({
         </Pressable>
       )}
 
-      {!video && hasMultipleImages && (
+      {!hideMedia && !video && hasMultipleImages && (
         <ScrollView
           horizontal
           nestedScrollEnabled

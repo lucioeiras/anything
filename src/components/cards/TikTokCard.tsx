@@ -9,15 +9,16 @@ cssInterop(ExpoImage, { className: 'style' });
 type TikTokCardProps = {
   videoTitle: string;
   thumbnail: string;
+  compactThumbnail?: boolean;
 };
 
-export function TikTokCard({ videoTitle, thumbnail }: TikTokCardProps) {
+export function TikTokCard({ videoTitle, thumbnail, compactThumbnail = false }: TikTokCardProps) {
   return (
     <View className="w-full">
       <View
         testID="video-thumbnail-container"
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: 9 / 16 }}
+        style={{ aspectRatio: compactThumbnail ? 3 / 4 : 9 / 16 }}
       >
         <ExpoImage
           source={{ uri: thumbnail }}

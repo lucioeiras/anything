@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useEffect as mockUseEffect } from 'react';
-import { Text as MockText, View as MockView } from 'react-native';
+import { Pressable as MockPressable, Text as MockText, View as MockView } from 'react-native';
 import BoardScreen from '@/app/(tabs)/board';
 import type { LibraryItem } from '@/lib/library/types';
 
@@ -17,6 +17,7 @@ const mockItems: LibraryItem[] = [
     type: 'note',
     version: 1,
     text: 'Today note',
+    pinnedAt: '2026-10-12T12:00:00.000Z',
     tags: ['keep'],
     createdAt: new Date(2026, 9, 13, 12).toISOString(),
     updatedAt: '',
@@ -72,11 +73,31 @@ jest.mock('@shopify/flash-list', () => ({
   ),
 }));
 jest.mock('@/components/cards/ItemCard', () => ({
-  ItemCard: ({ item }: { item: LibraryItem }) => (
-    <MockText>{'text' in item ? item.text : item.id}</MockText>
+  ItemCard: ({
+    item,
+    isSelected,
+    onPress,
+    onLongPress,
+  }: {
+    item: LibraryItem;
+    isSelected?: boolean;
+    onPress?: (item: LibraryItem) => void;
+    onLongPress?: (item: LibraryItem) => void;
+  }) => (
+    <MockPressable
+      testID={`card-${item.id}-${isSelected ? 'selected' : 'not-selected'}`}
+      onPress={() => onPress?.(item)}
+      onLongPress={() => onLongPress?.(item)}
+      accessibilityState={{ selected: isSelected }}
+    >
+      <MockText>{'text' in item ? item.text : item.id}</MockText>
+    </MockPressable>
   ),
 }));
-jest.mock('@/components/menus/CardSelectionBar', () => ({ CardSelectionBar: () => null }));
+jest.mock('@/components/menus/CardSelectionBar', () => ({
+  CardSelectionBar: ({ visible, selectedCount }: { visible: boolean; selectedCount: number }) =>
+    visible ? <MockText>{`${selectedCount} selected`}</MockText> : null,
+}));
 jest.mock('@/components/menus/RestoreToast', () => ({ RestoreToast: () => null }));
 jest.mock('@/components/modals/AddToFolderModal', () => ({ AddToFolderModal: () => null }));
 jest.mock('@/components/modals/NewAudioModal', () => ({ NewAudioModal: () => null }));
@@ -135,4 +156,30 @@ it('keeps the type filter when the date filter is removed', async () => {
   await view.rerender(<BoardScreen />);
   expect(screen.getByText('No results found')).toBeTruthy();
   expect(screen.queryByText('Today note')).toBeNull();
+});
+
+it('shows pinned cards only when the board has no active filters', async () => {
+  mockParams = {};
+  const view = await render(<BoardScreen />);
+  expect(screen.getByTestId('pinned-cards-container')).toBeTruthy();
+
+  mockQuery = 'Today';
+  await view.rerender(<BoardScreen />);
+  expect(screen.queryByTestId('pinned-cards-container')).toBeNull();
+});
+
+it('keeps the pinned row visible but excludes it from card selection', async () => {
+  mockParams = {};
+  await render(<BoardScreen />);
+  expect(screen.getByTestId('pinned-cards-container')).toBeTruthy();
+
+  const duplicateCards = screen.getAllByText('Today note');
+  await fireEvent(duplicateCards[1], 'longPress');
+  expect(screen.getByTestId('pinned-cards-container')).toBeTruthy();
+  expect(screen.getByTestId('card-today-selected')).toBeTruthy();
+
+  const pinnedCardWhileSelecting = screen.getAllByTestId('card-today-not-selected')[0];
+  await fireEvent(pinnedCardWhileSelecting, 'longPress');
+  await fireEvent.press(pinnedCardWhileSelecting);
+  expect(screen.getByTestId('card-today-selected')).toBeTruthy();
 });

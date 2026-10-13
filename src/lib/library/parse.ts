@@ -64,6 +64,9 @@ export function parseItem(raw: unknown): LibraryItem {
   if (typeof item.note === 'string') {
     item.note = decodeHTML(item.note);
   }
+  if (typeof item.pinnedAt !== 'string' || !validDate(item.pinnedAt)) {
+    delete item.pinnedAt;
+  }
   if (item.type === 'note' || item.type === 'quote') {
     if (typeof item.linkedItemId !== 'string' || !item.linkedItemId) {
       delete item.linkedItemId;

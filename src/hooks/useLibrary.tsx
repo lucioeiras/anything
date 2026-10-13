@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { getDistinctTags, searchCachedItems, type ItemIndexFilter } from '@/lib/library/cache';
+import { MAX_PINNED_ITEMS, nextPinnedAt } from '@/lib/library/pinned';
 import {
   addBookItemToLibrary,
   addGameItemToLibrary,
@@ -162,6 +163,7 @@ export type LibraryContextValue = {
     itemId: string,
     updates: Partial<import('@/lib/library/types').LibraryItem>
   ) => Promise<import('@/lib/library/types').LibraryItem>;
+  setItemsPinned: (itemIds: string[], pinned: boolean) => Promise<boolean>;
   setRelatedItems: (itemId: string, relatedIds: string[]) => Promise<void>;
   getTags: () => { tag: string; count: number }[];
   searchItems: (filter: ItemIndexFilter) => import('@/lib/library/types').LibraryItem[];
@@ -614,6 +616,33 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source]
   );
 
+  const setItemsPinned = useCallback(
+    async (itemIds: string[], pinned: boolean): Promise<boolean> => {
+      let currentItems = loaded?.state.status === 'ready' ? loaded.state.result.items : [];
+      const selected = currentItems.filter((item) => itemIds.includes(item.id));
+      if (selected.length === 0) return false;
+      const itemsToChange = selected.filter((item) => Boolean(item.pinnedAt) !== pinned);
+      if (
+        pinned &&
+        currentItems.filter((item) => item.pinnedAt).length + itemsToChange.length >
+          MAX_PINNED_ITEMS
+      ) {
+        return false;
+      }
+
+      for (const item of itemsToChange) {
+        const updated = await updateItem(item.id, {
+          pinnedAt: pinned ? nextPinnedAt(currentItems) : undefined,
+        });
+        currentItems = currentItems.map((candidate) =>
+          candidate.id === updated.id ? updated : candidate
+        );
+      }
+      return true;
+    },
+    [loaded, updateItem]
+  );
+
   const setRelatedItems = useCallback(
     async (itemId: string, relatedIds: string[]) => {
       const targetSource = source ?? { kind: 'local' as const, name: 'App Library' };
@@ -686,6 +715,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     deleteItems,
     restoreItems,
     updateItem,
+    setItemsPinned,
     setRelatedItems,
     getTags,
     searchItems,

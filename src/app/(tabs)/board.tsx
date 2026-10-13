@@ -1,26 +1,7 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { BlurTargetView } from 'expo-blur';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import {
-  ArticleIcon,
-  BookOpenIcon,
-  FilePdfIcon,
-  FilmSlateIcon,
-  GameControllerIcon,
-  ImageIcon,
-  LinkIcon,
-  MusicNotesIcon,
-  NotePencilIcon,
-  PlusIcon,
-  QuotesIcon,
-  RedditLogoIcon,
-  TiktokLogoIcon,
-  TwitterLogoIcon,
-  VideoCameraIcon,
-  WarningIcon,
-  WaveformIcon,
-  YoutubeLogoIcon,
-} from 'phosphor-react-native';
+import { PlusIcon, WarningIcon } from 'phosphor-react-native';
 import {
   createContext,
   forwardRef,
@@ -36,37 +17,27 @@ import {
   Alert,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BoardAddModals } from '@/components/board/BoardAddModals';
+import { BoardPinnedItems } from '@/components/board/BoardPinnedItems';
+import { BoardTypeFilters } from '@/components/board/BoardTypeFilters';
 import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
 import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { RestoreToast } from '@/components/menus/RestoreToast';
-import { TypeFilterButton } from '@/components/menus/TypeFilterButton';
 import { SearchBar } from '@/components/menus/SearchBar';
-import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
-import { NewAudioModal } from '@/components/modals/NewAudioModal';
-import { NewBookModal } from '@/components/modals/NewBookModal';
-import { NewEntertainmentModal } from '@/components/modals/NewEntertainmentModal';
-import { NewGameModal } from '@/components/modals/NewGameModal';
-import { NewImageModal } from '@/components/modals/NewImageModal';
-import { NewLinkModal } from '@/components/modals/NewLinkModal';
-import { NewMovieModal } from '@/components/modals/NewMovieModal';
-import { NewMusicModal } from '@/components/modals/NewMusicModal';
-import { NewNoteModal } from '@/components/modals/NewNoteModal';
-import { NewPdfModal } from '@/components/modals/NewPdfModal';
-import { NewVideoModal } from '@/components/modals/NewVideoModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { CARD_TYPE_LABELS, matchesAddedDay, parseDayKey } from '@/lib/library/activity';
 import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
+import { getPinnedItems, MAX_PINNED_ITEMS } from '@/lib/library/pinned';
 import type {
   DeletedItemBackup,
   PickedAudioAsset,
@@ -75,26 +46,7 @@ import type {
   PickedVideoAsset,
 } from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
-import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
-
-const CARD_TYPE_ICONS = {
-  note: NotePencilIcon,
-  quote: QuotesIcon,
-  image: ImageIcon,
-  pdf: FilePdfIcon,
-  video: VideoCameraIcon,
-  audio: WaveformIcon,
-  link: LinkIcon,
-  article: ArticleIcon,
-  youtube: YoutubeLogoIcon,
-  tiktok: TiktokLogoIcon,
-  tweet: TwitterLogoIcon,
-  reddit: RedditLogoIcon,
-  book: BookOpenIcon,
-  music: MusicNotesIcon,
-  movie: FilmSlateIcon,
-  game: GameControllerIcon,
-} satisfies Record<LibraryItemType, typeof NotePencilIcon>;
+import { type LibraryItem, type LibraryItemType } from '@/lib/library/types';
 
 type BoardGridContextType = {
   lastIndices: { col0: number; col1: number };
@@ -142,6 +94,7 @@ export default function BoardScreen() {
     setSearchQuery,
     clearSearchTag,
     updateItem,
+    setItemsPinned,
   } = useLibrary();
   const searchBlurTargetRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
@@ -672,6 +625,37 @@ export default function BoardScreen() {
     [state, selectedCardIds]
   );
 
+  const pinnedItems = useMemo(
+    () => (state.status === 'ready' ? getPinnedItems(state.result.items) : []),
+    [state]
+  );
+
+  const selectedPinnedCount = selectedItems.filter((item) => item.pinnedAt).length;
+  const selectedUnpinnedCount = selectedItems.length - selectedPinnedCount;
+  const canPinSelected =
+    selectedUnpinnedCount > 0 && pinnedItems.length + selectedUnpinnedCount <= MAX_PINNED_ITEMS;
+  const pinActionLabel = canPinSelected
+    ? 'Pin selected cards'
+    : selectedPinnedCount > 0
+      ? 'Unpin selected cards'
+      : undefined;
+
+  const handleToggleSelectedPins = useCallback(async () => {
+    if (!pinActionLabel) return;
+    try {
+      const succeeded = await setItemsPinned(
+        Array.from(selectedCardIds),
+        pinActionLabel === 'Pin selected cards'
+      );
+      if (!succeeded) Alert.alert('Could not update pinned cards');
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Could not update pinned cards'
+      );
+    }
+  }, [pinActionLabel, selectedCardIds, setItemsPinned]);
+
   const reportItemCol = useCallback(
     (index: number, col: number) => {
       itemColsRef.current.set(index, col);
@@ -764,7 +748,15 @@ export default function BoardScreen() {
 
     return (
       <View className="pb-2">
-        <TypeFilters selectedType={activeType} onSelect={handleTypeFilter} />
+        {!hasActiveFilter && pinnedItems.length > 0 && (
+          <BoardPinnedItems
+            items={pinnedItems}
+            isEditing={isEditing}
+            onPress={handleCardPress}
+            onLongPress={handleCardLongPress}
+          />
+        )}
+        <BoardTypeFilters selectedType={activeType} onSelect={handleTypeFilter} />
         {hasIssues && (
           <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
             <WarningIcon size={16} color="#fbbf24" weight="fill" />
@@ -782,7 +774,16 @@ export default function BoardScreen() {
         )}
       </View>
     );
-  }, [state, activeType, handleTypeFilter]);
+  }, [
+    state,
+    activeType,
+    handleTypeFilter,
+    hasActiveFilter,
+    pinnedItems,
+    isEditing,
+    handleCardPress,
+    handleCardLongPress,
+  ]);
 
   const renderEmpty = useCallback(() => {
     if (hasActiveFilter) {
@@ -906,6 +907,8 @@ export default function BoardScreen() {
             bottomOffset={60 + insets.bottom}
             onDelete={handleDeleteSelected}
             onAddToFolder={() => setIsFolderPickerOpen(true)}
+            pinActionLabel={pinActionLabel}
+            onTogglePin={handleToggleSelectedPins}
             onCancel={handleCancelEdition}
           />
           <RestoreToast
@@ -935,6 +938,8 @@ export default function BoardScreen() {
       state.status,
       isEditing,
       selectedCardIds.size,
+      pinActionLabel,
+      handleToggleSelectedPins,
       handleDeleteSelected,
       handleCancelEdition,
       handleRestore,
@@ -997,108 +1002,34 @@ export default function BoardScreen() {
         </View>
       )}
 
-      <NewNoteModal
-        visible={isNoteDrawerOpen}
-        onClose={() => closeAddModal('note')}
+      <BoardAddModals
+        isNoteDrawerOpen={isNoteDrawerOpen}
+        isLinkModalOpen={isLinkModalOpen}
+        isBookModalOpen={isBookModalOpen}
+        isMusicModalOpen={isMusicModalOpen}
+        isMovieModalOpen={isMovieModalOpen}
+        isGameModalOpen={isGameModalOpen}
+        isEntertainmentModalOpen={isEntertainmentModalOpen}
+        isImageModalOpen={isImageModalOpen}
+        isPdfModalOpen={isPdfModalOpen}
+        isVideoModalOpen={isVideoModalOpen}
+        isAudioModalOpen={isAudioModalOpen}
+        isFolderPickerOpen={isFolderPickerOpen}
+        pendingImage={pendingImage}
+        pendingPdf={pendingPdf}
+        pendingVideo={pendingVideo}
+        pendingAudio={pendingAudio}
+        selectedItems={selectedItems}
+        onClose={closeAddModal}
         onDismiss={handleAddModalDismiss}
-      />
-      <NewLinkModal
-        visible={isLinkModalOpen}
-        onClose={() => closeAddModal('link')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewBookModal
-        visible={isBookModalOpen}
-        onClose={() => closeAddModal('book')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewMusicModal
-        visible={isMusicModalOpen}
-        onClose={() => closeAddModal('music')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewMovieModal
-        visible={isMovieModalOpen}
-        onClose={() => closeAddModal('movie')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewGameModal
-        visible={isGameModalOpen}
-        onClose={() => closeAddModal('game')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewEntertainmentModal
-        visible={isEntertainmentModalOpen}
-        onClose={() => {
+        onCloseEntertainment={() => {
           if (!queuedControlActionRef.current) activeAddModalRef.current = null;
           setIsEntertainmentModalOpen(false);
         }}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewImageModal
-        visible={isImageModalOpen}
-        imageAsset={pendingImage}
-        onClose={() => closeAddModal('image')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewPdfModal
-        visible={isPdfModalOpen}
-        pdfAsset={pendingPdf}
-        onClose={() => closeAddModal('pdf')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewVideoModal
-        key={pendingVideo?.uri ?? 'empty-video'}
-        visible={isVideoModalOpen}
-        videoAsset={pendingVideo}
-        onClose={() => closeAddModal('video')}
-        onDismiss={handleAddModalDismiss}
-      />
-      <NewAudioModal
-        visible={isAudioModalOpen}
-        asset={pendingAudio}
-        onClose={() => closeAddModal('audio')}
-      />
-
-      <AddToFolderModal
-        visible={isFolderPickerOpen}
-        items={selectedItems}
-        onClose={() => setIsFolderPickerOpen(false)}
-        onAdded={handleCancelEdition}
+        onCloseFolderPicker={() => setIsFolderPickerOpen(false)}
+        onAddedToFolder={handleCancelEdition}
       />
     </View>
-  );
-}
-
-function TypeFilters({
-  selectedType,
-  onSelect,
-}: {
-  selectedType: LibraryItemType | null;
-  onSelect: (type: LibraryItemType) => void;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerClassName="items-center gap-2 px-3 py-2.5"
-      keyboardShouldPersistTaps="always"
-      accessibilityLabel="Filter cards by type"
-    >
-      {ITEM_TYPES.map((type) => {
-        const Icon = CARD_TYPE_ICONS[type];
-
-        return (
-          <TypeFilterButton
-            key={type}
-            label={CARD_TYPE_LABELS[type]}
-            icon={Icon}
-            selected={selectedType === type}
-            onPress={() => onSelect(type)}
-          />
-        );
-      })}
-    </ScrollView>
   );
 }
 
