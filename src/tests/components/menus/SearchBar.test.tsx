@@ -72,3 +72,21 @@ describe('SearchBar', () => {
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
 });
+
+it('shows and removes a date filter independently of other filters', async () => {
+  const removeDate = jest.fn(),
+    removeTag = jest.fn();
+  const { getByLabelText } = await render(
+    <SearchBar
+      value=""
+      onChangeText={jest.fn()}
+      filters={[
+        { kind: 'date', label: '10/13/2026', onRemove: removeDate },
+        { kind: 'tag', label: 'reading', onRemove: removeTag },
+      ]}
+    />
+  );
+  await fireEvent.press(getByLabelText('Remove date filter 10/13/2026'));
+  expect(removeDate).toHaveBeenCalledTimes(1);
+  expect(removeTag).not.toHaveBeenCalled();
+});

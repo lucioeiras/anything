@@ -8,6 +8,7 @@ O aplicativo é desenvolvido com Expo, React Native, TypeScript e Expo Router. A
 
 - **Captura de conteúdo:** notas, citações, tarefas, links, artigos, vídeos do YouTube, publicações do X/Twitter e Reddit, imagens, PDFs, livros, músicas, filmes e jogos.
 - **Board e busca:** grade de cartões, pesquisa de texto, filtros por tipo e tag, seleção de vários itens, exclusão com opção de restaurar e visualização dos detalhes.
+- **Perfil e atividade:** estatísticas da biblioteca aberta, calendário de adições com filtro do board por dia e visualização mensal com capas dos cards concluídos, filtrada por ano e tipo. O calendário de leitura reúne livros com logs em cada dia e destaca as maiores sequências de dias consecutivos do ano. Configurações ficam acessíveis pelo perfil. A data de conclusão é registrada ao entrar em Completed; cards antigos sem essa data ficam fora do gráfico, com aviso.
 - **Organização:** tags manuais e sugestões automáticas, pastas personalizadas e pastas por andamento — “Want to”, “In progress”, “Completed” e “Abandoned” — para itens compatíveis.
 - **Acompanhamento e avaliações:** progresso de leitura, filmes e jogos; avaliações e comentários; registro de páginas lidas em livros.
 - **Metadados:** leitura de metadados de links, consulta de livros por ISBN, busca de música no iTunes, letras via LRCLIB, filmes via TMDB e jogos via RAWG.

@@ -48,6 +48,7 @@ import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
 import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { RestoreToast } from '@/components/menus/RestoreToast';
+import { TypeFilterButton } from '@/components/menus/TypeFilterButton';
 import { SearchBar } from '@/components/menus/SearchBar';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewAudioModal } from '@/components/modals/NewAudioModal';
@@ -62,6 +63,7 @@ import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { NewVideoModal } from '@/components/modals/NewVideoModal';
 import { useLibrary } from '@/hooks/useLibrary';
+import { CARD_TYPE_LABELS, matchesAddedDay, parseDayKey } from '@/lib/library/activity';
 import { parseAudioWaveform } from '@/lib/library/audioWaveform';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
@@ -74,25 +76,6 @@ import type {
 } from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
-
-const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
-  note: 'Notes',
-  quote: 'Quotes',
-  image: 'Media',
-  pdf: 'PDFs',
-  video: 'Videos',
-  audio: 'Recorded audio',
-  link: 'Links',
-  article: 'Articles',
-  youtube: 'YouTube',
-  tiktok: 'TikTok',
-  tweet: 'Tweets',
-  reddit: 'Reddit',
-  book: 'Books',
-  music: 'Music',
-  movie: 'Movies',
-  game: 'Games',
-};
 
 const CARD_TYPE_ICONS = {
   note: NotePencilIcon,
@@ -190,6 +173,8 @@ export default function BoardScreen() {
     controlToken,
     folderKind,
     folderKey,
+    addedOn,
+    activityToken,
   } = useLocalSearchParams<{
     newNote?: string;
     newLink?: string;
@@ -215,6 +200,8 @@ export default function BoardScreen() {
     newAudioTimestamp?: string;
     controlAddItem?: AddControlItem;
     controlToken?: string;
+    addedOn?: string;
+    activityToken?: string;
     folderKind?: 'status' | 'tag';
     folderKey?: string;
   }>();
@@ -242,6 +229,9 @@ export default function BoardScreen() {
     type: LibraryItemType;
     folderId: string;
   } | null>(null);
+  const addedDate = parseDayKey(addedOn);
+  const activeDay = addedDate ? addedOn : null;
+  const clearDateFilter = useCallback(() => router.setParams({ addedOn: '' }), []);
   const activeFolderKind =
     folderKey && (folderKind === 'status' || folderKind === 'tag') ? folderKind : null;
   const activeFolderKey = activeFolderKind ? folderKey : null;
@@ -625,10 +615,14 @@ export default function BoardScreen() {
   }, []);
 
   const isSearching = searchQuery.trim().length > 0;
-  const folderId = activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : '';
+  const folderId = `${activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : ''}:${activityToken ?? ''}`;
   const activeType = searchType ?? (selectedType?.folderId === folderId ? selectedType.type : null);
   const hasActiveFilter =
-    isSearching || activeType !== null || activeFolderKind !== null || searchTag !== null;
+    isSearching ||
+    activeType !== null ||
+    activeFolderKind !== null ||
+    searchTag !== null ||
+    activeDay !== null;
 
   const handleTypeFilter = useCallback(
     (type: LibraryItemType) => {
@@ -650,6 +644,7 @@ export default function BoardScreen() {
         : state.result.items;
     return matches.filter(
       (item) =>
+        (!activeDay || matchesAddedDay(item, activeDay)) &&
         (!searchTag || item.tags?.some((tag) => tag.trim() === searchTag)) &&
         (activeFolderKind !== 'status' ||
           matchesStatus(item, activeFolderKey as MediaProgressStatus)) &&
@@ -658,6 +653,7 @@ export default function BoardScreen() {
   }, [
     state,
     hasActiveFilter,
+    activeDay,
     activeType,
     isSearching,
     searchQuery,
@@ -796,13 +792,15 @@ export default function BoardScreen() {
         <Centered
           title="No results found"
           message={
-            typeLabel
-              ? `No ${typeLabel}${queryLabel ? ` matching "${queryLabel}"` : ''}`
-              : activeFolderKind
-                ? `No cards in ${folderLabel ?? 'this folder'}${searchTag ? ` with tag #${searchTag}` : ''}${queryLabel ? ` matching "${queryLabel}"` : ''}`
-                : searchTag
-                  ? `No cards with tag #${searchTag}${queryLabel ? ` matching "${queryLabel}"` : ''}`
-                  : `No cards matching "${queryLabel}"`
+            activeDay
+              ? `No cards added on ${parseDayKey(activeDay)?.toLocaleDateString()} match your filters`
+              : typeLabel
+                ? `No ${typeLabel}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                : activeFolderKind
+                  ? `No cards in ${folderLabel ?? 'this folder'}${searchTag ? ` with tag #${searchTag}` : ''}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                  : searchTag
+                    ? `No cards with tag #${searchTag}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                    : `No cards matching "${queryLabel}"`
           }
         >
           <Pressable
@@ -811,6 +809,7 @@ export default function BoardScreen() {
               clearSearchTag();
               setSelectedType(null);
               clearFolderFilter();
+              clearDateFilter();
             }}
             className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
           >
@@ -836,6 +835,7 @@ export default function BoardScreen() {
     );
   }, [
     hasActiveFilter,
+    activeDay,
     activeType,
     isSearching,
     searchType,
@@ -846,6 +846,7 @@ export default function BoardScreen() {
     activeFolderKind,
     folderLabel,
     clearFolderFilter,
+    clearDateFilter,
   ]);
 
   useFocusEffect(
@@ -868,6 +869,15 @@ export default function BoardScreen() {
               />
             }
             filters={[
+              ...(activeDay
+                ? [
+                    {
+                      kind: 'date' as const,
+                      label: parseDayKey(activeDay)!.toLocaleDateString(),
+                      onRemove: clearDateFilter,
+                    },
+                  ]
+                : []),
               ...(activeFolderKind
                 ? [
                     {
@@ -915,6 +925,8 @@ export default function BoardScreen() {
       folderLabel,
       activeFolderKey,
       clearFolderFilter,
+      clearDateFilter,
+      activeDay,
       searchTag,
       clearSearchTag,
       state.status,
@@ -1072,6 +1084,7 @@ function TypeFilters({
     >
       {ITEM_TYPES.map((type) => {
         const Icon = CARD_TYPE_ICONS[type];
+
         return (
           <TypeFilterButton
             key={type}
@@ -1083,32 +1096,6 @@ function TypeFilters({
         );
       })}
     </ScrollView>
-  );
-}
-
-function TypeFilterButton({
-  label,
-  icon: Icon,
-  selected,
-  onPress,
-}: {
-  label: string;
-  icon: typeof NotePencilIcon;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      className={`flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${selected ? 'border-white bg-white' : 'border-zinc-700'}`}
-    >
-      <Icon size={16} color={selected ? '#000000' : '#a1a1aa'} weight="regular" />
-      <Text className={`font-sans-medium text-sm ${selected ? 'text-black' : 'text-zinc-300'}`}>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 

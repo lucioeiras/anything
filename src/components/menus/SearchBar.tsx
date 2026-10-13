@@ -1,5 +1,6 @@
 import { BlurView } from 'expo-blur';
 import {
+  CalendarBlankIcon,
   BookmarkSimpleIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -31,7 +32,7 @@ const statusIcons = {
 } satisfies Record<MediaProgressStatus, typeof FolderIcon>;
 
 type SearchFilter = {
-  kind: 'tag' | 'folder';
+  kind: 'tag' | 'folder' | 'date';
   label: string;
   status?: MediaProgressStatus;
   onRemove: () => void;
@@ -112,7 +113,13 @@ export function SearchBar({
                 const status = filter.status
                   ? STATUS_FOLDERS.find((folder) => folder.key === filter.status)
                   : null;
-                const Icon = status ? statusIcons[status.key] : isTag ? HashIcon : FolderIcon;
+                const Icon = status
+                  ? statusIcons[status.key]
+                  : isTag
+                    ? HashIcon
+                    : filter.kind === 'date'
+                      ? CalendarBlankIcon
+                      : FolderIcon;
                 const iconColor = status?.color ?? (isTag ? '#60A5FA' : '#C4B5FD');
                 return (
                   <Pressable

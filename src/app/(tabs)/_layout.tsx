@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { FolderIcon, NutIcon, SquaresFourIcon } from 'phosphor-react-native';
+import { FolderIcon, UserCircleIcon, SquaresFourIcon } from 'phosphor-react-native';
 
 import { ProgressiveBlur } from '@/components/effects/ProgressiveBlur';
 import { FloatingTabOverlayProvider } from '@/components/menus/FloatingTabOverlay';
@@ -59,11 +59,11 @@ export default function TabLayout() {
         />
         <Tabs.Screen name="add" options={{ href: null }} />
         <Tabs.Screen
-          name="settings"
+          name="profile"
           options={{
-            title: 'Settings',
+            title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
-              <NutIcon
+              <UserCircleIcon
                 size={iconSize}
                 color={color as string}
                 weight={focused ? 'fill' : 'regular'}

@@ -97,6 +97,8 @@ export type LinkItem = BaseItem & {
 
 export type ArticleItem = BaseItem & {
   type: 'article';
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
@@ -106,6 +108,8 @@ export type ArticleItem = BaseItem & {
 
 export type YouTubeItem = BaseItem & {
   type: 'youtube';
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
@@ -150,6 +154,8 @@ export type RedditItem = BaseItem & {
 export type BookItem = BaseItem & {
   type: 'book';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   isbn: string;
   title: string;
@@ -190,6 +196,8 @@ export type MusicItem = BaseItem & {
 export type MovieItem = BaseItem & {
   type: 'movie';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   tmdbId: number;
   title: string;
@@ -214,6 +222,8 @@ export type MovieItem = BaseItem & {
 export type GameItem = BaseItem & {
   type: 'game';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   rawgId?: number;
   title: string;

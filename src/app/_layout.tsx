@@ -124,6 +124,7 @@ function RootNavigator() {
       <Stack.Screen name="index" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="handle-share" />
+      <Stack.Screen name="settings" />
       <Stack.Screen
         name="card/[id]"
         options={{

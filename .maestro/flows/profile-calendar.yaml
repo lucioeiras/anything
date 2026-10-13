@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+name: Open profile and filter saved cards by day
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- tapOn: 'Type here...'
+- inputText: 'Profile calendar note'
+- tapOn: 'Save note'
+- assertVisible: 'Profile calendar note'
+- tapOn: 'Profile'
+- assertVisible: 'Saved cards'
+- scrollUntilVisible:
+    element: 'Tap a day to see the cards you saved.'
+    direction: DOWN
+- tapOn: '.*, 1 cards added'
+- assertVisible: 'Profile calendar note'
+- tapOn: 'Remove date filter .*'
+- assertVisible: 'Profile calendar note'

@@ -1,0 +1,133 @@
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import {
+  ArticleIcon,
+  BookOpenIcon,
+  FilmSlateIcon,
+  GameControllerIcon,
+  YoutubeLogoIcon,
+} from 'phosphor-react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+
+import { getRelatedCardTitle } from '@/lib/library/related';
+import type { LibraryItem } from '@/lib/library/types';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** One cover per completion, arranged as a horizontal shelf for each month. */
+export function CompletionChart({ months, year }: { months: LibraryItem[][]; year: number }) {
+  const total = months.reduce((sum, items) => sum + items.length, 0);
+  return (
+    <View className="mt-6">
+      <Text className="mb-4 font-sans text-sm text-zinc-400">
+        {total} {total === 1 ? 'card' : 'cards'} completed in {year}
+      </Text>
+      <View className="gap-2">
+        {MONTHS.map((month, index) => {
+          const items = months[index] ?? [];
+          return (
+            <View key={month} className="flex-row items-center gap-3">
+              <Text
+                accessibilityLabel={`${month} ${year}: ${items.length} cards completed`}
+                className="w-8 font-sans-medium text-xs text-zinc-500"
+              >
+                {month}
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="flex-1 rounded-xl bg-zinc-900/60"
+                style={{ height: 80 }}
+                contentContainerStyle={{
+                  flexGrow: 1,
+                  height: 80,
+                  padding: 8,
+                  gap: 4,
+                  alignItems: 'center',
+                }}
+              >
+                {items.map((item) => {
+                  const artwork = getArtwork(item);
+                  return (
+                    <CompletionCover
+                      key={`${item.id}:${artwork ?? ''}`}
+                      item={item}
+                      artwork={artwork}
+                    />
+                  );
+                })}
+              </ScrollView>
+            </View>
+          );
+        })}
+      </View>
+      {total === 0 && (
+        <Text className="mt-4 font-sans text-sm text-zinc-500">
+          No completions recorded for this selection.
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function getArtwork(item: LibraryItem): string | undefined {
+  switch (item.type) {
+    case 'book':
+    case 'game':
+      return item.cover;
+    case 'movie':
+      return item.poster;
+    case 'article':
+    case 'youtube':
+      return item.thumbnail;
+    default:
+      return undefined;
+  }
+}
+
+function CompletionCover({ item, artwork }: { item: LibraryItem; artwork?: string }) {
+  const [failed, setFailed] = useState(false);
+  const title = getRelatedCardTitle(item);
+  const Icon =
+    item.type === 'book'
+      ? BookOpenIcon
+      : item.type === 'movie'
+        ? FilmSlateIcon
+        : item.type === 'game'
+          ? GameControllerIcon
+          : item.type === 'youtube'
+            ? YoutubeLogoIcon
+            : ArticleIcon;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${title}`}
+      accessibilityHint="View completed card details"
+      onPress={() => router.push({ pathname: '/card/[id]', params: { id: item.id } })}
+      style={{ width: 44, height: 64 }}
+      className="overflow-hidden rounded-sm bg-zinc-800 active:opacity-70"
+    >
+      {artwork && !failed ? (
+        <Image
+          testID={`completion-cover-image-${item.id}`}
+          source={{ uri: artwork }}
+          contentFit="cover"
+          style={{ width: '100%', height: '100%' }}
+          recyclingKey={item.id}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <View
+          testID={`completion-cover-fallback-${item.id}`}
+          className="flex-1 items-center justify-center gap-1 px-1"
+        >
+          <Icon size={20} color="#A1A1AA" />
+          <Text numberOfLines={2} className="text-center font-sans text-[9px] text-zinc-400">
+            {title}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { parseItem } from './parse';
+import { TRACKABLE_TYPES } from './activity';
 import { normalizeRelatedIds } from './related';
 import { parseAudioWaveform } from './audioWaveform';
 import { isQuoteText } from './quotes';
@@ -1952,6 +1953,13 @@ export async function updateItemInLibrary(
     id: itemId,
     updatedAt: now,
   };
+
+  if (TRACKABLE_TYPES.includes(rawItem.type)) {
+    if (updatedRaw.progressStatus !== 'completed') delete updatedRaw.completedAt;
+    else if (rawItem.progressStatus !== 'completed') updatedRaw.completedAt = now;
+    else if (rawItem.completedAt !== undefined) updatedRaw.completedAt = rawItem.completedAt;
+    else delete updatedRaw.completedAt;
+  }
 
   if (rawItem.type === 'note' && typeof updatedRaw.text === 'string') {
     const markdownFile = new File(root, `${itemId}.md`);
