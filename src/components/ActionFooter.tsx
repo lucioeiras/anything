@@ -22,7 +22,7 @@ export function ActionFooter({
         marginHorizontal: horizontalScroll ? 4 : 12,
         marginBottom: Math.max(bottomInset, 12),
         backgroundColor: 'transparent',
-        ...(overlay ? { position: 'absolute', right: 0, bottom: 0, left: 0 } : null),
+        ...(overlay ? { position: 'absolute', right: 0, bottom: 0, left: 0, zIndex: 20 } : null),
       }}
     >
       {horizontalScroll ? (

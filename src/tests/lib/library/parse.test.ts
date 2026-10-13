@@ -21,6 +21,7 @@ describe('parseItem', () => {
       audio: { audio: 'audios/recording.m4a' },
       link: { url: 'url', siteTitle: 'siteTitle', favicon: 'favicon' },
       article: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
+      tiktok: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
       youtube: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
       tweet: { author: 'author', avatar: 'avatar', text: 'text' },
       reddit: { subreddit: 'subreddit', subredditAvatar: 'subredditAvatar', title: 'title' },
@@ -32,7 +33,8 @@ describe('parseItem', () => {
 
     for (const [type, fields] of Object.entries(required)) {
       expect(() => parseItem({ ...base, type })).toThrow(`"${type}" item is missing`);
-      expect(parseItem({ ...base, type, ...fields })).toMatchObject({
+      expect(parseItem({ ...base, type, ...fields, relatedItemIds: ['other'] })).toMatchObject({
+        relatedItemIds: ['other'],
         version: 1,
         updatedAt: base.createdAt,
       });
@@ -124,5 +126,26 @@ describe('parseItem', () => {
       authors: ['A & B', '3'],
       readingLogs: [{ id: 'valid', page: 12 }],
     });
+  });
+});
+
+describe('related card parsing', () => {
+  it.each([undefined, null, 'bad', 42, {}, []])(
+    'ignores invalid/absent lists: %p',
+    (relatedItemIds) => {
+      expect(
+        parseItem({ ...base, type: 'note', text: 'body', relatedItemIds }).relatedItemIds
+      ).toBeUndefined();
+    }
+  );
+  it('drops invalid IDs, duplicates and self references while preserving missing-card IDs', () => {
+    expect(
+      parseItem({
+        ...base,
+        type: 'note',
+        text: 'body',
+        relatedItemIds: ['', '  ', null, 2, 'item-1', 'other', 'other', 'missing'],
+      }).relatedItemIds
+    ).toEqual(['other', 'missing']);
   });
 });

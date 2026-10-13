@@ -1,0 +1,48 @@
+appId: ${APP_ID}
+name: Add, persist and remove bidirectional related cards
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- tapOn: 'Type here...'
+- inputText: 'E2E related Alpha'
+- tapOn: 'Save note'
+- tapOn: 'Add new item'
+- tapOn: 'Note, quote or to-do'
+- tapOn: 'Type here...'
+- inputText: 'E2E related Beta'
+- tapOn: 'Save note'
+- tapOn: 'E2E related Alpha'
+- tapOn: 'Manage related cards'
+- tapOn: 'E2E related Beta'
+- assertVisible: '1 selected'
+- tapOn: 'Save related cards'
+- stopApp
+- launchApp
+- tapOn: 'E2E related Alpha'
+- scrollUntilVisible:
+    element:
+      id: 'related-cards-section'
+    direction: DOWN
+- assertVisible: 'Related cards (1)'
+- tapOn: 'E2E related Beta'
+- scrollUntilVisible:
+    element:
+      id: 'related-cards-section'
+    direction: DOWN
+- assertVisible: 'Related cards (1)'
+- assertVisible: 'E2E related Alpha'
+- tapOn: 'Manage related cards'
+- assertVisible: '1 selected'
+- tapOn: 'E2E related Alpha'
+- assertVisible: '0 selected'
+- tapOn: 'Save related cards'
+- assertNotVisible:
+    id: 'related-cards-section'
+- stopApp
+- launchApp
+- tapOn: 'E2E related Alpha'
+- tapOn: 'Manage related cards'
+- assertVisible: '0 selected'
+- tapOn: 'Cancel related cards'

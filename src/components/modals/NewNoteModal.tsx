@@ -1,9 +1,9 @@
 import {
   ArrowLeftIcon,
+  BookmarkSimpleIcon,
   CheckIcon,
   EyeIcon,
   InfoIcon,
-  LinkIcon,
   ListBulletsIcon,
   ListChecksIcon,
   ListNumbersIcon,
@@ -40,14 +40,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionFooter } from '@/components/ActionFooter';
 import { Button } from '@/components/Button';
 import { MarkdownNote } from '@/components/card/MarkdownNote';
-import { LinkedContentPicker } from '@/components/LinkedContentPicker';
-import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { MusicLyricsPicker } from '@/components/modals/MusicLyricsPicker';
 import { NoteRichTextInput } from '@/components/modals/NoteRichTextInput';
 import type {
   NoteFormattingAction,
   NoteRichTextInputHandle,
 } from '@/components/modals/NoteRichTextInput.types';
+import { SourcePicker } from '@/components/SourcePicker';
+import { SourcePreview } from '@/components/SourcePreview';
 import { TagsBox } from '@/components/TagsBox';
 
 import { useLibrary } from '@/hooks/useLibrary';
@@ -492,14 +492,14 @@ export function NewNoteModal({
               />
 
               {lyricsSong ? (
-                <LinkedContentPreview
+                <SourcePreview
                   pendingMusic={lyricsSong}
                   onChange={() => setIsLyricsPickerOpen(true)}
                   onRemove={() => setLyricsSong(null)}
                   containerClassName="px-8 py-6 border-b border-zinc-800"
                 />
               ) : linkedItem && isLinkableItem(linkedItem) ? (
-                <LinkedContentPreview
+                <SourcePreview
                   item={linkedItem}
                   onChange={() => setIsLinkPickerOpen(true)}
                   onRemove={() => setLinkedItemId(undefined)}
@@ -509,11 +509,11 @@ export function NewNoteModal({
                 <Pressable
                   onPress={() => setIsLinkPickerOpen(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Link note to content"
+                  accessibilityLabel="Add source"
                   className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800"
                 >
-                  <LinkIcon size={20} color="#FFFFFF" />
-                  <Text className="font-sans-semibold text-lg text-white">Link to content</Text>
+                  <BookmarkSimpleIcon size={20} color="#FFFFFF" />
+                  <Text className="font-sans-semibold text-lg text-white">Add source</Text>
                 </Pressable>
               )}
             </ScrollView>
@@ -637,7 +637,7 @@ export function NewNoteModal({
           </ActionFooter>
         </View>
       </KeyboardAvoidingView>
-      <LinkedContentPicker
+      <SourcePicker
         visible={isLinkPickerOpen}
         items={libraryItems}
         selectedId={linkedItemId}

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import {
   getLinkableTitle,
@@ -12,6 +13,8 @@ import {
   type LinkableItem,
 } from '@/lib/library/links';
 import type { LibraryItem } from '@/lib/library/types';
+import { ActionFooter } from './ActionFooter';
+import { ProgressiveBlur } from './effects/ProgressiveBlur';
 
 type Props = {
   visible: boolean;
@@ -21,7 +24,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function LinkedContentPicker({ visible, items, selectedId, onSelect, onClose }: Props) {
+export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: Props) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
   const insets = useSafeAreaInsets();
@@ -61,33 +64,22 @@ export function LinkedContentPicker({ visible, items, selectedId, onSelect, onCl
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View
-        className="flex-1 bg-zinc-950"
-        style={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom }}
-      >
+      <View className="flex-1 bg-zinc-950" style={{ paddingTop: insets.top + 16 }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-6 mb-5">
-          <Text className="font-sans-semibold text-2xl text-white">Link to content</Text>
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close content picker"
-            hitSlop={12}
-          >
-            <XIcon size={24} color="#E4E4E7" />
-          </Pressable>
+          <Text className="font-sans-semibold text-2xl text-white">Select source</Text>
         </View>
 
         {/* Search Bar */}
         <View className="flex-row items-center gap-4 border-t border-b border-zinc-800 px-6 mb-4 py-5">
-          <MagnifyingGlassIcon size={20} color="#A1A1AA" />
+          <MagnifyingGlassIcon size={20} color="#E4E4E7" />
           <TextInput
             ref={inputRef}
             value={query}
             onChangeText={setQuery}
             placeholder="Search your library"
             placeholderTextColor="#71717A"
-            className="flex-1 font-sans text-lg text-white leading-tight"
+            className="flex-1 font-sans text-xl text-white leading-tight"
             autoCorrect={false}
             autoCapitalize="none"
             clearButtonMode="never"
@@ -118,11 +110,31 @@ export function LinkedContentPicker({ visible, items, selectedId, onSelect, onCl
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
           ListEmptyComponent={
-            <Text className="font-sans text-sm text-zinc-500 py-8 text-center">
+            <Text className="font-sans text-sm text-zinc-500 text-center">
               {query.trim() ? 'No matching content' : 'No content available to link'}
             </Text>
           }
         />
+
+        <ProgressiveBlur
+          height={190}
+          intensity={55}
+          darkLayerOpacity={0.75}
+          includeBottomInset={false}
+        />
+
+        <ActionFooter bottomInset={insets.bottom} overlay>
+          <View className="items-center gap-3">
+            <View className="flex-row items-center gap-2">
+              <Button
+                accessibilityLabel="Cancel related cards"
+                icon={<XIcon size={24} color="#FFFFFF" weight="bold" />}
+                onPress={onClose}
+                text="Cancel"
+              />
+            </View>
+          </View>
+        </ActionFooter>
       </View>
     </Modal>
   );
@@ -132,7 +144,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 4,
     paddingTop: 8,
-    paddingBottom: 24,
+    paddingBottom: 120,
   },
   cardWrapper: {
     width: '100%',

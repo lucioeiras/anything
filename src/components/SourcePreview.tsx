@@ -1,5 +1,5 @@
 import { Image as ExpoImage } from 'expo-image';
-import { LinkIcon, MusicNotesIcon, XIcon } from 'phosphor-react-native';
+import { BookmarkSimpleIcon, MusicNotesIcon, XIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -79,7 +79,7 @@ function getInitialAspectRatio(item: LinkableItem): number {
   }
 }
 
-export function LinkedContentPreview({
+export function SourcePreview({
   item,
   pendingMusic,
   onChange,
@@ -135,7 +135,7 @@ export function LinkedContentPreview({
         ) : pendingMusic ? (
           <MusicNotesIcon size={compact ? 16 : 24} color="#71717A" />
         ) : (
-          <LinkIcon size={compact ? 16 : 24} color="#71717A" />
+          <BookmarkSimpleIcon size={compact ? 16 : 24} color="#71717A" />
         )}
       </View>
       <View className={`flex-1 ${compact ? 'gap-1.5' : 'gap-2'}`}>
@@ -169,7 +169,7 @@ export function LinkedContentPreview({
       <Pressable
         onPress={onChange}
         accessibilityRole="button"
-        accessibilityLabel={`Change linked content: ${title}`}
+        accessibilityLabel={`Change source: ${title}`}
         className="flex-1 flex-row items-center gap-6"
       >
         {content}
@@ -181,7 +181,7 @@ export function LinkedContentPreview({
           hitSlop={10}
           className="p-2 rounded-full bg-zinc-800 active:opacity-70"
           accessibilityRole="button"
-          accessibilityLabel="Remove linked content"
+          accessibilityLabel="Remove source"
         >
           <XIcon size={16} color="#E4E4E7" weight="bold" />
         </Pressable>
