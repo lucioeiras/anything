@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import QuoteClose from '@/../assets/quote-close.svg';
 import QuoteOpen from '@/../assets/quote-open.svg';
 import { ItemCard } from '@/components/cards/ItemCard';
+import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { VinylRecord } from '@/components/effects/VinylRecord';
 import type { LibraryItem } from '@/lib/library/types';
 import { MusicPreviewPlayer } from './MusicPreviewPlayer';
@@ -130,7 +131,7 @@ export function CardPreview({
 
       {!isNoteOrQuote && !isMusic && (
         <View className="w-full max-w-sm">
-          <ItemCard item={displayItem} hideTitleAndAuthor />
+          <ItemCard item={displayItem} hideTitleAndAuthor showAudioPlaybackRate />
         </View>
       )}
 
@@ -155,18 +156,7 @@ export function CardPreview({
               <QuoteClose width={18} height={18} />
             </View>
           ) : (
-            <TextInput
-              value={editedText}
-              onChangeText={onTextChange}
-              onBlur={onTextBlur}
-              onFocus={onTextFocus}
-              multiline
-              placeholder="Type note here..."
-              placeholderTextColor="#71717A"
-              className="w-full font-sans text-2xl text-white leading-10 text-left py-2"
-              style={{ backgroundColor: 'transparent' }}
-              underlineColorAndroid="transparent"
-            />
+            <MarkdownNote markdown={editedText} onMarkdownChange={onTextChange} />
           )}
         </View>
       )}

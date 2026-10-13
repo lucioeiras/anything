@@ -17,6 +17,8 @@ const makeActions = () => ({
   onShare: jest.fn(),
   onOpenLink: jest.fn(),
   onOpenPdf: jest.fn(),
+  onEditNote: jest.fn(),
+  onTranscribeAudio: jest.fn(),
 });
 
 describe('CardActions', () => {
@@ -30,10 +32,13 @@ describe('CardActions', () => {
     expect(getByLabelText('Delete')).toBeTruthy();
     expect(getByLabelText('Add to folder')).toBeTruthy();
     expect(getByLabelText('Copy')).toBeTruthy();
+    expect(getByLabelText('Edit note')).toBeTruthy();
     expect(queryByLabelText('Share')).toBeNull();
     expect(queryByLabelText('Open link')).toBeNull();
     await fireEvent.press(getByLabelText('Copy'));
     expect(actions.onCopy).toHaveBeenCalledTimes(1);
+    await fireEvent.press(getByLabelText('Edit note'));
+    expect(actions.onEditNote).toHaveBeenCalledTimes(1);
   });
 
   it('adds download action for image cards', async () => {
@@ -77,5 +82,21 @@ describe('CardActions', () => {
     expect(actions.onOpenLink).toHaveBeenCalledTimes(1);
     expect(getByLabelText('Share')).toBeTruthy();
     expect(queryByLabelText('Copy')).toBeNull();
+  });
+
+  it('shows a manual transcription action for audio without a transcript', async () => {
+    const actions = makeActions();
+    const item: LibraryItem = { ...base, id: 'audio', type: 'audio', audio: 'audio.m4a' };
+    const { getByLabelText, queryByLabelText } = await render(
+      <CardActions item={item} {...actions} />
+    );
+
+    await fireEvent.press(getByLabelText('Transcribe audio'));
+    expect(actions.onTranscribeAudio).toHaveBeenCalledTimes(1);
+
+    const transcribedItem: LibraryItem = { ...item, transcript: 'A saved transcript' };
+    const withTranscript = await render(<CardActions item={transcribedItem} {...actions} />);
+    expect(withTranscript.queryByLabelText('Transcribe audio')).toBeNull();
+    expect(queryByLabelText('Transcribe audio')).toBeTruthy();
   });
 });

@@ -17,16 +17,22 @@ import { PdfCard } from './PdfCard';
 import { QuoteCard } from './QuoteCard';
 import { RedditCard } from './RedditCard';
 import { TweetCard } from './TweetCard';
+import { TikTokCard } from './TikTokCard';
 import { YouTubeCard } from './YouTubeCard';
+import { VideoCard } from './VideoCard';
+import { AudioCard } from './AudioCard';
 
 type ItemCardProps = {
   item: LibraryItem;
   linkedItem?: LinkableItem;
   hideTitleAndAuthor?: boolean;
+  showAudioPlaybackRate?: boolean;
+  compactAudioWaveform?: boolean;
   isEditing?: boolean;
   isSelected?: boolean;
   onPress?: (item: LibraryItem) => void;
   onLongPress?: (item: LibraryItem) => void;
+  onNoteTextChange?: (itemId: string, text: string) => void;
 };
 
 /** Maps a library item (from JSON) to the matching card component with edition mode support. */
@@ -34,10 +40,13 @@ export const ItemCard = memo(function ItemCard({
   item,
   linkedItem,
   hideTitleAndAuthor = false,
+  showAudioPlaybackRate = false,
+  compactAudioWaveform = false,
   isEditing = false,
   isSelected = false,
   onPress,
   onLongPress,
+  onNoteTextChange,
 }: ItemCardProps) {
   const isInteractiveTweet =
     item.type === 'tweet' &&
@@ -52,6 +61,9 @@ export const ItemCard = memo(function ItemCard({
             text={item.text}
             title={hideTitleAndAuthor ? undefined : item.title}
             linkedItem={linkedItem}
+            onMarkdownChange={
+              onNoteTextChange ? (text) => onNoteTextChange(item.id, text) : undefined
+            }
           />
         );
       case 'quote':
@@ -67,6 +79,18 @@ export const ItemCard = memo(function ItemCard({
       case 'pdf':
         return (
           <PdfCard url={item.pdf} title={item.title} hideTitleAndAuthor={hideTitleAndAuthor} />
+        );
+      case 'video':
+        return <VideoCard uri={item.video} title={hideTitleAndAuthor ? undefined : item.title} />;
+      case 'audio':
+        return (
+          <AudioCard
+            uri={item.audio}
+            title={hideTitleAndAuthor ? undefined : item.title}
+            waveform={item.waveform}
+            showPlaybackRate={showAudioPlaybackRate}
+            compactWaveform={compactAudioWaveform}
+          />
         );
       case 'link':
         return (
@@ -95,6 +119,8 @@ export const ItemCard = memo(function ItemCard({
             progressStatus={item.progressStatus}
           />
         );
+      case 'tiktok':
+        return <TikTokCard videoTitle={item.title} thumbnail={item.thumbnail} />;
       case 'tweet':
         return (
           <TweetCard
@@ -182,7 +208,11 @@ export const ItemCard = memo(function ItemCard({
       <View className="w-full overflow-hidden">{renderCardContent()}</View>
 
       {isSelected && (
-        <View pointerEvents="none" className="absolute inset-0 border-[3px] border-blue-500 z-10" />
+        <View
+          testID="item-card-selection-outline"
+          pointerEvents="none"
+          className="absolute inset-0 rounded-xl border-[3px] border-blue-500 z-10"
+        />
       )}
 
       {isEditing && (

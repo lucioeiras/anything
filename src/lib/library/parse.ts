@@ -1,5 +1,6 @@
 import { decodeHTML } from 'entities';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
+import { parseAudioWaveform } from './audioWaveform';
 
 /**
  * Lightweight runtime validation for item JSON. Files on disk can be edited by
@@ -52,6 +53,9 @@ export function parseItem(raw: unknown): LibraryItem {
     if (typeof item.linkedItemId !== 'string' || !item.linkedItemId) {
       delete item.linkedItemId;
     }
+  }
+  if (item.type === 'tiktok') {
+    delete item.progressStatus;
   }
   if (item.type === 'quote') {
     if (typeof item.author === 'string') {
@@ -141,6 +145,16 @@ export function parseItem(raw: unknown): LibraryItem {
       );
     }
   }
+  if (item.type === 'audio') {
+    const waveform = parseAudioWaveform(item.waveform);
+    if (waveform) item.waveform = waveform;
+    else delete item.waveform;
+    if (typeof item.transcript === 'string') {
+      item.transcript = decodeHTML(item.transcript);
+    } else {
+      delete item.transcript;
+    }
+  }
 
   return item as unknown as LibraryItem;
 }
@@ -150,9 +164,12 @@ const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {
   quote: ['text'],
   image: ['image'],
   pdf: ['pdf'],
+  video: ['video'],
+  audio: ['audio'],
   link: ['url', 'siteTitle', 'favicon'],
   article: ['url', 'title', 'thumbnail'],
   youtube: ['url', 'title', 'thumbnail'],
+  tiktok: ['url', 'title', 'thumbnail'],
   tweet: ['author', 'avatar', 'text'],
   reddit: ['subreddit', 'subredditAvatar', 'title'],
   book: ['isbn', 'title'],

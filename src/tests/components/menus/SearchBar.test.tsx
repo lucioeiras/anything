@@ -1,4 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 
 import { SearchBar } from '@/components/menus/SearchBar';
 
@@ -18,6 +20,31 @@ describe('SearchBar', () => {
       <SearchBar value="" onChangeText={jest.fn()} visible={false} />
     );
     expect(toJSON()).toBeNull();
+  });
+
+  it('floats above the board content', async () => {
+    const { toJSON } = await render(<SearchBar value="" onChangeText={jest.fn()} />);
+    expect(StyleSheet.flatten(toJSON()?.props.style)).toMatchObject({
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      left: 0,
+      zIndex: 1000,
+    });
+  });
+
+  it('can clear the tab bar using a bottom offset', async () => {
+    const { toJSON } = await render(
+      <SearchBar value="" onChangeText={jest.fn()} bottomOffset={72} />
+    );
+    expect(StyleSheet.flatten(toJSON()?.props.style)).toMatchObject({ bottom: 72 });
+  });
+
+  it('renders a trailing primary action beside the search field', async () => {
+    const { getByText } = await render(
+      <SearchBar value="" onChangeText={jest.fn()} trailingAction={<Text>Add action</Text>} />
+    );
+    expect(getByText('Add action')).toBeTruthy();
   });
 
   it('clears the query', async () => {

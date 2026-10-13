@@ -1,5 +1,6 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
-import { router, useLocalSearchParams } from 'expo-router';
+import { BlurTargetView } from 'expo-blur';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   ArticleIcon,
   BookOpenIcon,
@@ -13,7 +14,10 @@ import {
   PlusIcon,
   QuotesIcon,
   RedditLogoIcon,
+  TiktokLogoIcon,
   TwitterLogoIcon,
+  VideoCameraIcon,
+  WaveformIcon,
   WarningIcon,
   YoutubeLogoIcon,
 } from 'phosphor-react-native';
@@ -37,35 +41,51 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
+import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
+import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewBookModal } from '@/components/modals/NewBookModal';
 import { NewGameModal } from '@/components/modals/NewGameModal';
+import { NewEntertainmentModal } from '@/components/modals/NewEntertainmentModal';
 import { NewImageModal } from '@/components/modals/NewImageModal';
 import { NewLinkModal } from '@/components/modals/NewLinkModal';
 import { NewMovieModal } from '@/components/modals/NewMovieModal';
 import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
-import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
+import { NewVideoModal } from '@/components/modals/NewVideoModal';
+import { NewAudioModal } from '@/components/modals/NewAudioModal';
 import { useLibrary } from '@/hooks/useLibrary';
 import { isLinkableItem, type LinkableItem } from '@/lib/library/links';
-import type { DeletedItemBackup, PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
-import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
 import { matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
+import { parseAudioWaveform } from '@/lib/library/audioWaveform';
+import type {
+  DeletedItemBackup,
+  PickedImageAsset,
+  PickedPdfAsset,
+  PickedVideoAsset,
+  PickedAudioAsset,
+} from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
+import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from '@/lib/library/types';
 
 const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   note: 'Notes',
   quote: 'Quotes',
-  image: 'Images',
+  image: 'Media',
   pdf: 'PDFs',
+  video: 'Videos',
+  audio: 'Recorded audio',
   link: 'Links',
   article: 'Articles',
   youtube: 'YouTube',
+  tiktok: 'TikTok',
   tweet: 'Tweets',
   reddit: 'Reddit',
   book: 'Books',
@@ -79,9 +99,12 @@ const CARD_TYPE_ICONS = {
   quote: QuotesIcon,
   image: ImageIcon,
   pdf: FilePdfIcon,
+  video: VideoCameraIcon,
+  audio: WaveformIcon,
   link: LinkIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,
+  tiktok: TiktokLogoIcon,
   tweet: TwitterLogoIcon,
   reddit: RedditLogoIcon,
   book: BookOpenIcon,
@@ -97,7 +120,17 @@ type BoardGridContextType = {
 };
 
 type AddControlItem =
-  'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'all';
+  | 'note'
+  | 'link'
+  | 'book'
+  | 'music'
+  | 'movie'
+  | 'game'
+  | 'image'
+  | 'pdf'
+  | 'video'
+  | 'audio'
+  | 'all';
 
 type AddControlAction = {
   item: AddControlItem;
@@ -125,7 +158,11 @@ export default function BoardScreen() {
     searchType,
     setSearchQuery,
     clearSearchTag,
+    updateItem,
   } = useLibrary();
+  const searchBlurTargetRef = useRef<View>(null);
+  const insets = useSafeAreaInsets();
+  const setFloatingTabOverlay = useFloatingTabOverlay();
   const {
     newNote,
     newLink,
@@ -133,6 +170,7 @@ export default function BoardScreen() {
     newMusic,
     newMovie,
     newGame,
+    newEntertainment,
     newImageUri,
     newImageFileName,
     newImageMimeType,
@@ -140,6 +178,14 @@ export default function BoardScreen() {
     newPdfUri,
     newPdfFileName,
     newPdfTimestamp,
+    newVideoUri,
+    newVideoFileName,
+    newVideoFileSize,
+    newVideoTimestamp,
+    newAudioUri,
+    newAudioDuration,
+    newAudioWaveform,
+    newAudioTimestamp,
     controlAddItem,
     controlToken,
     folderKind,
@@ -151,6 +197,7 @@ export default function BoardScreen() {
     newMusic?: string;
     newMovie?: string;
     newGame?: string;
+    newEntertainment?: string;
     newImageUri?: string;
     newImageFileName?: string;
     newImageMimeType?: string;
@@ -158,6 +205,14 @@ export default function BoardScreen() {
     newPdfUri?: string;
     newPdfFileName?: string;
     newPdfTimestamp?: string;
+    newVideoUri?: string;
+    newVideoFileName?: string;
+    newVideoFileSize?: string;
+    newVideoTimestamp?: string;
+    newAudioUri?: string;
+    newAudioDuration?: string;
+    newAudioWaveform?: string;
+    newAudioTimestamp?: string;
     controlAddItem?: AddControlItem;
     controlToken?: string;
     folderKind?: 'status' | 'tag';
@@ -169,10 +224,15 @@ export default function BoardScreen() {
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [isMovieModalOpen, setIsMovieModalOpen] = useState(false);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [isEntertainmentModalOpen, setIsEntertainmentModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<PickedImageAsset | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pendingPdf, setPendingPdf] = useState<PickedPdfAsset | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [pendingVideo, setPendingVideo] = useState<PickedVideoAsset | null>(null);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
+  const [pendingAudio, setPendingAudio] = useState<PickedAudioAsset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
@@ -206,8 +266,11 @@ export default function BoardScreen() {
   const lastOpenedMusicRef = useRef<string | null>(null);
   const lastOpenedMovieRef = useRef<string | null>(null);
   const lastOpenedGameRef = useRef<string | null>(null);
+  const lastOpenedEntertainmentRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
   const lastOpenedPdfRef = useRef<string | null>(null);
+  const lastOpenedVideoRef = useRef<string | null>(null);
+  const lastOpenedAudioRef = useRef<string | null>(null);
   const lastOpenedControlRef = useRef<string | null>(null);
 
   const activeAddModalRef = useRef<Exclude<AddControlItem, 'all'> | null>(null);
@@ -264,6 +327,20 @@ export default function BoardScreen() {
         setPendingPdf(action.pdfAsset ?? null);
         setIsPdfModalOpen(true);
         break;
+      case 'video':
+        activeAddModalRef.current = null;
+        router.replace({
+          pathname: '/add',
+          params: { controlItem: 'video', controlToken: action.token ?? Date.now().toString() },
+        });
+        break;
+      case 'audio':
+        activeAddModalRef.current = null;
+        router.replace({
+          pathname: '/add',
+          params: { controlItem: 'audio', controlToken: action.token ?? Date.now().toString() },
+        });
+        break;
     }
   }, []);
 
@@ -281,8 +358,11 @@ export default function BoardScreen() {
       setIsMusicModalOpen(false);
       setIsMovieModalOpen(false);
       setIsGameModalOpen(false);
+      setIsEntertainmentModalOpen(false);
       setIsImageModalOpen(false);
       setIsPdfModalOpen(false);
+      setIsVideoModalOpen(false);
+      setIsAudioModalOpen(false);
     },
     [openControlAction]
   );
@@ -328,8 +408,35 @@ export default function BoardScreen() {
         setIsPdfModalOpen(false);
         setPendingPdf(null);
         break;
+      case 'video':
+        setIsVideoModalOpen(false);
+        setPendingVideo(null);
+        break;
+      case 'audio':
+        setIsAudioModalOpen(false);
+        setPendingAudio(null);
+        break;
     }
   }, []);
+
+  useEffect(() => {
+    const token = newAudioTimestamp || newAudioUri;
+    if (!newAudioUri || !token || token === lastOpenedAudioRef.current) return;
+    lastOpenedAudioRef.current = token;
+    activeAddModalRef.current = 'audio';
+    let waveform: number[] | undefined;
+    try {
+      waveform = parseAudioWaveform(newAudioWaveform ? JSON.parse(newAudioWaveform) : undefined);
+    } catch {
+      waveform = undefined;
+    }
+    setPendingAudio({
+      uri: newAudioUri,
+      durationMs: Number(newAudioDuration) || undefined,
+      waveform,
+    });
+    setIsAudioModalOpen(true);
+  }, [newAudioUri, newAudioDuration, newAudioWaveform, newAudioTimestamp]);
 
   useEffect(() => {
     if (!controlAddItem || !controlToken) return;
@@ -382,6 +489,14 @@ export default function BoardScreen() {
   }, [newGame, requestControlAction]);
 
   useEffect(() => {
+    if (newEntertainment && newEntertainment !== lastOpenedEntertainmentRef.current) {
+      lastOpenedEntertainmentRef.current = newEntertainment;
+      activeAddModalRef.current = 'book';
+      setIsEntertainmentModalOpen(true);
+    }
+  }, [newEntertainment]);
+
+  useEffect(() => {
     const pdfToken = newPdfTimestamp || newPdfUri;
     if (newPdfUri && pdfToken && pdfToken !== lastOpenedPdfRef.current) {
       lastOpenedPdfRef.current = pdfToken;
@@ -406,6 +521,19 @@ export default function BoardScreen() {
       });
     }
   }, [newImageUri, newImageFileName, newImageMimeType, newImageTimestamp, requestControlAction]);
+
+  useEffect(() => {
+    const token = newVideoTimestamp || newVideoUri;
+    if (!newVideoUri || !token || token === lastOpenedVideoRef.current) return;
+    lastOpenedVideoRef.current = token;
+    activeAddModalRef.current = 'video';
+    setPendingVideo({
+      uri: newVideoUri,
+      fileName: newVideoFileName,
+      fileSize: Number(newVideoFileSize) || undefined,
+    });
+    setIsVideoModalOpen(true);
+  }, [newVideoUri, newVideoFileName, newVideoFileSize, newVideoTimestamp]);
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -458,7 +586,7 @@ export default function BoardScreen() {
     setSelectedCardIds(new Set());
   }, []);
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = useCallback(async () => {
     const idsToDelete = Array.from(selectedCardIds);
     if (idsToDelete.length === 0) return;
 
@@ -476,9 +604,9 @@ export default function BoardScreen() {
       console.error('Failed to delete cards:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete cards');
     }
-  };
+  }, [deleteItems, selectedCardIds]);
 
-  const handleRestore = async () => {
+  const handleRestore = useCallback(async () => {
     if (!restoreBackup || restoreBackup.length === 0) return;
     try {
       const backups = restoreBackup;
@@ -489,12 +617,12 @@ export default function BoardScreen() {
       console.error('Failed to restore cards:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restore cards');
     }
-  };
+  }, [restoreBackup, restoreItems]);
 
-  const handleDismissToast = () => {
+  const handleDismissToast = useCallback(() => {
     setIsToastVisible(false);
     setRestoreBackup(null);
-  };
+  }, []);
 
   const isSearching = searchQuery.trim().length > 0;
   const folderId = activeFolderKind ? `${activeFolderKind}:${activeFolderKey}` : '';
@@ -609,19 +737,28 @@ export default function BoardScreen() {
       <View style={styles.cardWrapper}>
         <ItemCard
           item={item}
+          compactAudioWaveform
           linkedItem={
             (item.type === 'note' || item.type === 'quote') && item.linkedItemId
               ? linkableItems.get(item.linkedItemId)
               : undefined
           }
           isEditing={isEditing}
+          onNoteTextChange={(itemId, text) => {
+            updateItem(itemId, { text } as Partial<LibraryItem>).catch((error) => {
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Could not update note'
+              );
+            });
+          }}
           isSelected={selectedCardIds.has(item.id)}
           onPress={handleCardPress}
           onLongPress={handleCardLongPress}
         />
       </View>
     ),
-    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems]
+    [isEditing, selectedCardIds, handleCardPress, handleCardLongPress, linkableItems, updateItem]
   );
 
   const renderHeader = useCallback(() => {
@@ -711,6 +848,87 @@ export default function BoardScreen() {
     clearFolderFilter,
   ]);
 
+  useFocusEffect(
+    useCallback(() => {
+      setFloatingTabOverlay(
+        <>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            blurTarget={searchBlurTargetRef}
+            bottomOffset={48 + insets.bottom}
+            trailingAction={
+              <Button
+                accessibilityLabel="Add new item"
+                variant="primary"
+                shadowColor="#FFFFFF"
+                shadowOpacity={0.24}
+                icon={<PlusIcon size={24} color="#09090B" weight="bold" />}
+                onPress={() => router.push('/add')}
+              />
+            }
+            filters={[
+              ...(activeFolderKind
+                ? [
+                    {
+                      kind: 'folder' as const,
+                      label: folderLabel ?? activeFolderKey ?? '',
+                      status:
+                        activeFolderKind === 'status'
+                          ? (activeFolderKey as MediaProgressStatus)
+                          : undefined,
+                      onRemove: clearFolderFilter,
+                    },
+                  ]
+                : []),
+              ...(searchTag
+                ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
+                : []),
+            ]}
+            visible={state.status === 'ready' && !isEditing}
+          />
+          <CardSelectionBar
+            visible={isEditing}
+            selectedCount={selectedCardIds.size}
+            bottomOffset={60 + insets.bottom}
+            onDelete={handleDeleteSelected}
+            onAddToFolder={() => setIsFolderPickerOpen(true)}
+            onCancel={handleCancelEdition}
+          />
+          <RestoreToast
+            visible={isToastVisible && !isEditing}
+            count={restoreBackup?.length ?? 0}
+            bottomOffset={140 + insets.bottom}
+            onRestore={handleRestore}
+            onDismiss={handleDismissToast}
+          />
+        </>
+      );
+
+      return () => setFloatingTabOverlay(null);
+    }, [
+      setFloatingTabOverlay,
+      searchQuery,
+      handleSearchChange,
+      insets.bottom,
+      activeFolderKind,
+      folderLabel,
+      activeFolderKey,
+      clearFolderFilter,
+      searchTag,
+      clearSearchTag,
+      state.status,
+      isEditing,
+      selectedCardIds.size,
+      handleDeleteSelected,
+      handleCancelEdition,
+      handleRestore,
+      handleDismissToast,
+      isToastVisible,
+      restoreBackup?.length,
+    ])
+  );
+
   return (
     <View className="flex-1 bg-zinc-950">
       {state.status === 'loading' && (
@@ -733,52 +951,34 @@ export default function BoardScreen() {
       {state.status === 'ready' && (
         <View className="flex-1">
           <View className="flex-1">
-            <BoardGridContext.Provider value={gridContextValue}>
-              <FlashList<LibraryItem>
-                data={displayedItems}
-                renderItem={renderItem}
-                keyExtractor={keyExtractor}
-                numColumns={2}
-                masonry
-                optimizeItemArrangement
-                extraData={extraData}
-                CellRendererComponent={CellRenderer}
-                contentContainerStyle={styles.contentContainer}
-                showsVerticalScrollIndicator={false}
-                keyboardDismissMode="on-drag"
-                keyboardShouldPersistTaps="handled"
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#a1a1aa" />
-                }
-                ListHeaderComponent={renderHeader}
-                ListEmptyComponent={renderEmpty}
-              />
-            </BoardGridContext.Provider>
+            <BlurTargetView ref={searchBlurTargetRef} style={{ flex: 1 }}>
+              <BoardGridContext.Provider value={gridContextValue}>
+                <FlashList<LibraryItem>
+                  data={displayedItems}
+                  renderItem={renderItem}
+                  keyExtractor={keyExtractor}
+                  numColumns={2}
+                  masonry
+                  optimizeItemArrangement
+                  extraData={extraData}
+                  CellRendererComponent={CellRenderer}
+                  contentContainerStyle={styles.contentContainer}
+                  showsVerticalScrollIndicator={false}
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps="handled"
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={refresh}
+                      tintColor="#a1a1aa"
+                    />
+                  }
+                  ListHeaderComponent={renderHeader}
+                  ListEmptyComponent={renderEmpty}
+                />
+              </BoardGridContext.Provider>
+            </BlurTargetView>
           </View>
-
-          <SearchBar
-            value={searchQuery}
-            onChangeText={handleSearchChange}
-            filters={[
-              ...(activeFolderKind
-                ? [
-                    {
-                      kind: 'folder' as const,
-                      label: folderLabel ?? activeFolderKey ?? '',
-                      status:
-                        activeFolderKind === 'status'
-                          ? (activeFolderKey as MediaProgressStatus)
-                          : undefined,
-                      onRemove: clearFolderFilter,
-                    },
-                  ]
-                : []),
-              ...(searchTag
-                ? [{ kind: 'tag' as const, label: searchTag, onRemove: clearSearchTag }]
-                : []),
-            ]}
-            visible={!isEditing}
-          />
         </View>
       )}
 
@@ -812,6 +1012,14 @@ export default function BoardScreen() {
         onClose={() => closeAddModal('game')}
         onDismiss={handleAddModalDismiss}
       />
+      <NewEntertainmentModal
+        visible={isEntertainmentModalOpen}
+        onClose={() => {
+          if (!queuedControlActionRef.current) activeAddModalRef.current = null;
+          setIsEntertainmentModalOpen(false);
+        }}
+        onDismiss={handleAddModalDismiss}
+      />
       <NewImageModal
         visible={isImageModalOpen}
         imageAsset={pendingImage}
@@ -824,13 +1032,17 @@ export default function BoardScreen() {
         onClose={() => closeAddModal('pdf')}
         onDismiss={handleAddModalDismiss}
       />
-
-      <CardSelectionBar
-        visible={isEditing}
-        selectedCount={selectedCardIds.size}
-        onDelete={handleDeleteSelected}
-        onAddToFolder={() => setIsFolderPickerOpen(true)}
-        onCancel={handleCancelEdition}
+      <NewVideoModal
+        key={pendingVideo?.uri ?? 'empty-video'}
+        visible={isVideoModalOpen}
+        videoAsset={pendingVideo}
+        onClose={() => closeAddModal('video')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewAudioModal
+        visible={isAudioModalOpen}
+        asset={pendingAudio}
+        onClose={() => closeAddModal('audio')}
       />
 
       <AddToFolderModal
@@ -838,13 +1050,6 @@ export default function BoardScreen() {
         items={selectedItems}
         onClose={() => setIsFolderPickerOpen(false)}
         onAdded={handleCancelEdition}
-      />
-
-      <RestoreToast
-        visible={isToastVisible && !isEditing}
-        count={restoreBackup?.length ?? 0}
-        onRestore={handleRestore}
-        onDismiss={handleDismissToast}
       />
     </View>
   );
@@ -963,7 +1168,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 4,
     paddingTop: 64,
-    paddingBottom: 80,
+    paddingBottom: 200,
     flexGrow: 1,
   },
   cardWrapper: {

@@ -17,6 +17,8 @@ describe('parseItem', () => {
       quote: { text: 'text' },
       image: { image: 'image.jpg' },
       pdf: { pdf: 'file.pdf' },
+      video: { video: 'videos/clip.mp4' },
+      audio: { audio: 'audios/recording.m4a' },
       link: { url: 'url', siteTitle: 'siteTitle', favicon: 'favicon' },
       article: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
       youtube: { url: 'url', title: 'title', thumbnail: 'thumbnail' },
@@ -50,6 +52,55 @@ describe('parseItem', () => {
     expect(
       parseItem({ ...base, type: 'note', text: 'linked', linkedItemId: 'book-1' })
     ).toMatchObject({ linkedItemId: 'book-1' });
+  });
+
+  it('drops legacy TikTok progress statuses', () => {
+    expect(
+      parseItem({
+        ...base,
+        type: 'tiktok',
+        url: 'https://www.tiktok.com/@person/video/123',
+        title: 'A TikTok video',
+        thumbnail: 'cover.jpg',
+        progressStatus: 'completed',
+      })
+    ).not.toHaveProperty('progressStatus');
+  });
+
+  it('validates persisted audio waveform samples', () => {
+    const audio = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      waveform: [2, 50, 130, 'invalid'],
+    });
+    expect(audio).toMatchObject({ waveform: [8, 50, 100] });
+
+    const invalid = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      waveform: 'bad data',
+    });
+    expect(invalid).not.toHaveProperty('waveform');
+  });
+
+  it('keeps valid audio transcripts and discards malformed transcript values', () => {
+    const audio = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      transcript: 'Olá &amp; bem-vindo.',
+    });
+    expect(audio).toMatchObject({ transcript: 'Olá & bem-vindo.' });
+
+    const invalid = parseItem({
+      ...base,
+      type: 'audio',
+      audio: 'audios/recording.m4a',
+      transcript: ['not', 'text'],
+    });
+    expect(invalid).not.toHaveProperty('transcript');
   });
 
   it('normalizes quote authors and filters malformed book reading logs', () => {

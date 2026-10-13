@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,6 +22,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AddItemModalShell } from '@/components/modals/AddItemModalShell';
+
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import type { MusicItem } from '@/lib/library/types';
@@ -36,12 +39,19 @@ import { generateAutoTags } from '@/lib/tags/autoTags';
 
 type NewMusicModalProps = {
   visible: boolean;
+  embedded?: boolean;
   onClose: () => void;
   onDismiss?: () => void;
   onSaved?: (item: MusicItem) => void;
 };
 
-export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusicModalProps) {
+export function NewMusicModal({
+  visible,
+  embedded = false,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewMusicModalProps) {
   const { addMusicItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
@@ -236,21 +246,19 @@ export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusic
   const canSave = selectedMusic !== null && !saving;
 
   return (
-    <Modal
+    <AddItemModalShell
       visible={visible}
-      animationType="fade"
-      transparent
+      embedded={embedded}
       onRequestClose={handleClose}
       onDismiss={onDismiss}
-      statusBarTranslucent
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={embedded ? undefined : Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         <View
           style={{
-            paddingTop: Math.max(insets.top, 16),
+            paddingTop: embedded ? 0 : Math.max(insets.top, 16),
           }}
           className="flex-1 w-full relative"
         >
@@ -448,45 +456,32 @@ export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusic
           </ScrollView>
 
           {/* Action buttons at the bottom */}
-          <View pointerEvents="box-none">
-            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
-              <Pressable
-                onPress={handleClose}
-                disabled={saving}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <XIcon size={24} color="#FFFFFF" weight="bold" />
-                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSave}
-                disabled={!canSave}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
-                accessibilityRole="button"
-                accessibilityLabel={`Save ${selectedMusic?.kind ?? 'music'}`}
-              >
-                {saving ? (
-                  <ActivityIndicator size={24} color={canSave ? '#000000' : '#FFFFFF'} />
+          <ActionFooter bottomInset={insets.bottom} overlay>
+            <Button
+              accessibilityLabel="Cancel"
+              onPress={handleClose}
+              disabled={saving}
+              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+              text="Cancel"
+            />
+            <Button
+              accessibilityLabel={`Save ${selectedMusic?.kind ?? 'music'}`}
+              variant="primary"
+              onPress={handleSave}
+              disabled={!canSave}
+              icon={
+                saving ? (
+                  <ActivityIndicator size={20} color="#000000" />
                 ) : (
-                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
-                )}
-
-                <Text
-                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
-                >
-                  Save {selectedMusic?.kind ?? 'music'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                )
+              }
+              text={`Save ${selectedMusic?.kind ?? 'music'}`}
+            />
+          </ActionFooter>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </AddItemModalShell>
   );
 }
 
@@ -499,7 +494,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   borderlessInput: {
     borderWidth: 0,

@@ -21,6 +21,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
 import { formatDuration, searchITunesMusic, type MusicMetadata } from '@/lib/music/itunes';
 import { getSongLyrics } from '@/lib/music/lyrics';
 
@@ -252,29 +254,22 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
                 )
               )}
             </ScrollView>
-            <View
-              className="border-t border-zinc-800 bg-zinc-950"
-              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-            >
-              <Pressable
+            <ActionFooter bottomInset={insets.bottom}>
+              <Button
+                accessibilityLabel="Add selected lyrics to note"
+                variant="primary"
                 onPress={handleConfirm}
                 disabled={!selectedCount}
-                className="py-5 px-8 flex-row items-center justify-center gap-4"
-                accessibilityRole="button"
-                accessibilityLabel="Add selected lyrics to note"
-              >
-                <MusicNotesPlusIcon
-                  size={20}
-                  color={selectedCount ? '#FFFFFF' : '#71717A'}
-                  weight="bold"
-                />
-                <Text
-                  className={`font-sans-semibold text-lg ${selectedCount ? 'text-white' : 'text-zinc-500'}`}
-                >
-                  Add to note
-                </Text>
-              </Pressable>
-            </View>
+                icon={
+                  <MusicNotesPlusIcon
+                    size={20}
+                    color={selectedCount ? '#FFFFFF' : '#71717A'}
+                    weight="bold"
+                  />
+                }
+                text="Add to note"
+              />
+            </ActionFooter>
           </>
         ) : (
           <>

@@ -26,7 +26,7 @@ export const YouTubeCard = ({ videoTitle, thumbnail, progressStatus }: YouTubeCa
         </View>
       </View>
 
-      <View className="w-full p-5 gap-3 bg-rose-950/25 rounded-b-xl">
+      <View className="w-full p-5 gap-3 bg-rose-950/30 rounded-b-xl">
         <Text className="font-sans-medium text-lg leading-[1.6] text-zinc-50" numberOfLines={3}>
           {decodeHTML(videoTitle)}
         </Text>

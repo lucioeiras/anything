@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
+
 type NewFolderModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -102,42 +105,30 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
             </View>
           </ScrollView>
 
-          <View pointerEvents="box-none">
-            <View className="w-full flex-row items-center justify-center border-t border-zinc-800 bg-zinc-950">
-              <Pressable
-                onPress={handleClose}
-                disabled={saving}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 flex-row gap-4 items-center justify-center border-r border-zinc-800"
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <XIcon size={24} color="#FFFFFF" weight="bold" />
-                <Text className="font-sans-bold text-xl text-white">Cancel</Text>
-              </Pressable>
+          <ActionFooter bottomInset={insets.bottom}>
+            <Button
+              accessibilityLabel="Cancel"
+              onPress={handleClose}
+              disabled={saving}
+              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+              text="Cancel"
+            />
 
-              <Pressable
-                onPress={handleCreate}
-                disabled={!canSave}
-                hitSlop={12}
-                className="w-1/2 pt-6 pb-10 items-center justify-center flex-row gap-4"
-                accessibilityRole="button"
-                accessibilityLabel="Create folder"
-                accessibilityState={{ disabled: !canSave }}
-              >
-                {saving ? (
-                  <ActivityIndicator size={24} color="#3B82F6" />
+            <Button
+              accessibilityLabel="Create folder"
+              variant="primary"
+              onPress={handleCreate}
+              disabled={!canSave}
+              icon={
+                saving ? (
+                  <ActivityIndicator size={20} color="#000000" />
                 ) : (
-                  <CheckIcon size={24} color={canSave ? '#3B82F6' : '#71717A'} weight="bold" />
-                )}
-                <Text
-                  className={`font-sans-semibold text-xl ${canSave ? 'text-blue-500' : 'text-zinc-500'}`}
-                >
-                  Create folder
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                )
+              }
+              text="Create folder"
+            />
+          </ActionFooter>
         </View>
       </KeyboardAvoidingView>
     </Modal>

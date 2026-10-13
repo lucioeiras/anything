@@ -1,8 +1,16 @@
 import { Directory, DownloadTask, File, Paths } from 'expo-file-system';
-import { DEFAULT_LOCAL_MODEL, type DownloadProgressState, type LocalModelConfig } from './types';
+import {
+  DEFAULT_LOCAL_MODEL,
+  DEFAULT_WHISPER_MODEL,
+  type DownloadProgressState,
+  type LocalModelConfig,
+} from './types';
 
-class LocalModelManager {
+export class LocalModelManager {
+  constructor(private readonly defaultConfig: LocalModelConfig = DEFAULT_LOCAL_MODEL) {}
+
   private activeDownloadTask: DownloadTask | null = null;
+  private cancelledDownloadTask: DownloadTask | null = null;
   private progressListeners = new Set<(state: DownloadProgressState) => void>();
   private currentProgress: DownloadProgressState = {
     isDownloading: false,
@@ -20,12 +28,12 @@ class LocalModelManager {
     return dir;
   }
 
-  public getModelFile(config: LocalModelConfig = DEFAULT_LOCAL_MODEL): File {
+  public getModelFile(config: LocalModelConfig = this.defaultConfig): File {
     const dir = this.getModelsDirectory();
     return new File(dir, config.fileName);
   }
 
-  public isModelDownloaded(config: LocalModelConfig = DEFAULT_LOCAL_MODEL): boolean {
+  public isModelDownloaded(config: LocalModelConfig = this.defaultConfig): boolean {
     try {
       const file = this.getModelFile(config);
       return file.exists && (file.size ?? 0) > 1000000; // at least 1MB
@@ -34,7 +42,7 @@ class LocalModelManager {
     }
   }
 
-  public getModelSize(config: LocalModelConfig = DEFAULT_LOCAL_MODEL): number {
+  public getModelSize(config: LocalModelConfig = this.defaultConfig): number {
     try {
       const file = this.getModelFile(config);
       return file.exists ? (file.size ?? 0) : 0;
@@ -62,8 +70,8 @@ class LocalModelManager {
     }
   }
 
-  public async downloadModel(config: LocalModelConfig = DEFAULT_LOCAL_MODEL): Promise<File | null> {
-    if (this.currentProgress.isDownloading) {
+  public async downloadModel(config: LocalModelConfig = this.defaultConfig): Promise<File | null> {
+    if (this.activeDownloadTask) {
       return null;
     }
 
@@ -82,8 +90,9 @@ class LocalModelManager {
       error: null,
     });
 
+    let task: DownloadTask | null = null;
     try {
-      const task = new DownloadTask(config.downloadUrl, destinationFile, {
+      task = new DownloadTask(config.downloadUrl, destinationFile, {
         onProgress: (event) => {
           const written = event.bytesWritten;
           const total = event.totalBytes > 0 ? event.totalBytes : config.sizeBytes;
@@ -101,7 +110,8 @@ class LocalModelManager {
 
       this.activeDownloadTask = task;
       const result = await task.downloadAsync();
-      this.activeDownloadTask = null;
+      if (this.activeDownloadTask === task) this.activeDownloadTask = null;
+      if (this.cancelledDownloadTask === task) this.cancelledDownloadTask = null;
 
       if (result && result.exists) {
         this.notify({
@@ -116,12 +126,10 @@ class LocalModelManager {
         throw new Error('Download incomplete');
       }
     } catch (e) {
-      this.activeDownloadTask = null;
-      const msg = e instanceof Error ? e.message : 'Falha ao baixar o modelo';
-      this.notify({
-        isDownloading: false,
-        error: msg,
-      });
+      const wasCancelled = task !== null && this.cancelledDownloadTask === task;
+      if (this.activeDownloadTask === task) this.activeDownloadTask = null;
+      if (this.cancelledDownloadTask === task) this.cancelledDownloadTask = null;
+
       // Clean up partial file on failure
       try {
         if (destinationFile.exists) {
@@ -130,22 +138,32 @@ class LocalModelManager {
       } catch {
         // ignore delete error
       }
+
+      if (wasCancelled) {
+        this.notify({
+          isDownloading: false,
+          progress: 0,
+          bytesWritten: 0,
+          totalBytes: 0,
+          error: null,
+        });
+        return null;
+      }
+
+      const msg = e instanceof Error ? e.message : 'Falha ao baixar o modelo';
+      this.notify({ isDownloading: false, error: msg });
       throw e;
     }
   }
 
   public cancelDownload(): void {
     if (this.activeDownloadTask) {
+      this.cancelledDownloadTask = this.activeDownloadTask;
       this.activeDownloadTask.cancel();
-      this.activeDownloadTask = null;
-      this.notify({
-        isDownloading: false,
-        error: 'Download cancelado pelo usuário',
-      });
     }
   }
 
-  public async deleteModel(config: LocalModelConfig = DEFAULT_LOCAL_MODEL): Promise<boolean> {
+  public async deleteModel(config: LocalModelConfig = this.defaultConfig): Promise<boolean> {
     try {
       this.cancelDownload();
       const file = this.getModelFile(config);
@@ -167,3 +185,4 @@ class LocalModelManager {
 }
 
 export const localModelManager = new LocalModelManager();
+export const whisperModelManager = new LocalModelManager(DEFAULT_WHISPER_MODEL);
