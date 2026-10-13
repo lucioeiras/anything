@@ -8,12 +8,11 @@ import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as WebBrowser from 'expo-web-browser';
 import {
-  LinkIcon,
+  BookmarkSimpleIcon,
   NotePencilIcon,
   SubtitlesIcon,
   TextTIcon,
   UserIcon,
-  XIcon,
 } from 'phosphor-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -35,14 +34,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookLogs } from '@/components/books/BookLogs';
 import { getProgressLabel } from '@/components/cards/ProgressStatus';
-import { LinkedContentPicker } from '@/components/LinkedContentPicker';
-import { LinkedContentPreview } from '@/components/LinkedContentPreview';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
+import { SourcePicker } from '@/components/SourcePicker';
+import { SourcePreview } from '@/components/SourcePreview';
 import { TagsBox } from '@/components/TagsBox';
 import { useLibrary } from '@/hooks/useLibrary';
 import { transcribeAudio } from '@/lib/ai/transcribeAudio';
 import { isLinkableItem } from '@/lib/library/links';
+import { getRelatedItems } from '@/lib/library/related';
 import { getSourceId } from '@/lib/library/storage';
 import {
   MEDIA_PROGRESS_STATUSES,
@@ -52,14 +52,13 @@ import {
   type MediaProgressStatus,
 } from '@/lib/library/types';
 import { CardActions } from './CardActions';
-import { RelatedCardsSection } from './RelatedCardsSection';
-import { RelatedCardsPicker } from './RelatedCardsPicker';
-import { getRelatedItems } from '@/lib/library/related';
 import { CardInfo } from './CardInfo';
 import { CardMediaDetails } from './CardMediaDetails';
 import { CardPdfReader } from './CardPdfReader';
 import { CardPreview } from './CardPreview';
 import { CardReview } from './CardReview';
+import { RelatedCardsPicker } from './RelatedCardsPicker';
+import { RelatedCardsSection } from './RelatedCardsSection';
 
 function isLinkType(type: LibraryItem['type']): boolean {
   return (
@@ -1049,50 +1048,23 @@ export function CardDetailContent({
               )}
             />
 
-            {/* Link to content Section */}
-            {isNoteOrQuote && (
+            {/* Note source section */}
+            {isNoteOrQuote && linkedContent && isLinkableItem(linkedContent) && (
               <View className="py-6 px-6 border-b border-zinc-800 gap-5">
-                {linkedContent && isLinkableItem(linkedContent) ? (
-                  <>
-                    <View className="flex-row items-center gap-2">
-                      <LinkIcon size={16} color="#E4E4E7" />
-                      <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                        Linked content
-                      </Text>
-                    </View>
+                <View className="flex-row items-center gap-2">
+                  <BookmarkSimpleIcon size={16} color="#E4E4E7" />
+                  <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                    Source
+                  </Text>
+                </View>
 
-                    <LinkedContentPreview
-                      item={linkedContent}
-                      onChange={() =>
-                        router.push({ pathname: '/card/[id]', params: { id: linkedContent.id } })
-                      }
-                      onRemove={() => handleUpdateLinkedItem(undefined)}
-                    />
-                  </>
-                ) : (
-                  <View className="flex-row items-center rounded-xl pr-3">
-                    <Pressable
-                      onPress={() => setIsLinkPickerOpen(true)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Link to content"
-                      className="flex-row items-center gap-4"
-                    >
-                      <LinkIcon size={20} color="#FFFFFF" />
-                      <Text className="font-sans-semibold text-lg text-white">Link to content</Text>
-                    </Pressable>
-                    {(item.type === 'note' || item.type === 'quote') && item.linkedItemId && (
-                      <Pressable
-                        onPress={() => handleUpdateLinkedItem(undefined)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Remove linked content"
-                        hitSlop={10}
-                        className="p-2 rounded-full bg-zinc-800 active:opacity-70"
-                      >
-                        <XIcon size={16} color="#E4E4E7" weight="bold" />
-                      </Pressable>
-                    )}
-                  </View>
-                )}
+                <SourcePreview
+                  item={linkedContent}
+                  onChange={() =>
+                    router.push({ pathname: '/card/[id]', params: { id: linkedContent.id } })
+                  }
+                  onRemove={() => handleUpdateLinkedItem(undefined)}
+                />
               </View>
             )}
 
@@ -1225,6 +1197,10 @@ export function CardDetailContent({
             Keyboard.dismiss();
             setIsRelatedPickerOpen(true);
           }}
+          onAddSource={() => {
+            Keyboard.dismiss();
+            setIsLinkPickerOpen(true);
+          }}
           onDownload={handleDownload}
           onCopy={handleCopy}
           onShare={handleShare}
@@ -1280,7 +1256,7 @@ export function CardDetailContent({
         />
       )}
       {isNoteOrQuote && (
-        <LinkedContentPicker
+        <SourcePicker
           visible={isLinkPickerOpen}
           items={libraryItems}
           selectedId={item.linkedItemId}

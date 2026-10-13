@@ -1,11 +1,12 @@
 import {
   ArrowSquareOutIcon,
+  BookmarkSimpleIcon,
   CopyIcon,
   DownloadSimpleIcon,
   ExportIcon,
   FilePdfIcon,
   FolderPlusIcon,
-  LinkIcon,
+  ShareNetworkIcon,
   MicrophoneIcon,
   NotePencilIcon,
   TrashSimpleIcon,
@@ -22,6 +23,7 @@ type CardActionsProps = {
   onDelete: () => void;
   onAddToFolder: () => void;
   onManageRelatedCards: () => void;
+  onAddSource: () => void;
   onDownload: () => void;
   onCopy: () => void;
   onShare: () => void;
@@ -39,6 +41,7 @@ export function CardActions({
   onDelete,
   onAddToFolder,
   onManageRelatedCards,
+  onAddSource,
   onDownload,
   onCopy,
   onShare,
@@ -68,9 +71,18 @@ export function CardActions({
     },
     {
       accessibilityLabel: 'Manage related cards',
-      icon: <LinkIcon size={24} color="#FFFFFF" />,
+      icon: <ShareNetworkIcon size={24} color="#FFFFFF" />,
       onPress: onManageRelatedCards,
     },
+    ...(isNoteOrQuote
+      ? [
+          {
+            accessibilityLabel: 'Add source',
+            icon: <BookmarkSimpleIcon size={24} color="#FFFFFF" />,
+            onPress: onAddSource,
+          },
+        ]
+      : []),
     ...(isImage
       ? [
           {

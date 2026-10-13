@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { MarkdownNote } from '@/components/card/MarkdownNote';
-import { LinkedContentPreview } from '@/components/LinkedContentPreview';
+import { SourcePreview } from '@/components/SourcePreview';
 import type { LinkableItem } from '@/lib/library/links';
 
 type NoteProps = {
@@ -20,7 +20,7 @@ export const NoteCard = ({ text, title, linkedItem, onMarkdownChange }: NoteProp
         </View>
 
         {linkedItem && (
-          <LinkedContentPreview
+          <SourcePreview
             item={linkedItem}
             compact
             containerClassName="px-5 py-4 bg-zinc-800/50 gap-4 rounded-b-xl"

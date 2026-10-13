@@ -13,6 +13,7 @@ const makeActions = () => ({
   onDelete: jest.fn(),
   onAddToFolder: jest.fn(),
   onManageRelatedCards: jest.fn(),
+  onAddSource: jest.fn(),
   onDownload: jest.fn(),
   onCopy: jest.fn(),
   onShare: jest.fn(),

@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { getRelatedItems } from '@/lib/library/related';
 import type { LibraryItem } from '@/lib/library/types';
-import { LinkIcon } from 'phosphor-react-native';
+import { ShareNetworkIcon } from 'phosphor-react-native';
 import { RelatedCardTile } from './RelatedCardTile';
 
 export function RelatedCardsSection({ item, items }: { item: LibraryItem; items: LibraryItem[] }) {
@@ -13,7 +13,7 @@ export function RelatedCardsSection({ item, items }: { item: LibraryItem; items:
   return (
     <View className="py-6 border-t border-zinc-800 gap-6" testID="related-cards-section">
       <View className="flex-row items-center gap-2 px-6">
-        <LinkIcon size={16} color="#E4E4E7" />
+        <ShareNetworkIcon size={16} color="#E4E4E7" />
         <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
           Related cards ({related.length})
         </Text>

@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
-import { LinkedContentPreview } from '@/components/LinkedContentPreview';
+import { SourcePreview } from '@/components/SourcePreview';
 import type { LinkableItem } from '@/lib/library/links';
 
 const linkedBook: LinkableItem = {
@@ -15,9 +15,9 @@ const linkedBook: LinkableItem = {
   updatedAt: '2024-01-01T00:00:00Z',
 };
 
-describe('LinkedContentPreview', () => {
+describe('SourcePreview', () => {
   it('shows the linked item type, title and subtitle', async () => {
-    const { getByText } = await render(<LinkedContentPreview item={linkedBook} />);
+    const { getByText } = await render(<SourcePreview item={linkedBook} />);
     expect(getByText('Book')).toBeTruthy();
     expect(getByText('A linked book')).toBeTruthy();
     expect(getByText('Ada Lovelace')).toBeTruthy();
@@ -27,18 +27,18 @@ describe('LinkedContentPreview', () => {
     const onChange = jest.fn();
     const onRemove = jest.fn();
     const { getByLabelText } = await render(
-      <LinkedContentPreview item={linkedBook} onChange={onChange} onRemove={onRemove} />
+      <SourcePreview item={linkedBook} onChange={onChange} onRemove={onRemove} />
     );
 
-    await fireEvent.press(getByLabelText('Change linked content: A linked book'));
-    await fireEvent.press(getByLabelText('Remove linked content'));
+    await fireEvent.press(getByLabelText('Change source: A linked book'));
+    await fireEvent.press(getByLabelText('Remove source'));
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
 
   it('renders pending music as a song preview', async () => {
     const { getByText } = await render(
-      <LinkedContentPreview
+      <SourcePreview
         pendingMusic={{
           title: 'Night Drive',
           artist: 'The Artists',
@@ -53,7 +53,7 @@ describe('LinkedContentPreview', () => {
   });
 
   it('omits subtitles in compact mode', async () => {
-    const { queryByText } = await render(<LinkedContentPreview item={linkedBook} compact />);
+    const { queryByText } = await render(<SourcePreview item={linkedBook} compact />);
     expect(queryByText('Ada Lovelace')).toBeNull();
   });
 });
