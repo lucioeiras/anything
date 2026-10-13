@@ -1,4 +1,5 @@
-import { File } from 'expo-file-system';
+import { AddActionIconSlot } from '@/components/AddActionIconSlot';
+import { buildAudioWaveform, normalizeAudioMetering } from '@/lib/library/audioWaveform';
 import {
   AudioModule,
   RecordingPresets,
@@ -6,23 +7,20 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
+import { File } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  BookIcon,
   FilePdfIcon,
   FilmSlateIcon,
-  GameControllerIcon,
   ImagesSquareIcon,
   LinkIcon,
-  MusicNotesIcon,
-  NotePencilIcon,
   MicrophoneIcon,
+  NotePencilIcon,
 } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { buildAudioWaveform, normalizeAudioMetering } from '@/lib/library/audioWaveform';
 
 export default function AddElementScreen() {
   const { controlItem, controlToken } = useLocalSearchParams<{
@@ -270,7 +268,7 @@ export default function AddElementScreen() {
           justifyContent: 'center',
           flexGrow: 1,
           paddingTop: 24,
-          paddingBottom: 200,
+          paddingBottom: 100,
         }}
         showsVerticalScrollIndicator={false}
         className="w-full"
@@ -308,11 +306,13 @@ export default function AddElementScreen() {
               disabled={isPickingPdf}
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
-              {isPickingPdf ? (
-                <ActivityIndicator size={24} color="#fff" />
-              ) : (
-                <FilePdfIcon size={24} color="#fff" weight="duotone" />
-              )}
+              <AddActionIconSlot>
+                {isPickingPdf ? (
+                  <ActivityIndicator size={24} color="#fff" />
+                ) : (
+                  <FilePdfIcon size={24} color="#fff" weight="duotone" />
+                )}
+              </AddActionIconSlot>
               <Text className="font-sans-semibold text-lg text-white">PDF document</Text>
             </Pressable>
 
@@ -321,11 +321,13 @@ export default function AddElementScreen() {
               disabled={isPickingMedia}
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
-              {isPickingMedia ? (
-                <ActivityIndicator size={24} color="#fff" />
-              ) : (
-                <ImagesSquareIcon size={24} color="#fff" weight="duotone" />
-              )}
+              <AddActionIconSlot>
+                {isPickingMedia ? (
+                  <ActivityIndicator size={24} color="#fff" />
+                ) : (
+                  <ImagesSquareIcon size={24} color="#fff" weight="duotone" />
+                )}
+              </AddActionIconSlot>
               <Text className="font-sans-semibold text-lg text-white">Media from gallery</Text>
             </Pressable>
 
@@ -338,56 +340,36 @@ export default function AddElementScreen() {
               }
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
-              {isRecordingAction ? (
-                <ActivityIndicator size={24} color="#fff" />
-              ) : (
-                <MicrophoneIcon
-                  size={24}
-                  color={recorderState.isRecording ? '#F87171' : '#fff'}
-                  weight="duotone"
-                />
-              )}
+              <AddActionIconSlot>
+                {isRecordingAction ? (
+                  <ActivityIndicator size={24} color="#fff" />
+                ) : (
+                  <MicrophoneIcon
+                    size={24}
+                    color={recorderState.isRecording ? '#F87171' : '#fff'}
+                    weight="duotone"
+                  />
+                )}
+              </AddActionIconSlot>
               <Text className="font-sans-semibold text-lg text-white">
                 {recorderState.isRecording
                   ? `Recording · ${Math.floor((recorderState.durationMillis ?? 0) / 1000)}s`
-                  : 'Record audio'}
+                  : `Record ${'\n'} audio`}
               </Text>
             </Pressable>
-          </View>
-
-          <View className="flex-row flex-wrap justify-center gap-4">
-            <Pressable
-              onPress={handleOpenBook}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
-            >
-              <BookIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Book for the library</Text>
-            </Pressable>
 
             <Pressable
-              onPress={handleOpenMusic}
+              onPress={() =>
+                router.replace({
+                  pathname: '/board',
+                  params: { newEntertainment: Date.now().toString() },
+                })
+              }
+              accessibilityRole="button"
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
-              <MusicNotesIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">A good song or album</Text>
-            </Pressable>
-          </View>
-
-          <View className="flex-row flex-wrap justify-center gap-4">
-            <Pressable
-              onPress={handleOpenMovie}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
-            >
-              <FilmSlateIcon size={24} color="#FFFFFF" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">An amazing movie</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleOpenGame}
-              className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
-            >
-              <GameControllerIcon size={24} color="#FFFFFF" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">A wonderful game</Text>
+              <FilmSlateIcon size={24} color="#fff" weight="duotone" />
+              <Text className="font-sans-semibold text-lg text-white">Entertainment</Text>
             </Pressable>
           </View>
         </View>

@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +20,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AddItemModalShell } from '@/components/modals/AddItemModalShell';
 
 import { ActionFooter } from '@/components/ActionFooter';
 import { Button } from '@/components/Button';
@@ -41,12 +42,19 @@ import { generateAutoTags } from '@/lib/tags/autoTags';
 
 type NewMovieModalProps = {
   visible: boolean;
+  embedded?: boolean;
   onClose: () => void;
   onDismiss?: () => void;
   onSaved?: (item: MovieItem) => void;
 };
 
-export function NewMovieModal({ visible, onClose, onDismiss, onSaved }: NewMovieModalProps) {
+export function NewMovieModal({
+  visible,
+  embedded = false,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewMovieModalProps) {
   const { addMovieItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -269,21 +277,19 @@ export function NewMovieModal({ visible, onClose, onDismiss, onSaved }: NewMovie
   const canSave = selectedMovie !== null && !saving;
 
   return (
-    <Modal
+    <AddItemModalShell
       visible={visible}
-      animationType="fade"
-      transparent
+      embedded={embedded}
       onRequestClose={handleClose}
       onDismiss={onDismiss}
-      statusBarTranslucent
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={embedded ? undefined : Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         <View
           style={{
-            paddingTop: Math.max(insets.top, 16),
+            paddingTop: embedded ? 0 : Math.max(insets.top, 16),
           }}
           className="flex-1 w-full relative"
         >
@@ -480,7 +486,7 @@ export function NewMovieModal({ visible, onClose, onDismiss, onSaved }: NewMovie
           </ScrollView>
 
           {/* Action buttons at the bottom */}
-          <ActionFooter bottomInset={insets.bottom}>
+          <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
               accessibilityLabel="Cancel"
               onPress={handleClose}
@@ -505,7 +511,7 @@ export function NewMovieModal({ visible, onClose, onDismiss, onSaved }: NewMovie
           </ActionFooter>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </AddItemModalShell>
   );
 }
 
@@ -518,7 +524,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   borderlessInput: {
     borderWidth: 0,

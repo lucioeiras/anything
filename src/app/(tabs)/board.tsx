@@ -52,6 +52,7 @@ import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
 import { AddToFolderModal } from '@/components/modals/AddToFolderModal';
 import { NewBookModal } from '@/components/modals/NewBookModal';
 import { NewGameModal } from '@/components/modals/NewGameModal';
+import { NewEntertainmentModal } from '@/components/modals/NewEntertainmentModal';
 import { NewImageModal } from '@/components/modals/NewImageModal';
 import { NewLinkModal } from '@/components/modals/NewLinkModal';
 import { NewMovieModal } from '@/components/modals/NewMovieModal';
@@ -169,6 +170,7 @@ export default function BoardScreen() {
     newMusic,
     newMovie,
     newGame,
+    newEntertainment,
     newImageUri,
     newImageFileName,
     newImageMimeType,
@@ -195,6 +197,7 @@ export default function BoardScreen() {
     newMusic?: string;
     newMovie?: string;
     newGame?: string;
+    newEntertainment?: string;
     newImageUri?: string;
     newImageFileName?: string;
     newImageMimeType?: string;
@@ -221,6 +224,7 @@ export default function BoardScreen() {
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [isMovieModalOpen, setIsMovieModalOpen] = useState(false);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [isEntertainmentModalOpen, setIsEntertainmentModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<PickedImageAsset | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -262,6 +266,7 @@ export default function BoardScreen() {
   const lastOpenedMusicRef = useRef<string | null>(null);
   const lastOpenedMovieRef = useRef<string | null>(null);
   const lastOpenedGameRef = useRef<string | null>(null);
+  const lastOpenedEntertainmentRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
   const lastOpenedPdfRef = useRef<string | null>(null);
   const lastOpenedVideoRef = useRef<string | null>(null);
@@ -353,6 +358,7 @@ export default function BoardScreen() {
       setIsMusicModalOpen(false);
       setIsMovieModalOpen(false);
       setIsGameModalOpen(false);
+      setIsEntertainmentModalOpen(false);
       setIsImageModalOpen(false);
       setIsPdfModalOpen(false);
       setIsVideoModalOpen(false);
@@ -481,6 +487,14 @@ export default function BoardScreen() {
       requestControlAction({ item: 'game' });
     }
   }, [newGame, requestControlAction]);
+
+  useEffect(() => {
+    if (newEntertainment && newEntertainment !== lastOpenedEntertainmentRef.current) {
+      lastOpenedEntertainmentRef.current = newEntertainment;
+      activeAddModalRef.current = 'book';
+      setIsEntertainmentModalOpen(true);
+    }
+  }, [newEntertainment]);
 
   useEffect(() => {
     const pdfToken = newPdfTimestamp || newPdfUri;
@@ -996,6 +1010,14 @@ export default function BoardScreen() {
       <NewGameModal
         visible={isGameModalOpen}
         onClose={() => closeAddModal('game')}
+        onDismiss={handleAddModalDismiss}
+      />
+      <NewEntertainmentModal
+        visible={isEntertainmentModalOpen}
+        onClose={() => {
+          if (!queuedControlActionRef.current) activeAddModalRef.current = null;
+          setIsEntertainmentModalOpen(false);
+        }}
         onDismiss={handleAddModalDismiss}
       />
       <NewImageModal

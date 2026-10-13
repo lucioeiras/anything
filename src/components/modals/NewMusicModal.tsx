@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -22,6 +21,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AddItemModalShell } from '@/components/modals/AddItemModalShell';
 
 import { ActionFooter } from '@/components/ActionFooter';
 import { Button } from '@/components/Button';
@@ -38,12 +39,19 @@ import { generateAutoTags } from '@/lib/tags/autoTags';
 
 type NewMusicModalProps = {
   visible: boolean;
+  embedded?: boolean;
   onClose: () => void;
   onDismiss?: () => void;
   onSaved?: (item: MusicItem) => void;
 };
 
-export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusicModalProps) {
+export function NewMusicModal({
+  visible,
+  embedded = false,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewMusicModalProps) {
   const { addMusicItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
@@ -238,21 +246,19 @@ export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusic
   const canSave = selectedMusic !== null && !saving;
 
   return (
-    <Modal
+    <AddItemModalShell
       visible={visible}
-      animationType="fade"
-      transparent
+      embedded={embedded}
       onRequestClose={handleClose}
       onDismiss={onDismiss}
-      statusBarTranslucent
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={embedded ? undefined : Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         <View
           style={{
-            paddingTop: Math.max(insets.top, 16),
+            paddingTop: embedded ? 0 : Math.max(insets.top, 16),
           }}
           className="flex-1 w-full relative"
         >
@@ -450,7 +456,7 @@ export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusic
           </ScrollView>
 
           {/* Action buttons at the bottom */}
-          <ActionFooter bottomInset={insets.bottom}>
+          <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
               accessibilityLabel="Cancel"
               onPress={handleClose}
@@ -475,7 +481,7 @@ export function NewMusicModal({ visible, onClose, onDismiss, onSaved }: NewMusic
           </ActionFooter>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </AddItemModalShell>
   );
 }
 
@@ -488,7 +494,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   borderlessInput: {
     borderWidth: 0,

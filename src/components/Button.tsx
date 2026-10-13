@@ -14,6 +14,8 @@ type ButtonProps = {
   contentColor?: string;
   shadowColor?: string;
   shadowOpacity?: number;
+  accessibilityRole?: 'button' | 'tab';
+  selected?: boolean;
 };
 
 /** Rounded floating action with optional icon and text. */
@@ -29,6 +31,8 @@ export function Button({
   contentColor,
   shadowColor = '#FFFFFF',
   shadowOpacity = 0,
+  accessibilityRole = 'button',
+  selected,
 }: ButtonProps) {
   const foreground = contentColor ?? (variant === 'primary' ? '#09090B' : '#FFFFFF');
   const isSmall = size === 'small';
@@ -37,7 +41,7 @@ export function Button({
     iconElement && 'size' in iconElement.props
       ? cloneElement(iconElement as ReactElement<{ size?: number; color?: string }>, {
           size: isSmall ? 20 : 24,
-          // color: foreground,
+          color: foreground,
         })
       : icon;
 
@@ -60,9 +64,9 @@ export function Button({
         disabled={disabled}
         className={`flex-row items-center justify-center overflow-hidden rounded-full active:opacity-80 disabled:opacity-50 ${isSmall ? 'gap-2' : 'gap-3'} ${text ? (isSmall ? 'px-4 py-2' : 'px-6 py-3') : isSmall ? 'p-3' : 'p-4'} ${variant === 'secondary' && 'border border-white/10'}`}
         style={variant === 'primary' ? { backgroundColor } : undefined}
-        accessibilityRole="button"
+        accessibilityRole={accessibilityRole}
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled }}
+        accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }) }}
       >
         {variant === 'secondary' && (
           <>
