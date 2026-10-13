@@ -1,4 +1,4 @@
-import { updateItemInLibrary } from '@/lib/library/storage';
+import { updateItemInLibrary, updateItemsInLibrary } from '@/lib/library/storage';
 import { parseItem } from '@/lib/library/parse';
 const mockFiles = new Map<string, string>();
 let mockWriteFailure: ((name: string, text: string) => boolean) | undefined;
@@ -25,6 +25,9 @@ jest.mock('expo-file-system', () => {
     write(text: string) {
       if (mockWriteFailure?.(this.name, text)) throw new Error('write failed');
       mockFiles.set(this.name, text);
+    }
+    delete() {
+      mockFiles.delete(this.name);
     }
   }
   return {
@@ -101,4 +104,20 @@ it('rejects missing cards without changing the existing JSON', async () => {
     updateItemInLibrary(source, 'missing', { progressStatus: 'completed' })
   ).rejects.toThrow('not found');
   expect(read()).toEqual(original);
+});
+
+it('rolls back earlier card writes when a later batch update fails', async () => {
+  const second = { ...original, id: 'second', title: 'Second' };
+  mockFiles.set('second.json', JSON.stringify(second));
+  const before = new Map(mockFiles);
+  mockWriteFailure = (name, text) => name === 'second.json' && text.includes('pinnedAt');
+
+  await expect(
+    updateItemsInLibrary(source, [
+      { itemId: 'book', updates: { pinnedAt: '2026-02-01T12:00:00.000Z' } },
+      { itemId: 'second', updates: { pinnedAt: '2026-02-01T12:00:00.001Z' } },
+    ])
+  ).rejects.toThrow('Could not save all card updates');
+
+  expect(mockFiles).toEqual(before);
 });

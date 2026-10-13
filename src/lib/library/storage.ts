@@ -2040,6 +2040,78 @@ export async function updateItemInLibrary(
   return resolvedItem;
 }
 
+type LibraryItemUpdate = { itemId: string; updates: Partial<LibraryItem> };
+
+type FileSnapshot = { file: File; existed: boolean; text?: string };
+
+// Serialize batch edits and retain their source files so a failed write can be rolled back.
+let itemUpdateQueue: Promise<unknown> = Promise.resolve();
+
+export function updateItemsInLibrary(
+  source: LibrarySource,
+  updates: LibraryItemUpdate[]
+): Promise<LibraryItem[]> {
+  const operation = itemUpdateQueue.then(async () => {
+    if (updates.length === 0) return [];
+    const root = getLibraryDirectory(source);
+    if (!root.exists) throw new Error('Library directory not found');
+
+    const snapshots: FileSnapshot[] = [];
+    const seen = new Set<string>();
+    for (const { itemId, updates: itemUpdates } of updates) {
+      const jsonFile = new File(root, `${itemId}.json`);
+      if (!jsonFile.exists) throw new Error(`Card ${itemId} not found`);
+      const jsonText = await jsonFile.text();
+      const raw = JSON.parse(jsonText);
+      if (!seen.has(jsonFile.name)) {
+        snapshots.push({ file: jsonFile, existed: true, text: jsonText });
+        seen.add(jsonFile.name);
+      }
+      if (raw.type === 'note' && 'text' in itemUpdates && typeof itemUpdates.text === 'string') {
+        const markdownFile = new File(root, `${itemId}.md`);
+        if (!seen.has(markdownFile.name)) {
+          snapshots.push({
+            file: markdownFile,
+            existed: markdownFile.exists,
+            text: markdownFile.exists ? await markdownFile.text() : undefined,
+          });
+          seen.add(markdownFile.name);
+        }
+      }
+    }
+
+    try {
+      const updated: LibraryItem[] = [];
+      for (const { itemId, updates: itemUpdates } of updates) {
+        updated.push(await updateItemInLibrary(source, itemId, itemUpdates));
+      }
+      return updated;
+    } catch (error) {
+      let restored = true;
+      for (const snapshot of snapshots.reverse()) {
+        try {
+          if (snapshot.existed) snapshot.file.write(snapshot.text ?? '');
+          else if (snapshot.file.exists) snapshot.file.delete();
+        } catch {
+          restored = false;
+        }
+      }
+      try {
+        clearSourceCache(getSourceId(source));
+      } catch {
+        restored = false;
+      }
+      throw new Error(
+        restored
+          ? `Could not save all card updates. ${errorMessage(error)}`
+          : 'Could not save or restore every card update. Review the library and try again.'
+      );
+    }
+  });
+  itemUpdateQueue = operation.catch(() => undefined);
+  return operation;
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

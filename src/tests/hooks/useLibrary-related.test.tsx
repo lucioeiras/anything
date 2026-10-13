@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { act, render, waitFor } from '@testing-library/react-native';
 import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
-import { loadLibrary, setRelatedItemsInLibrary, updateItemInLibrary } from '@/lib/library/storage';
+import {
+  loadLibrary,
+  setRelatedItemsInLibrary,
+  updateItemInLibrary,
+  updateItemsInLibrary,
+} from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({}));
@@ -15,6 +20,7 @@ jest.mock('@/lib/library/storage', () => ({
   getFolderDisplayName: () => 'Library',
   loadLibrary: jest.fn(),
   updateItemInLibrary: jest.fn(),
+  updateItemsInLibrary: jest.fn(),
   setRelatedItemsInLibrary: jest.fn(),
 }));
 const a: LibraryItem = {
@@ -47,6 +53,13 @@ const open = async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(loadLibrary).mockResolvedValue(result([a, b]));
+  jest.mocked(updateItemsInLibrary).mockImplementation(async (_source, updates) => {
+    const items: LibraryItem[] = [];
+    for (const entry of updates) {
+      items.push(await updateItemInLibrary(_source, entry.itemId, entry.updates));
+    }
+    return items;
+  });
 });
 
 it('publishes both changed cards together after persistence succeeds', async () => {

@@ -30,6 +30,7 @@ import {
   saveLibrarySource,
   saveRecentFolder,
   updateItemInLibrary,
+  updateItemsInLibrary,
   setRelatedItemsInLibrary,
   type AddGameOptions,
   type AddImageOptions,
@@ -625,10 +626,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       updates: { itemId: string; updates: Partial<LibraryItem> }[]
     ): Promise<LibraryItem[]> => {
       const targetSource = source ?? { kind: 'local', name: 'App Library' };
-      const updatedItems: LibraryItem[] = [];
-      for (const entry of updates) {
-        updatedItems.push(await updateItemInLibrary(targetSource, entry.itemId, entry.updates));
-      }
+      const updatedItems = await updateItemsInLibrary(targetSource, updates);
 
       const updatesById = new Map(updatedItems.map((item) => [item.id, item]));
       setLoaded((prev) => {
