@@ -107,7 +107,7 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
               <View
                 testID={`reading-day-${key}`}
                 style={{ backgroundColor }}
-                className={`flex-1 overflow-hidden rounded-xl p-1.5 ${key === today ? 'border border-zinc-500' : ''}`}
+                className={`flex-1 overflow-hidden rounded-xl p-1.5 ${key === today ? 'border border-white' : ''}`}
               >
                 <Text
                   className={`font-sans-medium text-xs ${streak ? 'text-zinc-950' : books.length ? 'text-white' : 'text-zinc-500'}`}
