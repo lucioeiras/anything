@@ -288,7 +288,9 @@ export default function AddElementScreen() {
               className="p-6 max-w-80 justify-between h-40 w-40 bg-white active:opacity-80 rounded-xl"
             >
               <NotePencilIcon size={24} color="#000" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-zinc-950">Note, quote or to-do</Text>
+              <Text className="font-sans-semibold text-lg text-zinc-950">
+                A thought to remember
+              </Text>
             </Pressable>
 
             <Pressable
@@ -296,7 +298,7 @@ export default function AddElementScreen() {
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <LinkIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Link from anywhere</Text>
+              <Text className="font-sans-semibold text-lg text-white">Found on the web</Text>
             </Pressable>
           </View>
 
@@ -313,7 +315,7 @@ export default function AddElementScreen() {
                   <FilePdfIcon size={24} color="#fff" weight="duotone" />
                 )}
               </AddActionIconSlot>
-              <Text className="font-sans-semibold text-lg text-white">PDF document</Text>
+              <Text className="font-sans-semibold text-lg text-white">Important document</Text>
             </Pressable>
 
             <Pressable
@@ -328,7 +330,7 @@ export default function AddElementScreen() {
                   <ImagesSquareIcon size={24} color="#fff" weight="duotone" />
                 )}
               </AddActionIconSlot>
-              <Text className="font-sans-semibold text-lg text-white">Media from gallery</Text>
+              <Text className="font-sans-semibold text-lg text-white">A photo or video</Text>
             </Pressable>
 
             <Pressable
@@ -354,7 +356,7 @@ export default function AddElementScreen() {
               <Text className="font-sans-semibold text-lg text-white">
                 {recorderState.isRecording
                   ? `Recording · ${Math.floor((recorderState.durationMillis ?? 0) / 1000)}s`
-                  : `Record ${'\n'} audio`}
+                  : `Speak my mind`}
               </Text>
             </Pressable>
 
@@ -369,7 +371,7 @@ export default function AddElementScreen() {
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <FilmSlateIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Entertainment</Text>
+              <Text className="font-sans-semibold text-lg text-white">To watch, read, or play</Text>
             </Pressable>
           </View>
         </View>
