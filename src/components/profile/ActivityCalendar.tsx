@@ -1,6 +1,6 @@
+import { localDayKey } from '@/lib/library/activity';
 import { CaretLeftIcon, CaretRightIcon } from 'phosphor-react-native';
 import { Pressable, Text, View } from 'react-native';
-import { localDayKey } from '@/lib/library/activity';
 
 type Props = {
   month: Date;
@@ -72,7 +72,7 @@ export function ActivityCalendar({ month, byDay, onChangeMonth, onPressDate }: P
               <View
                 testID={`activity-day-${key}`}
                 style={{ backgroundColor }}
-                className={`flex-1 overflow-hidden rounded-xl p-1.5 ${key === today ? 'border border-zinc-500' : ''}`}
+                className={`flex-1 overflow-hidden rounded-xl p-1.5 ${key === today ? 'border border-white' : ''}`}
               >
                 <Text
                   className={`font-sans-medium text-xs ${count >= 5 ? 'text-zinc-950' : count > 0 ? 'text-white' : 'text-zinc-500'}`}

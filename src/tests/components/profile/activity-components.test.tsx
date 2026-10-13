@@ -56,9 +56,15 @@ it('opens a select, switches its value, and closes the options', async () => {
     />
   );
   await fireEvent.press(screen.getByLabelText('Year: 2026'));
+  expect(screen.getByTestId('year-dropdown')).toBeTruthy();
+  expect(screen.getByLabelText('2026').props.accessibilityState.selected).toBe(true);
   await fireEvent.press(screen.getByLabelText('2025'));
   expect(onSelect).toHaveBeenCalledWith('2025');
-  expect(screen.queryByLabelText('Close Year')).toBeNull();
+  expect(screen.queryByTestId('year-dropdown')).toBeNull();
+  expect(screen.getByLabelText('Year: 2026').props.accessibilityState.expanded).toBe(false);
+  await fireEvent.press(screen.getByLabelText('Year: 2026'));
+  await fireEvent.press(screen.getByLabelText('Year: 2026'));
+  expect(screen.queryByTestId('year-dropdown')).toBeNull();
 });
 
 it('uses progressively lighter blue backgrounds for days with more additions', async () => {

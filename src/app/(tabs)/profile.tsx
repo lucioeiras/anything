@@ -1,9 +1,9 @@
 import { Button } from '@/components/Button';
-import { ReadingCalendarSection } from '@/components/profile/ReadingCalendarSection';
 import { ActivityCalendar } from '@/components/profile/ActivityCalendar';
-import { CompletionTypeFilters } from '@/components/profile/CompletionTypeFilters';
 import { CompletionChart } from '@/components/profile/CompletionChart';
+import { CompletionTypeFilters } from '@/components/profile/CompletionTypeFilters';
 import { ProfileSelect } from '@/components/profile/ProfileSelect';
+import { ReadingCalendarSection } from '@/components/profile/ReadingCalendarSection';
 import { useLibrary } from '@/hooks/useLibrary';
 import {
   getLibraryActivity,
@@ -64,6 +64,7 @@ export default function ProfileScreen() {
             />
           </View>
         )}
+
         {state.status === 'ready' && (
           <>
             <View className="flex-row flex-wrap border-y border-zinc-800 px-8 py-6">
@@ -96,11 +97,12 @@ export default function ProfileScreen() {
                 onPressDate={openDay}
               />
             </View>
-            <View className="border-t border-zinc-800 py-6">
+
+            <View className="border-t border-zinc-800 py-6" style={{ zIndex: 1 }}>
               <Text className="mb-4 px-8 font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
                 Completed cards
               </Text>
-              <View className="flex-row items-center gap-2 pl-8">
+              <View className="flex-row items-center gap-2 pl-8" style={{ zIndex: 1 }}>
                 <ProfileSelect
                   label="Year"
                   value={String(year)}
