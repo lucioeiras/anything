@@ -19,12 +19,14 @@ export const AudioCard = memo(function AudioCard({
   waveform,
   showPlaybackRate = false,
   compactWaveform = false,
+  stackedControls = false,
 }: {
   uri: string;
   title?: string;
   waveform?: number[];
   showPlaybackRate?: boolean;
   compactWaveform?: boolean;
+  stackedControls?: boolean;
 }) {
   const player = useAudioPlayer(uri);
   const status = useAudioPlayerStatus(player);
@@ -58,83 +60,102 @@ export const AudioCard = memo(function AudioCard({
     player.play();
   };
 
+  const waveformControl = (
+    <Pressable
+      testID="audio-waveform"
+      accessibilityRole="button"
+      accessibilityLabel="Seek audio"
+      onLayout={(event: LayoutChangeEvent) => setWaveformWidth(event.nativeEvent.layout.width)}
+      onPress={(event) => {
+        if (duration <= 0 || waveformWidth <= 0) return;
+        const ratio = Math.max(0, Math.min(1, event.nativeEvent.locationX / waveformWidth));
+        void player.seekTo(ratio * duration);
+      }}
+      className={`h-8 ${stackedControls ? 'w-full justify-center' : 'flex-1'} flex-row items-center ${displayWaveform ? 'gap-[2px]' : ''}`}
+    >
+      {displayWaveform?.length ? (
+        displayWaveform.map((amplitude, index) => (
+          <View
+            key={index}
+            pointerEvents="none"
+            style={{
+              flex: 1,
+              height: Math.max(3, (amplitude / 100) * (stackedControls ? 40 : 26)),
+              borderRadius: 2,
+              backgroundColor: index < playedBars ? '#FFFFFF' : '#52525B',
+            }}
+          />
+        ))
+      ) : (
+        <View pointerEvents="none" className="h-1 w-full overflow-hidden rounded-full bg-zinc-700">
+          <View className="h-full bg-white" style={{ width: `${progress * 100}%` }} />
+        </View>
+      )}
+    </Pressable>
+  );
+
+  const playButton = (
+    <View
+      testID={stackedControls ? 'audio-playback-button-wrapper' : undefined}
+      className="h-12 w-12 shrink-0 items-center justify-center"
+    >
+      <Button
+        size="small"
+        variant={status.playing ? 'primary' : 'secondary'}
+        accessibilityLabel={status.playing ? 'Pause audio' : 'Play audio'}
+        onPress={togglePlayback}
+        icon={
+          status.playing ? (
+            <PauseIcon size={16} color="#000" weight="fill" />
+          ) : (
+            <PlayIcon size={16} color="#fff" weight="fill" />
+          )
+        }
+      />
+    </View>
+  );
+
+  const timeText = (
+    <Text
+      className={`font-sans ${compactWaveform ? 'text-xs' : 'text-sm'} text-zinc-300 ${stackedControls ? 'text-center' : ''}`}
+    >
+      {timeLabel(current * 1000)} / {timeLabel(duration * 1000)}
+    </Text>
+  );
+
+  const playbackRateControl = showPlaybackRate ? (
+    <Pressable
+      onPress={changePlaybackRate}
+      accessibilityRole="button"
+      accessibilityLabel={`Playback speed ${rateLabel}`}
+      className="min-w-16 items-center rounded-full bg-zinc-950/80 px-2 py-1 active:opacity-70"
+    >
+      <Text className="font-sans-semibold text-lg text-zinc-200">{rateLabel}</Text>
+    </Pressable>
+  ) : null;
+
   return (
     <View className="w-full">
-      <View className="rounded-xl bg-zinc-900 p-4">
-        <View className={`flex-row items-center ${compactWaveform ? 'gap-3' : 'gap-5'}`}>
-          <View className="h-12 w-12 shrink-0 items-center justify-center">
-            <Button
-              size="small"
-              variant={status.playing ? 'primary' : 'secondary'}
-              accessibilityLabel={status.playing ? 'Pause audio' : 'Play audio'}
-              onPress={togglePlayback}
-              icon={
-                status.playing ? (
-                  <PauseIcon size={16} color="#000" weight="fill" />
-                ) : (
-                  <PlayIcon size={16} color="#fff" weight="fill" />
-                )
-              }
-            />
+      <View className={`rounded-xl bg-zinc-900 ${stackedControls ? 'h-full p-3' : 'p-4'}`}>
+        {stackedControls ? (
+          <View
+            testID="audio-stacked-controls"
+            className="h-full items-center justify-center gap-2"
+          >
+            {waveformControl}
+            {timeText}
+            {playButton}
           </View>
-          <View className="flex-1 gap-1.5">
-            <View className="flex-row items-center gap-5">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Seek audio"
-                onLayout={(event: LayoutChangeEvent) =>
-                  setWaveformWidth(event.nativeEvent.layout.width)
-                }
-                onPress={(event) => {
-                  if (duration <= 0 || waveformWidth <= 0) return;
-                  const ratio = Math.max(
-                    0,
-                    Math.min(1, event.nativeEvent.locationX / waveformWidth)
-                  );
-                  void player.seekTo(ratio * duration);
-                }}
-                className={`h-8 flex-1 flex-row items-center ${displayWaveform ? 'gap-[2px]' : ''}`}
-              >
-                {displayWaveform?.length ? (
-                  displayWaveform.map((amplitude, index) => (
-                    <View
-                      key={index}
-                      pointerEvents="none"
-                      style={{
-                        flex: 1,
-                        height: Math.max(3, (amplitude / 100) * 26),
-                        borderRadius: 2,
-                        backgroundColor: index < playedBars ? '#FFFFFF' : '#52525B',
-                      }}
-                    />
-                  ))
-                ) : (
-                  <View
-                    pointerEvents="none"
-                    className="h-1 w-full overflow-hidden rounded-full bg-zinc-700"
-                  >
-                    <View className="h-full bg-white" style={{ width: `${progress * 100}%` }} />
-                  </View>
-                )}
-              </Pressable>
+        ) : (
+          <View className={`flex-row items-center ${compactWaveform ? 'gap-3' : 'gap-5'}`}>
+            {playButton}
+            <View className="flex-1 gap-1.5">
+              <View className="flex-row items-center gap-5">{waveformControl}</View>
+              {timeText}
             </View>
-
-            <Text className={`font-sans ${compactWaveform ? 'text-xs' : 'text-sm'} text-zinc-300`}>
-              {timeLabel(current * 1000)} / {timeLabel(duration * 1000)}
-            </Text>
+            {playbackRateControl}
           </View>
-
-          {showPlaybackRate && (
-            <Pressable
-              onPress={changePlaybackRate}
-              accessibilityRole="button"
-              accessibilityLabel={`Playback speed ${rateLabel}`}
-              className="min-w-16 items-center rounded-full bg-zinc-950/80 px-2 py-1 active:opacity-70"
-            >
-              <Text className="font-sans-semibold text-lg text-zinc-200">{rateLabel}</Text>
-            </Pressable>
-          )}
-        </View>
+        )}
       </View>
       {title && (
         <Text

@@ -19,6 +19,7 @@ type MovieCardProps = {
   genres?: string[];
   runtime?: number;
   progressStatus?: MediaProgressStatus;
+  onAspectRatioChange?: (ratio: number) => void;
 };
 
 type FilmPerforationsProps = {
@@ -56,6 +57,7 @@ export const MovieCard = ({
   genres,
   runtime,
   progressStatus,
+  onAspectRatioChange,
 }: MovieCardProps) => {
   const [aspectRatio, setAspectRatio] = useState(2 / 3);
   const [posterHeight, setPosterHeight] = useState(0);
@@ -89,6 +91,7 @@ export const MovieCard = ({
           onLoad={(e) => {
             if (e.source.width && e.source.height) {
               setAspectRatio(e.source.width / e.source.height);
+              onAspectRatioChange?.(e.source.width / e.source.height);
             }
           }}
         />

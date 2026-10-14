@@ -1,6 +1,6 @@
-import { HourglassIcon, PlusIcon } from 'phosphor-react-native';
+import { HourglassIcon } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { BookLogCalendarGrid } from '@/components/books/BookLogCalendarGrid';
@@ -17,6 +17,7 @@ export function BookLogs({
   onDelete,
   getNoteText,
   readOnly = false,
+  openOnMount = false,
 }: {
   book: BookItem;
   onSave: (
@@ -29,6 +30,7 @@ export function BookLogs({
   onDelete: (existingLog: BookReadingLog) => Promise<void>;
   getNoteText: (id: string) => string | undefined;
   readOnly?: boolean;
+  openOnMount?: boolean;
 }) {
   const logs = book.readingLogs ?? [];
   const latest = [...logs].sort((a, b) =>
@@ -37,7 +39,7 @@ export function BookLogs({
   const total = book.pageCount && book.pageCount > 0 ? book.pageCount : null;
   const percentage = total ? Math.min(100, Math.round(((latest?.page ?? 0) / total) * 100)) : null;
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromKey(localDateKey(new Date())));
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(openOnMount);
   const [formSession, setFormSession] = useState(0);
   const [logToEdit, setLogToEdit] = useState<BookReadingLog>();
   const [noteToEdit, setNoteToEdit] = useState<string>();
@@ -105,7 +107,7 @@ export function BookLogs({
       )}
 
       {/* Calendar */}
-      <View className={readOnly ? 'px-6 py-6' : 'px-6'}>
+      <View className={`mb-8 px-6 ${readOnly && 'py-6'}`}>
         <BookLogCalendarGrid
           month={calendarMonth}
           logs={logs}
@@ -126,24 +128,6 @@ export function BookLogs({
           }}
         />
       </View>
-
-      {/* Log button */}
-      {!readOnly && (
-        <Pressable
-          onPress={() => {
-            setLogToEdit(undefined);
-            setNoteToEdit(undefined);
-            setFormSession((session) => session + 1);
-            setFormOpen(true);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Log reading"
-          className="flex-row items-center justify-center gap-4 px-3 py-5 bg-amber-950/20 active:opacity-80"
-        >
-          <PlusIcon size={16} color="#FCD34D" weight="bold" />
-          <Text className="font-sans-semibold text-base text-amber-300">Log reading</Text>
-        </Pressable>
-      )}
 
       <BookLogModal
         key={formSession}

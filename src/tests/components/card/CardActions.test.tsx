@@ -53,6 +53,47 @@ describe('CardActions', () => {
     expect(actions.onEditNote).toHaveBeenCalledTimes(1);
   });
 
+  it('shows Log reading as the final primary action when enabled', async () => {
+    const actions = makeActions();
+    const onLogReading = jest.fn();
+    const item: LibraryItem = {
+      ...base,
+      id: 'book',
+      type: 'book',
+      title: 'Book',
+      isbn: '',
+      authors: [],
+    };
+    const { getByLabelText, queryByLabelText, queryByText } = await render(
+      <CardActions item={item} {...actions} showLogReading onLogReading={onLogReading} />
+    );
+
+    const logButton = getByLabelText('Log reading');
+    expect(logButton.props.accessibilityState?.disabled).toBeFalsy();
+    expect(queryByText('Log reading')).toBeNull();
+    expect(queryByLabelText('Copy')).toBeNull();
+    await fireEvent.press(logButton);
+    expect(onLogReading).toHaveBeenCalledTimes(1);
+    expect(queryByLabelText('Log reading')).toBeTruthy();
+  });
+
+  it('hides Log reading when disabled', async () => {
+    const actions = makeActions();
+    const item: LibraryItem = {
+      ...base,
+      id: 'book',
+      type: 'book',
+      title: 'Book',
+      isbn: '',
+      authors: [],
+    };
+    const { queryByLabelText } = await render(
+      <CardActions item={item} {...actions} onLogReading={jest.fn()} />
+    );
+
+    expect(queryByLabelText('Log reading')).toBeNull();
+  });
+
   it('adds download action for image cards', async () => {
     const actions = makeActions();
     const item: LibraryItem = { ...base, id: 'image', type: 'image', image: 'image.jpg' };

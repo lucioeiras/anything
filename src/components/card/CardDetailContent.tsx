@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decodeHTML } from 'entities';
 import * as Clipboard from 'expo-clipboard';
 import { File } from 'expo-file-system';
@@ -43,7 +42,7 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { transcribeAudio } from '@/lib/ai/transcribeAudio';
 import { isLinkableItem } from '@/lib/library/links';
 import { getRelatedItems } from '@/lib/library/related';
-import { getSourceId } from '@/lib/library/storage';
+import { getLibraryFolders, getSourceId } from '@/lib/library/storage';
 import {
   MEDIA_PROGRESS_STATUSES,
   type BookReadingLog,
@@ -141,15 +140,12 @@ export function CardDetailContent({
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(folderStorageKey)
-      .then((value) => {
+    getLibraryFolders(source)
+      .then((names) => {
         if (!active) return;
-        const parsed: unknown = value ? JSON.parse(value) : [];
         setSavedFolders({
           key: folderStorageKey,
-          names: Array.isArray(parsed)
-            ? parsed.filter((name): name is string => typeof name === 'string')
-            : [],
+          names,
         });
       })
       .catch(() => {
@@ -158,7 +154,7 @@ export function CardDetailContent({
     return () => {
       active = false;
     };
-  }, [folderStorageKey]);
+  }, [folderStorageKey, source]);
   const libraryItems = state.status === 'ready' ? state.result.items : [];
   const linkedContent =
     item.type === 'note' || item.type === 'quote'
@@ -195,6 +191,7 @@ export function CardDetailContent({
   const [progressStatus, setProgressStatus] = useState<MediaProgressStatus>(
     isTrackableItem(item) ? getCurrentProgressStatus(item.type, item.progressStatus) : 'want'
   );
+  const [bookLogRequest, setBookLogRequest] = useState(0);
   const [reviewRating, setReviewRating] = useState(
     item.type === 'book' || item.type === 'movie' || item.type === 'game'
       ? (item.review?.rating ?? null)
@@ -1106,8 +1103,10 @@ export function CardDetailContent({
               (progressStatus === 'in-progress' ||
                 (progressStatus === 'completed' && (item.readingLogs?.length ?? 0) > 0)) && (
                 <BookLogs
+                  key={bookLogRequest}
                   book={item}
                   readOnly={progressStatus === 'completed'}
+                  openOnMount={bookLogRequest > 0}
                   onSave={handleSaveReadingLog}
                   onDelete={handleDeleteReadingLog}
                   getNoteText={(noteId) => {
@@ -1209,6 +1208,8 @@ export function CardDetailContent({
           onTranscribeAudio={handleTranscribeAudioManually}
           isTranscribingAudio={isTranscribingAudio}
           showTranscribeAudio={item.type === 'audio' && !transcript.trim()}
+          showLogReading={item.type === 'book' && progressStatus === 'in-progress'}
+          onLogReading={() => setBookLogRequest((request) => request + 1)}
         />
       </KeyboardAvoidingView>
 

@@ -2,7 +2,6 @@ import { decodeHTML } from 'entities';
 import { Image as ExpoImage } from 'expo-image';
 import { cssInterop } from 'nativewind';
 import { GameControllerIcon } from 'phosphor-react-native';
-import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import type { MediaProgressStatus } from '@/lib/library/types';
@@ -24,23 +23,15 @@ export const GameCard = ({
   hideTitleAndAuthor = false,
   progressStatus,
 }: GameCardProps) => {
-  const [aspectRatio, setAspectRatio] = useState(16 / 9);
-
   return (
     <View className="w-full">
-      <View className="w-full overflow-hidden rounded-xl bg-zinc-900" style={{ aspectRatio }}>
+      <View
+        testID="game-cover-container"
+        className="w-full overflow-hidden rounded-xl bg-zinc-900"
+        style={{ aspectRatio: 1 }}
+      >
         {cover ? (
-          <ExpoImage
-            source={{ uri: cover }}
-            className="w-full h-full"
-            contentFit="cover"
-            onLoad={(event) => {
-              const { width, height } = event.source;
-              if (width > 0 && height > 0) {
-                setAspectRatio(width / height);
-              }
-            }}
-          />
+          <ExpoImage source={{ uri: cover }} className="w-full h-full" contentFit="cover" />
         ) : (
           <View className="flex-1 items-center justify-center">
             <GameControllerIcon size={44} color="#71717A" weight="duotone" />

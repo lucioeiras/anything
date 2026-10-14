@@ -56,6 +56,18 @@ describe('parseItem', () => {
     ).toMatchObject({ linkedItemId: 'book-1' });
   });
 
+  it('keeps valid pinned timestamps and discards invalid values', () => {
+    const note = {
+      ...base,
+      type: 'note',
+      text: 'Pinned note',
+      pinnedAt: '2026-02-03T04:05:06.000Z',
+    };
+    expect(parseItem(note)).toMatchObject({ pinnedAt: note.pinnedAt });
+    expect(parseItem({ ...note, pinnedAt: 'not-a-date' })).not.toHaveProperty('pinnedAt');
+    expect(parseItem({ ...note, pinnedAt: 42 })).not.toHaveProperty('pinnedAt');
+  });
+
   it('drops legacy TikTok progress statuses', () => {
     expect(
       parseItem({

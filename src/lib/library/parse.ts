@@ -1,4 +1,5 @@
 import { decodeHTML } from 'entities';
+import { TRACKABLE_TYPES, validDate } from './activity';
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
 import { parseAudioWaveform } from './audioWaveform';
 import { normalizeRelatedIds } from './related';
@@ -32,6 +33,15 @@ export function parseItem(raw: unknown): LibraryItem {
     ...raw,
   };
 
+  if (
+    !TRACKABLE_TYPES.includes(type as (typeof TRACKABLE_TYPES)[number]) ||
+    item.progressStatus !== 'completed' ||
+    typeof item.completedAt !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}T/.test(item.completedAt) ||
+    !validDate(item.completedAt)
+  )
+    delete item.completedAt;
+
   const relatedIds = normalizeRelatedIds(item.relatedItemIds, id);
   if (relatedIds.length) item.relatedItemIds = relatedIds;
   else delete item.relatedItemIds;
@@ -53,6 +63,9 @@ export function parseItem(raw: unknown): LibraryItem {
   }
   if (typeof item.note === 'string') {
     item.note = decodeHTML(item.note);
+  }
+  if (typeof item.pinnedAt !== 'string' || !validDate(item.pinnedAt)) {
+    delete item.pinnedAt;
   }
   if (item.type === 'note' || item.type === 'quote') {
     if (typeof item.linkedItemId !== 'string' || !item.linkedItemId) {

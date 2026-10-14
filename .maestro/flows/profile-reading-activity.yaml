@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+name: Inspect the profile reading calendar
+---
+- launchApp:
+    clearState: true
+- tapOn: 'Profile'
+- scrollUntilVisible:
+    element: 'Reading activity'
+    direction: DOWN
+- scrollUntilVisible:
+    element: 'Previous reading month'
+    direction: DOWN
+- assertVisible: 'Best reading streak in .*'
+- tapOn: 'Previous reading month'
+- tapOn: 'Next reading month'
+- scrollUntilVisible:
+    element: 'No reading logs recorded for .*'
+    direction: DOWN
+- assertVisible: 'No reading logs recorded for .*'

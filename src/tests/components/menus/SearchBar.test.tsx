@@ -11,7 +11,12 @@ describe('SearchBar', () => {
       <SearchBar value="" onChangeText={onChangeText} />
     );
 
-    await fireEvent.changeText(getByPlaceholderText('Search cards, tags, notes...'), 'design');
+    const input = getByPlaceholderText('Search cards, tags, notes...');
+    expect(input.props.className).toContain('min-w-0');
+    expect(input.props.className).toContain('flex-1');
+    expect(input.props.multiline).toBe(false);
+    expect(input.props.scrollEnabled).toBe(true);
+    await fireEvent.changeText(input, 'design');
     expect(onChangeText).toHaveBeenCalledWith('design');
   });
 
@@ -68,7 +73,31 @@ describe('SearchBar', () => {
     );
 
     expect(getByPlaceholderText('Search within...')).toBeTruthy();
+    expect(getByPlaceholderText('Search within...').parent?.props.className).toContain(
+      'flex-nowrap'
+    );
     await fireEvent.press(getByLabelText('Remove tag filter travel'));
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
+});
+
+it('shows and removes a date filter independently of other filters', async () => {
+  const removeDate = jest.fn(),
+    removeTag = jest.fn();
+  const { getByLabelText } = await render(
+    <SearchBar
+      value=""
+      onChangeText={jest.fn()}
+      filters={[
+        { kind: 'date', label: '10/13/2026', onRemove: removeDate },
+        { kind: 'tag', label: 'reading', onRemove: removeTag },
+      ]}
+    />
+  );
+  expect(getByLabelText('Remove date filter 10/13/2026').props.className).toContain(
+    'bg-amber-500/15'
+  );
+  await fireEvent.press(getByLabelText('Remove date filter 10/13/2026'));
+  expect(removeDate).toHaveBeenCalledTimes(1);
+  expect(removeTag).not.toHaveBeenCalled();
 });

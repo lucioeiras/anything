@@ -153,6 +153,93 @@ describe('ItemCard', () => {
     expect(queryByText('Want to watch')).toBeNull();
   });
 
+  it('reduces the TikTok thumbnail height in the pinned-card layout', async () => {
+    const tiktok = examples.find(([item]) => item.type === 'tiktok')?.[0];
+    if (!tiktok) throw new Error('Missing TikTok test item');
+
+    const { getByTestId } = await render(<ItemCard item={tiktok} compactTikTokThumbnail />);
+    expect(getByTestId('video-thumbnail-container').props.style).toMatchObject({
+      aspectRatio: 3 / 4,
+    });
+  });
+
+  it('applies a fixed height to compact card previews', async () => {
+    const note = examples.find(([item]) => item.type === 'note')?.[0];
+    if (!note) throw new Error('Missing note test item');
+
+    const { getByTestId } = await render(<ItemCard item={note} fixedHeight={100} />);
+    expect(getByTestId('item-card-fixed-height').props.style).toMatchObject({ height: 100 });
+  });
+
+  it.each([
+    ['article', 'article-thumbnail'],
+    ['youtube', 'youtube-thumbnail-container'],
+    ['tiktok', 'video-thumbnail-container'],
+  ] as const)(
+    '%s pinned preview splits its height evenly between thumbnail and title',
+    async (type, thumbnailTestId) => {
+      const item = examples.find(([candidate]) => candidate.type === type)?.[0];
+      if (!item) throw new Error(`Missing ${type} test item`);
+
+      const { getByTestId } = await render(<ItemCard item={item} fixedHeight={100} />);
+      expect(getByTestId(thumbnailTestId).props.style).toMatchObject({ height: 50 });
+      expect(getByTestId('pinned-title-container').props.style).toMatchObject({ height: 50 });
+    }
+  );
+
+  it('keeps game covers square', async () => {
+    const game = examples.find(([item]) => item.type === 'game')?.[0];
+    if (!game) throw new Error('Missing game test item');
+
+    const { getByTestId } = await render(<ItemCard item={game} />);
+    expect(getByTestId('game-cover-container').props.style).toMatchObject({ aspectRatio: 1 });
+  });
+
+  it('allows the music vinyl shadow to extend past normal and pinned card content', async () => {
+    const music = examples.find(([item]) => item.type === 'music')?.[0];
+    if (!music) throw new Error('Missing music test item');
+
+    const boardCard = await render(<ItemCard item={music} />);
+    expect(boardCard.getByTestId('item-card-content').props.style.overflow).toBe('visible');
+
+    const pinnedCard = await render(<ItemCard item={music} fixedHeight={100} />);
+    expect(pinnedCard.getByTestId('item-card-content').props.style.overflow).toBe('visible');
+  });
+
+  it('keeps author identity and text while hiding media for pinned X and Reddit cards', async () => {
+    const tweet: LibraryItem = {
+      ...base,
+      id: 'tweet-text-only',
+      type: 'tweet',
+      url: 'https://x.com/user/status/3',
+      author: 'A User',
+      avatar: 'avatar.jpg',
+      text: 'Only this post body',
+      images: ['image.jpg'],
+    };
+    const reddit: LibraryItem = {
+      ...base,
+      id: 'reddit-text-only',
+      type: 'reddit',
+      url: 'https://reddit.com/r/test/2',
+      subreddit: 'r/test',
+      subredditAvatar: 'reddit.jpg',
+      title: 'Hidden title',
+      text: 'Only this Reddit body',
+      image: 'image.jpg',
+    };
+
+    const tweetScreen = await render(<ItemCard item={tweet} compactMedia />);
+    expect(tweetScreen.getByText('Only this post body')).toBeTruthy();
+    expect(tweetScreen.getByText('A User')).toBeTruthy();
+    await tweetScreen.unmount();
+
+    const redditScreen = await render(<ItemCard item={reddit} compactMedia hideTitleAndAuthor />);
+    expect(redditScreen.getByText('Only this Reddit body')).toBeTruthy();
+    expect(redditScreen.queryByText('Hidden title')).toBeNull();
+    expect(redditScreen.getByText('r/test')).toBeTruthy();
+  });
+
   it('passes press actions the original item and supports selection display', async () => {
     const item = examples[0][0];
     const onPress = jest.fn();

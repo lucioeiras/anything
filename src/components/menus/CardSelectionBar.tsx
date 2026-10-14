@@ -1,4 +1,4 @@
-import { FolderPlusIcon, TrashSimpleIcon, XIcon } from 'phosphor-react-native';
+import { FolderPlusIcon, PushPinSimpleIcon, TrashSimpleIcon, XIcon } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -9,6 +9,8 @@ type CardSelectionBarProps = {
   bottomOffset?: number;
   onDelete: () => void;
   onAddToFolder: () => void;
+  pinActionLabel?: string;
+  onTogglePin?: () => void;
   onCancel: () => void;
 };
 
@@ -18,6 +20,8 @@ export function CardSelectionBar({
   bottomOffset = 0,
   onDelete,
   onAddToFolder,
+  pinActionLabel,
+  onTogglePin,
   onCancel,
 }: CardSelectionBarProps) {
   if (!visible) return null;
@@ -51,6 +55,16 @@ export function CardSelectionBar({
             disabled={!hasSelection}
             onPress={onAddToFolder}
           />
+          {pinActionLabel && onTogglePin && (
+            <Button
+              accessibilityLabel={pinActionLabel}
+              variant="secondary"
+              contentColor="#FFFFFF"
+              icon={<PushPinSimpleIcon size={24} color="#FFFFFF" weight="bold" />}
+              disabled={!hasSelection}
+              onPress={onTogglePin}
+            />
+          )}
           <Button
             accessibilityLabel="Delete selected cards"
             variant="secondary"

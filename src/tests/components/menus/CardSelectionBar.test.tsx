@@ -6,6 +6,7 @@ describe('CardSelectionBar', () => {
   const callbacks = () => ({
     onDelete: jest.fn(),
     onAddToFolder: jest.fn(),
+    onTogglePin: jest.fn(),
     onCancel: jest.fn(),
   });
 
@@ -29,15 +30,22 @@ describe('CardSelectionBar', () => {
   it('reports the selected count and calls each action', async () => {
     const handlers = callbacks();
     const { getByText, getByLabelText } = await render(
-      <CardSelectionBar visible selectedCount={3} {...handlers} />
+      <CardSelectionBar
+        visible
+        selectedCount={3}
+        pinActionLabel="Pin selected cards"
+        {...handlers}
+      />
     );
 
     expect(getByText('3')).toBeTruthy();
     await fireEvent.press(getByLabelText('Cancel selection'));
     await fireEvent.press(getByLabelText('Add selected cards to folder'));
+    await fireEvent.press(getByLabelText('Pin selected cards'));
     await fireEvent.press(getByLabelText('Delete selected cards'));
     expect(handlers.onCancel).toHaveBeenCalledTimes(1);
     expect(handlers.onAddToFolder).toHaveBeenCalledTimes(1);
+    expect(handlers.onTogglePin).toHaveBeenCalledTimes(1);
     expect(handlers.onDelete).toHaveBeenCalledTimes(1);
   });
 });

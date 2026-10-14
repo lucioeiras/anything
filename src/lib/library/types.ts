@@ -34,6 +34,8 @@ type BaseItem = {
   autoTags?: string[];
   /** User-selected, bidirectional relationships with other cards. */
   relatedItemIds?: string[];
+  /** ISO-8601 timestamp set when this card is pinned to the board. */
+  pinnedAt?: string;
   note?: string;
 };
 
@@ -97,6 +99,8 @@ export type LinkItem = BaseItem & {
 
 export type ArticleItem = BaseItem & {
   type: 'article';
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
@@ -106,6 +110,8 @@ export type ArticleItem = BaseItem & {
 
 export type YouTubeItem = BaseItem & {
   type: 'youtube';
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: Exclude<MediaProgressStatus, 'abandoned'>;
   url: string;
   title: string;
@@ -150,6 +156,8 @@ export type RedditItem = BaseItem & {
 export type BookItem = BaseItem & {
   type: 'book';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   isbn: string;
   title: string;
@@ -190,6 +198,8 @@ export type MusicItem = BaseItem & {
 export type MovieItem = BaseItem & {
   type: 'movie';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   tmdbId: number;
   title: string;
@@ -214,6 +224,8 @@ export type MovieItem = BaseItem & {
 export type GameItem = BaseItem & {
   type: 'game';
   review?: MediaReview;
+  /** ISO timestamp of the current completion; absent for legacy cards. */
+  completedAt?: string;
   progressStatus?: MediaProgressStatus;
   rawgId?: number;
   title: string;
@@ -254,10 +266,10 @@ export type LibraryItemType = LibraryItem['type'];
 export const ITEM_TYPES: readonly LibraryItemType[] = [
   'note',
   'quote',
-  'image',
-  'pdf',
-  'video',
   'audio',
+  'image',
+  'video',
+  'pdf',
   'link',
   'article',
   'youtube',

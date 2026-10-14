@@ -16,6 +16,7 @@ type RedditProps = {
   postTitle: string;
   text?: string;
   image?: string;
+  hideMedia?: boolean;
 };
 
 export const RedditCard = ({
@@ -24,6 +25,7 @@ export const RedditCard = ({
   postTitle,
   text,
   image,
+  hideMedia = false,
 }: RedditProps) => {
   const [aspectRatio, setAspectRatio] = useState(1);
 
@@ -43,7 +45,7 @@ export const RedditCard = ({
 
       <Text className="font-sans-medium text-base text-zinc-100">{cleanTitle}</Text>
 
-      {cleanImage && (
+      {!hideMedia && cleanImage && (
         <ExpoImage
           source={{ uri: cleanImage }}
           className="w-full rounded-lg"

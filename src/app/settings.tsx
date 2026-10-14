@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import {
+  ArrowLeftIcon,
   ArrowsLeftRightIcon,
   CircleIcon,
   CpuIcon,
@@ -80,11 +81,14 @@ export default function SettingsScreen() {
         contentContainerClassName="pt-5 pb-40"
         showsVerticalScrollIndicator={false}
       >
-        <View className="gap-3 px-8 pb-8">
+        <View className="px-8 pb-8 flex-row items-center gap-4">
+          <Button
+            accessibilityLabel="Back to profile"
+            size="small"
+            icon={<ArrowLeftIcon size={20} color="#FFFFFF" />}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))}
+          />
           <Text className="font-sans-semibold text-2xl text-white">Settings</Text>
-          <Text className="font-sans text-base leading-relaxed text-zinc-400">
-            Manage your library space and the tools available on this device.
-          </Text>
         </View>
 
         <View className="gap-4 border-t border-b border-zinc-800 px-8 py-6">
