@@ -1,5 +1,11 @@
 {
   "build": {
+    "release": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "e2e": {
       "distribution": "internal",
       "env": {
