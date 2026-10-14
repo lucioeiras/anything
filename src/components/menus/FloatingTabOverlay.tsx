@@ -31,6 +31,10 @@ export function useFloatingTabOverlay() {
   return setOverlay;
 }
 
+export function clearOverlayIfCurrent(current: ReactNode, registered: ReactNode) {
+  return current === registered ? null : current;
+}
+
 const styles = StyleSheet.create({
   overlay: {
     zIndex: 1000,

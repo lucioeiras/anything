@@ -5,7 +5,10 @@ import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
+import {
+  clearOverlayIfCurrent,
+  useFloatingTabOverlay,
+} from '@/components/menus/FloatingTabOverlay';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -29,7 +32,7 @@ export default function OrganizeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setFloatingTabOverlay(
+      const overlay = (
         <View
           pointerEvents="box-none"
           style={{
@@ -50,8 +53,9 @@ export default function OrganizeScreen() {
           />
         </View>
       );
+      setFloatingTabOverlay(overlay);
 
-      return () => setFloatingTabOverlay(null);
+      return () => setFloatingTabOverlay((current) => clearOverlayIfCurrent(current, overlay));
     }, [insets.bottom, saved?.source, setFloatingTabOverlay, sourceId])
   );
 

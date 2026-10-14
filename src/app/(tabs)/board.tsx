@@ -30,7 +30,10 @@ import { BoardTypeFilters } from '@/components/board/BoardTypeFilters';
 import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
-import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
+import {
+  clearOverlayIfCurrent,
+  useFloatingTabOverlay,
+} from '@/components/menus/FloatingTabOverlay';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -931,7 +934,7 @@ export default function BoardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setFloatingTabOverlay(
+      const overlay = (
         <>
           <SearchBar
             value={searchQuery}
@@ -999,8 +1002,9 @@ export default function BoardScreen() {
           />
         </>
       );
+      setFloatingTabOverlay(overlay);
 
-      return () => setFloatingTabOverlay(null);
+      return () => setFloatingTabOverlay((current) => clearOverlayIfCurrent(current, overlay));
     }, [
       setFloatingTabOverlay,
       searchQuery,
