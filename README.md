@@ -80,9 +80,9 @@ O suporte a iCloud depende também de habilitar o container `iCloud.com.diegoeir
 
 ### Releases no GitHub
 
-Um push para `main` gera builds Android (`.apk`) e iOS (`.ipa`) pelo EAS Build e publica ambos como assets de uma GitHub Release. Configure o secret `EXPO_TOKEN` nas configurações do repositório e vincule o projeto ao EAS com `bunx eas-cli init`; o `projectId` gerado precisa estar no `app.json`. Configure também as credenciais de assinatura do Android e iOS no EAS antes do primeiro build não interativo.
+Um push para `main` gera um build Android (`.apk`) pelo EAS Build e publica o arquivo como asset de uma GitHub Release. Configure o secret `EXPO_TOKEN` nas configurações do repositório e vincule o projeto ao EAS com `bunx eas-cli init`; o `projectId` gerado precisa estar no `app.json`. Configure as credenciais de assinatura do Android no EAS antes do primeiro build não interativo.
 
-O IPA usa distribuição interna (Ad Hoc), então só pode ser instalado em iPhones/iPads registrados no perfil de provisionamento Apple usado pelo EAS. Para incluir dispositivos, registre seus UDIDs no EAS e atualize o perfil de provisionamento. O APK pode ser instalado diretamente em dispositivos Android compatíveis.
+O perfil `release` incrementa remotamente os números de build. O APK pode ser instalado diretamente em dispositivos Android compatíveis.
 
 ## Chaves de API
 

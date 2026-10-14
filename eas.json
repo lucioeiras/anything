@@ -1,7 +1,11 @@
 {
+  "cli": {
+    "appVersionSource": "remote"
+  },
   "build": {
     "release": {
       "distribution": "internal",
+      "autoIncrement": true,
       "android": {
         "buildType": "apk"
       }
