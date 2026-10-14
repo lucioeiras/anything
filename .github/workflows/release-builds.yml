@@ -17,6 +17,8 @@ jobs:
     name: Build APK and IPA
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     steps:
       - name: Check out repository
@@ -33,6 +35,13 @@ jobs:
 
       - name: Install dependencies
         run: bun ci
+
+      - name: Validate Expo authentication
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Configure EXPO_TOKEN em Settings > Secrets and variables > Actions no repositório."
+            exit 1
+          fi
 
       - name: Build Android and iOS
         id: eas-build
