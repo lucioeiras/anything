@@ -1,7 +1,14 @@
 import type { LibraryItem, LibraryItemType } from './types';
 
 export const MAX_PINNED_ITEMS = 8;
-const PINNED_ASPECT_RATIO_TYPES: LibraryItemType[] = ['image', 'music', 'book', 'movie', 'game'];
+const PINNED_ASPECT_RATIO_TYPES: LibraryItemType[] = [
+  'image',
+  'music',
+  'book',
+  'movie',
+  'tvshow',
+  'game',
+];
 
 export function shouldPreservePinnedAspectRatio(type: LibraryItemType): boolean {
   return PINNED_ASPECT_RATIO_TYPES.includes(type);

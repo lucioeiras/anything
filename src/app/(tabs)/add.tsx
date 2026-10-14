@@ -205,6 +205,10 @@ export default function AddElementScreen() {
     });
   };
 
+  const handleOpenTvShow = () => {
+    router.replace({ pathname: '/board', params: { newTvShow: Date.now().toString() } });
+  };
+
   const handleOpenMusic = () => {
     router.replace({
       pathname: '/board',
@@ -249,6 +253,9 @@ export default function AddElementScreen() {
         case 'movie':
           handleOpenMovie();
           break;
+        case 'tvshow':
+          handleOpenTvShow();
+          break;
         case 'game':
           handleOpenGame();
           break;
@@ -277,8 +284,8 @@ export default function AddElementScreen() {
           Save <Text className="text-2xl text-blue-500 text-center"> anything</Text> you want
         </Text>
         <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-96">
-          You can record audio, add notes, to-do's, quotes, links, movies, games, PDFs, songs, X
-          posts and Reddit posts, articles, books or YouTube videos
+          You can record audio, add notes, to-do's, quotes, links, movies, TV shows, games, PDFs,
+          songs, X posts and Reddit posts, articles, books or YouTube videos
         </Text>
 
         <View className="mt-10 gap-4">

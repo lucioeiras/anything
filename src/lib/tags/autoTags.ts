@@ -1303,6 +1303,8 @@ export function generateAutoTags(input: AutoTagInput): string[] {
     addCandidate('music', 70);
   } else if (type === 'movie') {
     addCandidate('movie', 70);
+  } else if (type === 'tvshow') {
+    addCandidate('tvshow', 70);
     addCandidate('cinema', 60);
   } else if (type === 'game') {
     addCandidate('games', 70);

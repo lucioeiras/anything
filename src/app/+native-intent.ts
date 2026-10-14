@@ -21,6 +21,7 @@ export function redirectSystemPath({ path }: { path: string; initial: boolean })
         'book',
         'music',
         'movie',
+        'tvshow',
         'game',
         'pdf',
         'image',

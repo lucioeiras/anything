@@ -30,7 +30,10 @@ import { BoardTypeFilters } from '@/components/board/BoardTypeFilters';
 import { Button } from '@/components/Button';
 import { ItemCard } from '@/components/cards/ItemCard';
 import { CardSelectionBar } from '@/components/menus/CardSelectionBar';
-import { useFloatingTabOverlay } from '@/components/menus/FloatingTabOverlay';
+import {
+  clearOverlayIfCurrent,
+  useFloatingTabOverlay,
+} from '@/components/menus/FloatingTabOverlay';
 import { RestoreToast } from '@/components/menus/RestoreToast';
 import { SearchBar } from '@/components/menus/SearchBar';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -61,6 +64,7 @@ type AddControlItem =
   | 'book'
   | 'music'
   | 'movie'
+  | 'tvshow'
   | 'game'
   | 'image'
   | 'pdf'
@@ -108,6 +112,7 @@ export default function BoardScreen() {
     newBook,
     newMusic,
     newMovie,
+    newTvShow,
     newGame,
     newEntertainment,
     newImageUri,
@@ -137,6 +142,7 @@ export default function BoardScreen() {
     newBook?: string;
     newMusic?: string;
     newMovie?: string;
+    newTvShow?: string;
     newGame?: string;
     newEntertainment?: string;
     newImageUri?: string;
@@ -166,6 +172,7 @@ export default function BoardScreen() {
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [isMovieModalOpen, setIsMovieModalOpen] = useState(false);
+  const [isTvShowModalOpen, setIsTvShowModalOpen] = useState(false);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isEntertainmentModalOpen, setIsEntertainmentModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -212,6 +219,7 @@ export default function BoardScreen() {
   const lastOpenedBookRef = useRef<string | null>(null);
   const lastOpenedMusicRef = useRef<string | null>(null);
   const lastOpenedMovieRef = useRef<string | null>(null);
+  const lastOpenedTvShowRef = useRef<string | null>(null);
   const lastOpenedGameRef = useRef<string | null>(null);
   const lastOpenedEntertainmentRef = useRef<string | null>(null);
   const lastOpenedImageRef = useRef<string | null>(null);
@@ -246,6 +254,9 @@ export default function BoardScreen() {
         break;
       case 'movie':
         setIsMovieModalOpen(true);
+        break;
+      case 'tvshow':
+        setIsTvShowModalOpen(true);
         break;
       case 'game':
         setIsGameModalOpen(true);
@@ -344,6 +355,9 @@ export default function BoardScreen() {
       case 'movie':
         setIsMovieModalOpen(false);
         break;
+      case 'tvshow':
+        setIsTvShowModalOpen(false);
+        break;
       case 'game':
         setIsGameModalOpen(false);
         break;
@@ -427,6 +441,13 @@ export default function BoardScreen() {
       requestControlAction({ item: 'movie' });
     }
   }, [newMovie, requestControlAction]);
+
+  useEffect(() => {
+    if (newTvShow && newTvShow !== lastOpenedTvShowRef.current) {
+      lastOpenedTvShowRef.current = newTvShow;
+      requestControlAction({ item: 'tvshow' });
+    }
+  }, [newTvShow, requestControlAction]);
 
   useEffect(() => {
     if (newGame && newGame !== lastOpenedGameRef.current) {
@@ -913,7 +934,7 @@ export default function BoardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setFloatingTabOverlay(
+      const overlay = (
         <>
           <SearchBar
             value={searchQuery}
@@ -981,8 +1002,9 @@ export default function BoardScreen() {
           />
         </>
       );
+      setFloatingTabOverlay(overlay);
 
-      return () => setFloatingTabOverlay(null);
+      return () => setFloatingTabOverlay((current) => clearOverlayIfCurrent(current, overlay));
     }, [
       setFloatingTabOverlay,
       searchQuery,
@@ -1075,6 +1097,7 @@ export default function BoardScreen() {
             isBookModalOpen={isBookModalOpen}
             isMusicModalOpen={isMusicModalOpen}
             isMovieModalOpen={isMovieModalOpen}
+            isTvShowModalOpen={isTvShowModalOpen}
             isGameModalOpen={isGameModalOpen}
             isEntertainmentModalOpen={isEntertainmentModalOpen}
             isImageModalOpen={isImageModalOpen}

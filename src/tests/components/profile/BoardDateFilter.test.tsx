@@ -172,6 +172,7 @@ jest.mock('@/components/modals/NewGameModal', () => ({ NewGameModal: () => null 
 jest.mock('@/components/modals/NewImageModal', () => ({ NewImageModal: () => null }));
 jest.mock('@/components/modals/NewLinkModal', () => ({ NewLinkModal: () => null }));
 jest.mock('@/components/modals/NewMovieModal', () => ({ NewMovieModal: () => null }));
+jest.mock('@/components/modals/NewTvShowModal', () => ({ NewTvShowModal: () => null }));
 jest.mock('@/components/modals/NewMusicModal', () => ({ NewMusicModal: () => null }));
 jest.mock('@/components/modals/NewNoteModal', () => ({ NewNoteModal: () => null }));
 jest.mock('@/components/modals/NewPdfModal', () => ({ NewPdfModal: () => null }));

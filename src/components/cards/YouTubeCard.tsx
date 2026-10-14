@@ -26,16 +26,20 @@ export const YouTubeCard = ({
   const compact = compactHeight !== undefined;
 
   return (
-    <View className="w-full" style={compact ? { height: compactHeight } : undefined}>
+    <View
+      testID="youtube-card-base"
+      className="w-full bg-zinc-950"
+      style={compact ? { height: compactHeight } : undefined}
+    >
       <View
         testID="youtube-thumbnail-container"
-        className="relative w-full h-32"
-        style={compact ? { height: compactHeight / 2 } : undefined}
+        className="relative w-full"
+        style={compact ? { height: compactHeight / 2 } : { aspectRatio: 16 / 9 }}
       >
         <ExpoImage
           source={{ uri: thumbnail }}
-          className="w-full h-32 rounded-t-xl"
-          style={compact ? { height: compactHeight / 2 } : undefined}
+          className="w-full h-full rounded-t-xl"
+          contentFit="cover"
         />
         <View className="absolute inset-0 bg-black/50 items-center justify-center">
           <PlayIcon size={compact ? 24 : 36} color="#FFFFFF" weight="fill" />
@@ -43,7 +47,7 @@ export const YouTubeCard = ({
       </View>
 
       <View
-        testID={compact ? 'pinned-title-container' : undefined}
+        testID={compact ? 'pinned-title-container' : 'youtube-title-container'}
         className={`w-full bg-rose-950/30 rounded-b-xl ${compact ? 'justify-center px-3' : 'p-5 gap-3'}`}
         style={compact ? { height: compactHeight / 2 } : undefined}
       >

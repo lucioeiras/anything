@@ -37,6 +37,30 @@ export type TmdbMovieDetails = {
   };
 };
 
+export type TmdbTvShowResult = {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+};
+
+export type TmdbTvShowDetails = TmdbTvShowResult & {
+  genres?: { id: number; name: string }[];
+  seasons?: {
+    id: number;
+    season_number: number;
+    name: string;
+    poster_path: string | null;
+    overview: string;
+    air_date: string | null;
+    episode_count: number;
+  }[];
+};
+
 export type TmdbKeyInfo = {
   key: string | null;
   source: 'env' | 'custom' | 'none';
@@ -186,6 +210,44 @@ export async function searchTmdbMovies(
 
   const data = await response.json();
   return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function searchTmdbTvShows(
+  query: string,
+  language = 'en-US'
+): Promise<TmdbTvShowResult[]> {
+  const apiKey = await getTmdbApiKey();
+  if (!apiKey) throw new Error('TMDB API key is not configured.');
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return [];
+  const { url, headers } = buildHeadersAndUrl('/search/tv', apiKey, {
+    query: cleanQuery,
+    include_adult: 'false',
+    language,
+    page: '1',
+  });
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('Invalid or unauthorized TMDB API key (401).');
+    throw new Error(`Failed to search TMDB: HTTP ${response.status}`);
+  }
+  const data = await response.json();
+  return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function getTmdbTvShowDetails(
+  tmdbId: number,
+  language = 'en-US'
+): Promise<TmdbTvShowDetails> {
+  const apiKey = await getTmdbApiKey();
+  if (!apiKey) throw new Error('TMDB API key is not configured.');
+  const { url, headers } = buildHeadersAndUrl(`/tv/${tmdbId}`, apiKey, { language });
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('Invalid or unauthorized TMDB API key (401).');
+    throw new Error(`Failed to fetch TV show details: HTTP ${response.status}`);
+  }
+  return response.json();
 }
 
 /**

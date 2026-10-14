@@ -12,7 +12,7 @@ describe('parseItem', () => {
   });
 
   it('validates required fields for every supported item type', () => {
-    const required: Record<string, Record<string, string>> = {
+    const required: Record<string, Record<string, unknown>> = {
       note: { text: 'text' },
       quote: { text: 'text' },
       image: { image: 'image.jpg' },
@@ -28,6 +28,7 @@ describe('parseItem', () => {
       book: { isbn: 'isbn', title: 'title' },
       music: { title: 'title', artist: 'artist', cover: 'cover' },
       movie: { title: 'title', poster: 'poster' },
+      tvshow: { title: 'title', poster: 'poster', tmdbId: 5, seasons: [] },
       game: { title: 'title', cover: 'cover' },
     };
 
@@ -115,6 +116,45 @@ describe('parseItem', () => {
       transcript: ['not', 'text'],
     });
     expect(invalid).not.toHaveProperty('transcript');
+  });
+
+  it('normalizes TV show seasons and preserves season reviews only when valid', () => {
+    const show = parseItem({
+      ...base,
+      type: 'tvshow',
+      title: 'A &amp; B',
+      poster: 'poster.jpg',
+      tmdbId: 5,
+      seasons: [
+        {
+          seasonNumber: 1,
+          name: 'Season &amp; One',
+          progressStatus: 'completed',
+          review: { rating: 4.5, comments: 'Loved &amp; it' },
+        },
+        {
+          seasonNumber: 2,
+          name: 'Season Two',
+          progressStatus: 'invalid',
+          review: { rating: 'bad' },
+        },
+        { seasonNumber: 'bad', name: 'Malformed' },
+      ],
+    });
+    expect(show).toMatchObject({
+      type: 'tvshow',
+      title: 'A & B',
+      seasons: [
+        {
+          seasonNumber: 1,
+          name: 'Season & One',
+          progressStatus: 'completed',
+          review: { rating: 4.5, comments: 'Loved & it' },
+        },
+        { seasonNumber: 2, name: 'Season Two', progressStatus: 'want' },
+      ],
+    });
+    expect(show.type === 'tvshow' && show.seasons[1]).not.toHaveProperty('review');
   });
 
   it('normalizes quote authors and filters malformed book reading logs', () => {

@@ -17,6 +17,8 @@ function getDefaultAspectRatio(item: LibraryItem): number {
       return item.coverAspectRatio && item.coverAspectRatio > 0 ? item.coverAspectRatio : 2 / 3;
     case 'movie':
       return 2 / 3;
+    case 'tvshow':
+      return 4 / 3;
     case 'game':
     case 'music':
     case 'image':
@@ -51,6 +53,7 @@ export function PinnedItemPreview({
     'book',
     'music',
     'movie',
+    'tvshow',
     'image',
     'video',
     'game',

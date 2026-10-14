@@ -38,6 +38,7 @@ const CARD_TYPE_ICONS = {
   book: BookOpenIcon,
   music: MusicNotesIcon,
   movie: FilmSlateIcon,
+  tvshow: FilmSlateIcon,
   game: GameControllerIcon,
 } satisfies Record<LibraryItemType, typeof NotePencilIcon>;
 

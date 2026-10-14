@@ -1,6 +1,6 @@
 import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
 
-export const TRACKABLE_TYPES = ['book', 'movie', 'game', 'article', 'youtube'] as const;
+export const TRACKABLE_TYPES = ['book', 'movie', 'tvshow', 'game', 'article', 'youtube'] as const;
 export type TrackableType = (typeof TRACKABLE_TYPES)[number];
 
 export const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
@@ -19,6 +19,7 @@ export const CARD_TYPE_LABELS: Record<LibraryItemType, string> = {
   book: 'Books',
   music: 'Music',
   movie: 'Movies',
+  tvshow: 'TV Shows',
   game: 'Games',
 };
 

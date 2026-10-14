@@ -1,6 +1,12 @@
-import { BookIcon, FilmSlateIcon, GameControllerIcon, MusicNoteIcon } from 'phosphor-react-native';
+import {
+  BookIcon,
+  FilmSlateIcon,
+  GameControllerIcon,
+  MusicNoteIcon,
+  TelevisionIcon,
+} from 'phosphor-react-native';
 import { JSX, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -8,8 +14,9 @@ import { NewBookModal } from '@/components/modals/NewBookModal';
 import { NewGameModal } from '@/components/modals/NewGameModal';
 import { NewMovieModal } from '@/components/modals/NewMovieModal';
 import { NewMusicModal } from '@/components/modals/NewMusicModal';
+import { NewTvShowModal } from '@/components/modals/NewTvShowModal';
 
-type EntertainmentType = 'book' | 'music' | 'movie' | 'game';
+type EntertainmentType = 'book' | 'music' | 'movie' | 'tvshow' | 'game';
 
 type Props = {
   visible: boolean;
@@ -21,6 +28,7 @@ const tabs: { id: EntertainmentType; label: string; icon: JSX.Element }[] = [
   { id: 'book', label: 'Book', icon: <BookIcon size={20} color="#FFFFFF" weight="bold" /> },
   { id: 'music', label: 'Music', icon: <MusicNoteIcon size={20} color="#FFFFFF" weight="bold" /> },
   { id: 'movie', label: 'Film', icon: <FilmSlateIcon size={20} color="#FFFFFF" weight="bold" /> },
+  { id: 'tvshow', label: 'TV', icon: <TelevisionIcon size={20} color="#FFFFFF" weight="bold" /> },
   {
     id: 'game',
     label: 'Game',
@@ -36,7 +44,13 @@ export function EntertainmentTabs({
   onSelect: (type: EntertainmentType) => void;
 }) {
   return (
-    <View className="flex-1 flex-row rounded-xl justify-between px-8">
+    <ScrollView
+      horizontal
+      testID="entertainment-type-picker"
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+      keyboardShouldPersistTaps="handled"
+    >
       {tabs.map((tab) => (
         <Button
           key={tab.id}
@@ -52,7 +66,7 @@ export function EntertainmentTabs({
           icon={tab.icon}
         />
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -96,6 +110,12 @@ export function NewEntertainmentModal({ visible, onClose, onDismiss }: Props) {
                 visible={visible && selectedType === 'movie'}
                 embedded
                 onClose={onClose}
+              />
+              <NewTvShowModal
+                visible={visible && selectedType === 'tvshow'}
+                embedded
+                onClose={onClose}
+                onDismiss={onDismiss}
               />
               <NewGameModal
                 visible={visible && selectedType === 'game'}

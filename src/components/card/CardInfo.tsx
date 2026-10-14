@@ -136,6 +136,33 @@ export function CardInfo({ item }: { item: LibraryItem }) {
         </>
       )}
 
+      {item.type === 'tvshow' && (
+        <>
+          {Boolean(item.firstAirDate) && (
+            <View className="flex-row items-center gap-2.5">
+              <CalendarCheckIcon size={16} color="#A1A1AA" />
+              <Text className="font-sans text-base text-zinc-400">
+                First aired {item.firstAirDate}
+              </Text>
+            </View>
+          )}
+          {typeof item.voteAverage === 'number' && item.voteAverage > 0 && (
+            <View className="flex-row items-center gap-2.5">
+              <StarIcon size={16} color="#A1A1AA" />
+              <Text className="font-sans text-base text-zinc-400">
+                {item.voteAverage.toFixed(1)} / 10
+              </Text>
+            </View>
+          )}
+          {!!item.genres?.length && (
+            <View className="flex-row items-center gap-2.5">
+              <FilmSlateIcon size={16} color="#A1A1AA" />
+              <Text className="font-sans text-base text-zinc-400">{item.genres.join(', ')}</Text>
+            </View>
+          )}
+        </>
+      )}
+
       {item.type === 'music' && (
         <>
           {item.musicKind === 'album' && (

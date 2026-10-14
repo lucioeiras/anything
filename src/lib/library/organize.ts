@@ -20,6 +20,8 @@ export function getItemArtwork(item: LibraryItem): string | undefined {
       return item.cover;
     case 'movie':
       return item.poster;
+    case 'tvshow':
+      return item.poster;
     case 'game':
       return item.cover;
     case 'music':

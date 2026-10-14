@@ -153,6 +153,32 @@ describe('ItemCard', () => {
     expect(queryByText('Want to watch')).toBeNull();
   });
 
+  it('preserves the 16:9 YouTube thumbnail aspect ratio', async () => {
+    const youtube = examples.find(([item]) => item.type === 'youtube')?.[0];
+    if (!youtube) throw new Error('Missing YouTube test item');
+
+    const { getByTestId } = await render(<ItemCard item={youtube} />);
+    expect(getByTestId('youtube-thumbnail-container').props.style).toMatchObject({
+      aspectRatio: 16 / 9,
+    });
+  });
+
+  it.each([
+    ['youtube', 'youtube-card-base', 'youtube-title-container', 'bg-rose-950/30'],
+    ['tweet', 'tweet-card-base', 'tweet-card-tint', 'bg-sky-950/25'],
+    ['reddit', 'reddit-card-base', 'reddit-card-tint', 'bg-orange-950/25'],
+  ] as const)(
+    'places a zinc-950 base beneath the %s card tint',
+    async (type, baseTestId, tintTestId, tintClass) => {
+      const item = examples.find(([candidate]) => candidate.type === type)?.[0];
+      if (!item) throw new Error(`Missing ${type} test item`);
+
+      const { getByTestId } = await render(<ItemCard item={item} />);
+      expect(getByTestId(baseTestId).props.className).toContain('bg-zinc-950');
+      expect(getByTestId(tintTestId).props.className).toContain(tintClass);
+    }
+  );
+
   it('reduces the TikTok thumbnail height in the pinned-card layout', async () => {
     const tiktok = examples.find(([item]) => item.type === 'tiktok')?.[0];
     if (!tiktok) throw new Error('Missing TikTok test item');

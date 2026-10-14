@@ -54,6 +54,7 @@ const cardTypeTags = {
   book: { label: 'Book', icon: BookOpenIcon },
   music: { label: 'Music', icon: MusicNotesIcon },
   movie: { label: 'Movie', icon: FilmSlateIcon },
+  tvshow: { label: 'TV show', icon: FilmSlateIcon },
   game: { label: 'Game', icon: GameControllerIcon },
 } satisfies Record<LibraryItemType, { label: string; icon: typeof TagIcon }>;
 

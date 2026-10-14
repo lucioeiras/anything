@@ -12,6 +12,7 @@ import { CARD_TYPE_LABELS, TRACKABLE_TYPES, type TrackableType } from '@/lib/lib
 const ICONS = {
   book: BookOpenIcon,
   movie: FilmSlateIcon,
+  tvshow: FilmSlateIcon,
   game: GameControllerIcon,
   article: ArticleIcon,
   youtube: YoutubeLogoIcon,

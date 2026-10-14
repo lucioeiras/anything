@@ -26,6 +26,20 @@ export function CardMediaDetails({ item }: { item: LibraryItem }) {
         </View>
       )}
 
+      {item.type === 'tvshow' && Boolean(item.overview) && (
+        <View className="py-6 px-6 border-b border-zinc-800 gap-3">
+          <View className="flex-row items-center gap-2">
+            <FilmSlateIcon size={14} color="#E4E4E7" weight="bold" />
+            <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+              Overview
+            </Text>
+          </View>
+          <Text className="font-sans text-base text-zinc-300 leading-relaxed">
+            {decodeHTML(item.overview || '')}
+          </Text>
+        </View>
+      )}
+
       {/* Movie Cast Section */}
       {item.type === 'movie' && (item.cast?.length ?? 0) > 0 && (
         <View className="py-6 px-6 border-b border-zinc-800 gap-3">

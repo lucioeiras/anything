@@ -1,5 +1,10 @@
 import { Tabs } from 'expo-router';
-import { FolderIcon, UserCircleIcon, SquaresFourIcon } from 'phosphor-react-native';
+import {
+  ArrowCounterClockwiseIcon,
+  FolderIcon,
+  UserCircleIcon,
+  SquaresFourIcon,
+} from 'phosphor-react-native';
 
 import { ProgressiveBlur } from '@/components/effects/ProgressiveBlur';
 import { FloatingTabOverlayProvider } from '@/components/menus/FloatingTabOverlay';
@@ -50,6 +55,19 @@ export default function TabLayout() {
             title: 'Folders',
             tabBarIcon: ({ color, focused }) => (
               <FolderIcon
+                size={iconSize}
+                color={color as string}
+                weight={focused ? 'fill' : 'regular'}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="review"
+          options={{
+            title: 'Review',
+            tabBarIcon: ({ color, focused }) => (
+              <ArrowCounterClockwiseIcon
                 size={iconSize}
                 color={color as string}
                 weight={focused ? 'fill' : 'regular'}

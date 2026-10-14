@@ -1,0 +1,470 @@
+import { Image as ExpoImage } from 'expo-image';
+import {
+  CheckIcon,
+  MagnifyingGlassIcon,
+  NotePencilIcon,
+  TelevisionIcon,
+  XIcon,
+} from 'phosphor-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ActionFooter } from '@/components/ActionFooter';
+import { Button } from '@/components/Button';
+import { AddItemModalShell } from '@/components/modals/AddItemModalShell';
+import { TagsBox } from '@/components/TagsBox';
+import { useLibrary } from '@/hooks/useLibrary';
+import type { TvShowItem } from '@/lib/library/types';
+import {
+  getBackdropUrl,
+  getPosterUrl,
+  getReleaseYear,
+  getTmdbKeyInfo,
+  getTmdbTvShowDetails,
+  searchTmdbTvShows,
+  type TmdbTvShowDetails,
+  type TmdbTvShowResult,
+} from '@/lib/movies/tmdb';
+import { generateAutoTags } from '@/lib/tags/autoTags';
+
+type NewTvShowModalProps = {
+  visible: boolean;
+  embedded?: boolean;
+  onClose: () => void;
+  onDismiss?: () => void;
+  onSaved?: (item: TvShowItem) => void;
+};
+
+export function NewTvShowModal({
+  visible,
+  embedded = false,
+  onClose,
+  onDismiss,
+  onSaved,
+}: NewTvShowModalProps) {
+  const { addTvShowItem, getTags } = useLibrary();
+  const insets = useSafeAreaInsets();
+  const searchInputRef = useRef<TextInput>(null);
+  const tagsInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoTagsRef = useRef<string[]>([]);
+
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<TmdbTvShowResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedShow, setSelectedShow] = useState<TmdbTvShowDetails | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [autoTags, setAutoTags] = useState<string[]>([]);
+
+  const existingTags = useMemo(
+    () => (visible ? getTags().map((tag) => tag.tag) : []),
+    [getTags, visible]
+  );
+
+  const updateAutoTags = useCallback((newAutoTags: string[]) => {
+    const previous = autoTagsRef.current;
+    const combined = [...previous];
+    for (const tag of newAutoTags) {
+      if (!combined.includes(tag)) combined.push(tag);
+    }
+    autoTagsRef.current = combined;
+    setAutoTags(combined);
+    setTags((current) => {
+      const merged = current.filter((tag) => !previous.includes(tag));
+      for (const tag of combined) {
+        if (!merged.includes(tag)) merged.push(tag);
+      }
+      return merged;
+    });
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (visible) {
+      getTmdbKeyInfo().then((info) => {
+        if (mounted && info.source !== 'none') {
+          setTimeout(() => mounted && searchInputRef.current?.focus(), 100);
+        }
+      });
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [visible]);
+
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    setSelectedShow(null);
+    if (!text.trim()) {
+      setResults([]);
+      setIsSearching(false);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      return;
+    }
+
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        setResults(await searchTmdbTvShows(text.trim()));
+      } catch (error) {
+        console.warn('TV show search error:', error);
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+  };
+
+  const handleSelectShow = async (result: TmdbTvShowResult) => {
+    setIsLoadingDetails(true);
+    try {
+      const details = await getTmdbTvShowDetails(result.id);
+      setSelectedShow(details);
+      const generated = generateAutoTags({ title: details.name, type: 'tvshow', existingTags });
+      const genreTags = (details.genres ?? []).map((genre) =>
+        genre.name
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .trim()
+      );
+      updateAutoTags(Array.from(new Set([...generated, ...genreTags].filter(Boolean))));
+    } catch (error) {
+      console.warn('Failed to load TV show details:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Could not fetch TV show details'
+      );
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setQuery('');
+    setResults([]);
+    setSelectedShow(null);
+    setIsSearching(false);
+    searchInputRef.current?.focus();
+  };
+
+  const handleClose = () => {
+    if (saving) return;
+    setQuery('');
+    setResults([]);
+    setIsSearching(false);
+    setSelectedShow(null);
+    setTags([]);
+    setAutoTags([]);
+    autoTagsRef.current = [];
+    setTagInput('');
+    setNote('');
+    onClose();
+  };
+
+  const handleSave = async () => {
+    if (!selectedShow || saving) return;
+    setSaving(true);
+    try {
+      const details = await getTmdbTvShowDetails(selectedShow.id);
+      const finalTags = [...tags];
+      const pending = tagInput.replace(/^#/, '').trim();
+      if (pending && !finalTags.includes(pending)) finalTags.push(pending);
+      const savedAutoTags = autoTagsRef.current.filter((tag) => finalTags.includes(tag));
+      const seasons = (details.seasons ?? []).map((season) => ({
+        tmdbId: season.id,
+        seasonNumber: season.season_number,
+        name: season.name,
+        poster: getPosterUrl(season.poster_path, 'w342') || undefined,
+        overview: season.overview || undefined,
+        airDate: season.air_date || undefined,
+        episodeCount: season.episode_count,
+        progressStatus: 'want' as const,
+      }));
+      const item = await addTvShowItem(
+        {
+          tmdbId: details.id,
+          title: details.name,
+          originalTitle: details.original_name || undefined,
+          poster: getPosterUrl(details.poster_path, 'w500'),
+          backdrop: getBackdropUrl(details.backdrop_path, 'w780') || undefined,
+          firstAirDate: details.first_air_date || undefined,
+          releaseYear: getReleaseYear(details.first_air_date) || undefined,
+          overview: details.overview || undefined,
+          voteAverage: details.vote_average,
+          genres: details.genres?.map((genre) => genre.name),
+          seasons,
+        },
+        {
+          tags: finalTags.length ? finalTags : undefined,
+          autoTags: savedAutoTags.length ? savedAutoTags : undefined,
+          note: note.trim() || undefined,
+        }
+      );
+      handleClose();
+      onSaved?.(item);
+    } catch (error) {
+      console.error('Failed to save TV show:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save TV show');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canSave = selectedShow !== null && !saving;
+
+  return (
+    <AddItemModalShell
+      visible={visible}
+      embedded={embedded}
+      onRequestClose={handleClose}
+      onDismiss={onDismiss}
+    >
+      <KeyboardAvoidingView
+        behavior={embedded ? undefined : Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
+        <View
+          style={{ paddingTop: embedded ? 0 : Math.max(insets.top, 16) }}
+          className="flex-1 w-full relative"
+        >
+          <ScrollView
+            className="flex-1 w-full"
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="gap-3 p-8 pt-0">
+              <Text className="font-sans-semibold text-2xl text-white">Add TV show</Text>
+              <Text className="font-sans text-base text-zinc-400 leading-relaxed">
+                Search TV shows from The Movie Database (TMDB) to add to your library.
+              </Text>
+            </View>
+
+            {selectedShow ? (
+              <View className="px-8 py-6 border-t border-b border-zinc-800 flex-row items-center gap-6">
+                <View className="w-16 h-24 rounded-lg bg-zinc-800 overflow-hidden items-center justify-center">
+                  {selectedShow.poster_path ? (
+                    <ExpoImage
+                      source={{ uri: getPosterUrl(selectedShow.poster_path, 'w185') }}
+                      className="w-full h-full"
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <TelevisionIcon size={24} color="#71717A" />
+                  )}
+                </View>
+                <View className="flex-1 gap-2">
+                  <Text className="font-sans-semibold text-lg text-white" numberOfLines={1}>
+                    {selectedShow.name}
+                  </Text>
+                  <Text className="font-sans text-base text-zinc-400" numberOfLines={1}>
+                    {getReleaseYear(selectedShow.first_air_date) || '—'}
+                    {` • ${selectedShow.seasons?.length ?? 0} seasons`}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setSelectedShow(null)}
+                  hitSlop={10}
+                  className="p-2 rounded-full bg-zinc-800 active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Change TV show"
+                >
+                  <XIcon size={16} color="#E4E4E7" weight="bold" />
+                </Pressable>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-4 py-5 px-8 border-t border-b border-zinc-800">
+                <MagnifyingGlassIcon size={20} color="#D4D4D8" />
+                <TextInput
+                  ref={searchInputRef}
+                  value={query}
+                  onChangeText={handleQueryChange}
+                  placeholder="Search TV show title..."
+                  placeholderTextColor="#71717A"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                  className="flex-1 font-sans text-xl text-white leading-tight"
+                  style={styles.borderlessInput}
+                  underlineColorAndroid="transparent"
+                  clearButtonMode="never"
+                  accessibilityLabel="Search TV shows"
+                />
+                {isSearching ? (
+                  <ActivityIndicator size={16} color="#A1A1AA" />
+                ) : query.length > 0 ? (
+                  <Pressable
+                    onPress={handleClearSearch}
+                    hitSlop={10}
+                    className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                  >
+                    <XIcon size={12} color="#E4E4E7" weight="bold" />
+                  </Pressable>
+                ) : null}
+              </View>
+            )}
+
+            {!selectedShow && (
+              <View className="w-full">
+                {isLoadingDetails && (
+                  <View className="py-8 items-center justify-center">
+                    <ActivityIndicator size={24} color="#60A5FA" />
+                    <Text className="font-sans text-sm text-zinc-400 mt-2">
+                      Loading TV show details...
+                    </Text>
+                  </View>
+                )}
+                {!isLoadingDetails &&
+                  results.map((result) => (
+                    <Pressable
+                      key={result.id}
+                      onPress={() => handleSelectShow(result)}
+                      className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-900 active:bg-zinc-900"
+                      accessibilityRole="button"
+                    >
+                      <View className="w-12 h-16 rounded-md bg-zinc-800 overflow-hidden items-center justify-center">
+                        {result.poster_path ? (
+                          <ExpoImage
+                            source={{ uri: getPosterUrl(result.poster_path, 'w185') }}
+                            className="w-full h-full"
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <TelevisionIcon size={24} color="#71717A" />
+                        )}
+                      </View>
+                      <View className="flex-1 gap-1.5">
+                        <Text
+                          className="font-sans-medium text-base text-zinc-100"
+                          numberOfLines={1}
+                        >
+                          {result.name}
+                        </Text>
+                        <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
+                          {getReleaseYear(result.first_air_date) || '—'}
+                          {result.original_name && result.original_name !== result.name
+                            ? ` • ${result.original_name}`
+                            : ''}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                {!isLoadingDetails &&
+                  results.length === 0 &&
+                  query.trim().length > 1 &&
+                  !isSearching && (
+                    <View className="py-12 items-center justify-center">
+                      <TelevisionIcon size={32} color="#52525B" weight="duotone" />
+                      <Text className="font-sans text-sm text-zinc-500 mt-3">
+                        No TV shows found for "{query}"
+                      </Text>
+                    </View>
+                  )}
+              </View>
+            )}
+
+            {selectedShow && (
+              <View>
+                <TagsBox
+                  tags={tags}
+                  autoTags={autoTags}
+                  onTagsChange={setTags}
+                  onAutoTagsChange={setAutoTags}
+                  tagInput={tagInput}
+                  onTagInputChange={setTagInput}
+                  inputRef={tagsInputRef}
+                  onSubmitEditing={() => noteInputRef.current?.focus()}
+                  onRemoveTag={(removed) => {
+                    autoTagsRef.current = autoTagsRef.current.filter((tag) => tag !== removed);
+                  }}
+                />
+                <View className="py-6 px-8 gap-4 border-t border-zinc-800">
+                  <View className="flex-row items-center gap-2">
+                    <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
+                    <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+                      Note
+                    </Text>
+                  </View>
+                  <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
+                    <TextInput
+                      ref={noteInputRef}
+                      value={note}
+                      onChangeText={setNote}
+                      placeholder="Add personal thoughts or notes about this TV show..."
+                      placeholderTextColor="#71717A"
+                      multiline
+                      textAlignVertical="top"
+                      className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[96px]"
+                      style={styles.borderlessInput}
+                      underlineColorAndroid="transparent"
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+          <ActionFooter bottomInset={insets.bottom} overlay>
+            <Button
+              accessibilityLabel="Cancel"
+              onPress={handleClose}
+              disabled={saving}
+              icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
+              text="Cancel"
+            />
+            <Button
+              accessibilityLabel="Save TV show"
+              variant="primary"
+              onPress={handleSave}
+              disabled={!canSave}
+              icon={
+                saving ? (
+                  <ActivityIndicator size={20} color="#000000" />
+                ) : (
+                  <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
+                )
+              }
+              text="Save TV show"
+            />
+          </ActionFooter>
+        </View>
+      </KeyboardAvoidingView>
+    </AddItemModalShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#09090B',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 20,
+    paddingBottom: 120,
+  },
+  borderlessInput: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+});
