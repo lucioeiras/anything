@@ -82,58 +82,18 @@ export const TweetCard = ({
   const hasMultipleImages = images.length > 1;
 
   return (
-    <View className="w-full p-5 gap-4 relative bg-sky-950/25 rounded-xl">
-      {onPress && (
-        <Pressable
-          onPress={onPress}
-          onLongPress={onLongPress}
-          delayLongPress={350}
-          style={StyleSheet.absoluteFill}
-        />
-      )}
+    <View testID="tweet-card-base" className="w-full rounded-xl bg-zinc-950">
+      <View testID="tweet-card-tint" className="w-full p-5 gap-4 relative bg-sky-950/25 rounded-xl">
+        {onPress && (
+          <Pressable
+            onPress={onPress}
+            onLongPress={onLongPress}
+            delayLongPress={350}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
 
-      {/* Header: avatar + author + text */}
-      <Pressable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        delayLongPress={350}
-        disabled={!onPress && !onLongPress}
-        style={({ pressed }) =>
-          pressed && onPress ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
-        }
-      >
-        <View className="flex-row items-center gap-3">
-          <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
-          <Text className="font-sans-medium text-sm text-zinc-300">{author}</Text>
-        </View>
-
-        <Text className="font-sans text-base leading-[1.8] text-zinc-50 mt-4" numberOfLines={8}>
-          {cleanText}
-        </Text>
-      </Pressable>
-
-      {/* Video */}
-      {!hideMedia && video?.url ? (
-        <TweetVideoPlayer
-          videoUrl={video.url}
-          aspectRatio={video.aspectRatio}
-          isDetail={isDetail}
-        />
-      ) : !hideMedia && video?.thumbnail ? (
-        <ExpoImage
-          source={{ uri: video.thumbnail }}
-          className="w-full rounded-xl"
-          style={{
-            width: '100%',
-            aspectRatio: video.aspectRatio || 16 / 9,
-            maxHeight: 220,
-          }}
-          contentFit="cover"
-        />
-      ) : null}
-
-      {/* Single Image */}
-      {!hideMedia && !video && images.length === 1 && (
+        {/* Header: avatar + author + text */}
         <Pressable
           onPress={onPress}
           onLongPress={onLongPress}
@@ -143,76 +103,118 @@ export const TweetCard = ({
             pressed && onPress ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
           }
         >
+          <View className="flex-row items-center gap-3">
+            <ExpoImage source={{ uri: avatar }} className="w-6 h-6 rounded-full" />
+            <Text className="font-sans-medium text-sm text-zinc-300">{author}</Text>
+          </View>
+
+          <Text className="font-sans text-base leading-[1.8] text-zinc-50 mt-4" numberOfLines={8}>
+            {cleanText}
+          </Text>
+        </Pressable>
+
+        {/* Video */}
+        {!hideMedia && video?.url ? (
+          <TweetVideoPlayer
+            videoUrl={video.url}
+            aspectRatio={video.aspectRatio}
+            isDetail={isDetail}
+          />
+        ) : !hideMedia && video?.thumbnail ? (
           <ExpoImage
-            source={{ uri: images[0] }}
-            className="w-full rounded-lg"
+            source={{ uri: video.thumbnail }}
+            className="w-full rounded-xl"
             style={{
-              aspectRatio: Math.max(0.75, Math.min(1.778, aspectRatio)),
+              width: '100%',
+              aspectRatio: video.aspectRatio || 16 / 9,
               maxHeight: 220,
             }}
             contentFit="cover"
-            onLoad={(e) => {
-              if (e.source.width && e.source.height) {
-                const ratio = e.source.width / e.source.height;
-                setAspectRatio(Math.max(0.75, Math.min(1.778, ratio)));
-              }
-            }}
           />
-        </Pressable>
-      )}
+        ) : null}
 
-      {!hideMedia && !video && hasMultipleImages && (
-        <ScrollView
-          horizontal
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -28 }}
-          contentContainerStyle={{ paddingHorizontal: 28, gap: 8 }}
-        >
-          {images.map((img, index) => {
-            const imageElement = (
-              <ExpoImage
-                source={{ uri: img }}
-                className="w-36 h-32 rounded-lg bg-zinc-800"
-                contentFit="cover"
-              />
-            );
-
-            if (onPress || onLongPress) {
-              return (
-                <Pressable
-                  key={index}
-                  onPress={onPress}
-                  onLongPress={onLongPress}
-                  delayLongPress={350}
-                  style={({ pressed }) =>
-                    pressed ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
-                  }
-                >
-                  {imageElement}
-                </Pressable>
-              );
+        {/* Single Image */}
+        {!hideMedia && !video && images.length === 1 && (
+          <Pressable
+            onPress={onPress}
+            onLongPress={onLongPress}
+            delayLongPress={350}
+            disabled={!onPress && !onLongPress}
+            style={({ pressed }) =>
+              pressed && onPress ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
             }
+          >
+            <ExpoImage
+              source={{ uri: images[0] }}
+              className="w-full rounded-lg"
+              style={{
+                aspectRatio: Math.max(0.75, Math.min(1.778, aspectRatio)),
+                maxHeight: 220,
+              }}
+              contentFit="cover"
+              onLoad={(e) => {
+                if (e.source.width && e.source.height) {
+                  const ratio = e.source.width / e.source.height;
+                  setAspectRatio(Math.max(0.75, Math.min(1.778, ratio)));
+                }
+              }}
+            />
+          </Pressable>
+        )}
 
-            return <View key={index}>{imageElement}</View>;
-          })}
-        </ScrollView>
-      )}
+        {!hideMedia && !video && hasMultipleImages && (
+          <ScrollView
+            horizontal
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -28 }}
+            contentContainerStyle={{ paddingHorizontal: 28, gap: 8 }}
+          >
+            {images.map((img, index) => {
+              const imageElement = (
+                <ExpoImage
+                  source={{ uri: img }}
+                  className="w-36 h-32 rounded-lg bg-zinc-800"
+                  contentFit="cover"
+                />
+              );
 
-      {/* Footer: Twitter logo */}
-      <Pressable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        delayLongPress={350}
-        disabled={!onPress && !onLongPress}
-        style={({ pressed }) =>
-          pressed && onPress ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
-        }
-        className="flex-row items-center gap-1.5 mt-2"
-      >
-        <TwitterLogoIcon size={14} color="#0CA5E9" weight="fill" />
-        <Text className="font-sans-semibold text-sm text-sky-500">Twitter</Text>
-      </Pressable>
+              if (onPress || onLongPress) {
+                return (
+                  <Pressable
+                    key={index}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    delayLongPress={350}
+                    style={({ pressed }) =>
+                      pressed ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
+                    }
+                  >
+                    {imageElement}
+                  </Pressable>
+                );
+              }
+
+              return <View key={index}>{imageElement}</View>;
+            })}
+          </ScrollView>
+        )}
+
+        {/* Footer: Twitter logo */}
+        <Pressable
+          onPress={onPress}
+          onLongPress={onLongPress}
+          delayLongPress={350}
+          disabled={!onPress && !onLongPress}
+          style={({ pressed }) =>
+            pressed && onPress ? { opacity: 0.85, transform: [{ scale: 0.98 }] } : undefined
+          }
+          className="flex-row items-center gap-1.5 mt-2"
+        >
+          <TwitterLogoIcon size={14} color="#0CA5E9" weight="fill" />
+          <Text className="font-sans-semibold text-sm text-sky-500">Twitter</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };

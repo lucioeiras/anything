@@ -37,41 +37,43 @@ export const RedditCard = ({
       : undefined;
 
   return (
-    <View className="w-full p-5 gap-3 bg-orange-950/25 rounded-xl">
-      <View className="flex-row items-center gap-3">
-        <ExpoImage source={{ uri: subredditAvatar }} className="w-6 h-6 rounded-full" />
-        <Text className="font-sans-medium text-sm text-zinc-300">{subredditName}</Text>
-      </View>
+    <View testID="reddit-card-base" className="w-full rounded-xl bg-zinc-950">
+      <View testID="reddit-card-tint" className="w-full p-5 gap-3 bg-orange-950/25 rounded-xl">
+        <View className="flex-row items-center gap-3">
+          <ExpoImage source={{ uri: subredditAvatar }} className="w-6 h-6 rounded-full" />
+          <Text className="font-sans-medium text-sm text-zinc-300">{subredditName}</Text>
+        </View>
 
-      <Text className="font-sans-medium text-base text-zinc-100">{cleanTitle}</Text>
+        <Text className="font-sans-medium text-base text-zinc-100">{cleanTitle}</Text>
 
-      {!hideMedia && cleanImage && (
-        <ExpoImage
-          source={{ uri: cleanImage }}
-          className="w-full rounded-lg"
-          style={{
-            aspectRatio: Math.max(0.75, Math.min(1.778, aspectRatio)),
-            maxHeight: 220,
-          }}
-          contentFit="cover"
-          onLoad={(e) => {
-            if (e.source.width && e.source.height) {
-              const ratio = e.source.width / e.source.height;
-              setAspectRatio(Math.max(0.75, Math.min(1.778, ratio)));
-            }
-          }}
-        />
-      )}
+        {!hideMedia && cleanImage && (
+          <ExpoImage
+            source={{ uri: cleanImage }}
+            className="w-full rounded-lg"
+            style={{
+              aspectRatio: Math.max(0.75, Math.min(1.778, aspectRatio)),
+              maxHeight: 220,
+            }}
+            contentFit="cover"
+            onLoad={(e) => {
+              if (e.source.width && e.source.height) {
+                const ratio = e.source.width / e.source.height;
+                setAspectRatio(Math.max(0.75, Math.min(1.778, ratio)));
+              }
+            }}
+          />
+        )}
 
-      {cleanText && (
-        <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={3}>
-          {cleanText}
-        </Text>
-      )}
+        {cleanText && (
+          <Text className="font-sans text-sm leading-[1.8] text-zinc-300" numberOfLines={3}>
+            {cleanText}
+          </Text>
+        )}
 
-      <View className="flex-row items-center gap-1.5 mt-1">
-        <RedditLogoIcon size={14} color="#F97315" weight="fill" />
-        <Text className="font-sans-semibold text-sm text-orange-500">Reddit</Text>
+        <View className="flex-row items-center gap-1.5 mt-1">
+          <RedditLogoIcon size={14} color="#F97315" weight="fill" />
+          <Text className="font-sans-semibold text-sm text-orange-500">Reddit</Text>
+        </View>
       </View>
     </View>
   );
