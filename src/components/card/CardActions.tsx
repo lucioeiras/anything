@@ -109,7 +109,13 @@ export function CardActions({
           },
         ]
       : []),
-    ...(isImage || isNoteOrQuote || isPdf || isMusic || isGame || item.type === 'movie'
+    ...(isImage ||
+    isNoteOrQuote ||
+    isPdf ||
+    isMusic ||
+    isGame ||
+    item.type === 'movie' ||
+    item.type === 'tvshow'
       ? [
           {
             accessibilityLabel: 'Copy',
@@ -133,6 +139,7 @@ export function CardActions({
     isMusic ||
     isGame ||
     item.type === 'movie' ||
+    item.type === 'tvshow' ||
     item.type === 'book'
       ? [
           {
@@ -146,7 +153,8 @@ export function CardActions({
     (item.type === 'book' && Boolean(item.url)) ||
     (isMusic && Boolean(item.externalUrl)) ||
     (isGame && Boolean(item.website)) ||
-    (item.type === 'movie' && Boolean(item.tmdbId))
+    (item.type === 'movie' && Boolean(item.tmdbId)) ||
+    (item.type === 'tvshow' && Boolean(item.tmdbId))
       ? [
           {
             accessibilityLabel: 'Open link',

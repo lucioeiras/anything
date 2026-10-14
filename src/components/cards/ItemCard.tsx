@@ -21,6 +21,7 @@ import { TikTokCard } from './TikTokCard';
 import { YouTubeCard } from './YouTubeCard';
 import { VideoCard } from './VideoCard';
 import { AudioCard } from './AudioCard';
+import { TvShowCard } from './TvShowCard';
 
 type ItemCardProps = {
   item: LibraryItem;
@@ -207,6 +208,16 @@ export const ItemCard = memo(function ItemCard({
             genres={item.genres}
             runtime={item.runtime}
             progressStatus={item.progressStatus}
+            onAspectRatioChange={onPinnedAspectRatioChange}
+          />
+        );
+      case 'tvshow':
+        return (
+          <TvShowCard
+            title={item.title}
+            poster={item.poster}
+            progressStatus={item.progressStatus}
+            hideTitleAndAuthor={hideTitleAndAuthor}
             onAspectRatioChange={onPinnedAspectRatioChange}
           />
         );

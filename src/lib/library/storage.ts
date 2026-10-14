@@ -28,6 +28,7 @@ import {
   type LibraryItem,
   type LinkItem,
   type MovieItem,
+  type TvShowItem,
   type MusicItem,
   type NoteItem,
   type PdfItem,
@@ -495,6 +496,16 @@ export function resolveImages(item: LibraryItem, root: Directory): LibraryItem {
         ...item,
         poster: r(item.poster),
         backdrop: item.backdrop ? r(item.backdrop) : undefined,
+      };
+    case 'tvshow':
+      return {
+        ...item,
+        poster: r(item.poster),
+        backdrop: item.backdrop ? r(item.backdrop) : undefined,
+        seasons: item.seasons.map((season) => ({
+          ...season,
+          poster: season.poster ? r(season.poster) : undefined,
+        })),
       };
     case 'game':
       return {
@@ -1290,6 +1301,59 @@ export async function addMovieItemToLibrary(
     Date.now();
   upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: jsonText, item }]);
 
+  return item;
+}
+
+export type AddTvShowOptions = Pick<TvShowItem, 'tmdbId' | 'title' | 'poster' | 'seasons'> &
+  Partial<
+    Pick<
+      TvShowItem,
+      | 'originalTitle'
+      | 'backdrop'
+      | 'firstAirDate'
+      | 'releaseYear'
+      | 'overview'
+      | 'voteAverage'
+      | 'genres'
+    >
+  >;
+
+export async function addTvShowItemToLibrary(
+  source: LibrarySource,
+  show: AddTvShowOptions,
+  options?: { tags?: string[]; autoTags?: string[]; note?: string }
+): Promise<TvShowItem> {
+  const root = getLibraryDirectory(source);
+  if (!root.exists) root.create({ intermediates: true, idempotent: true });
+  const id = generateId();
+  const now = new Date().toISOString();
+  const item: TvShowItem = {
+    id,
+    version: SCHEMA_VERSION,
+    type: 'tvshow',
+    progressStatus: 'want',
+    tmdbId: show.tmdbId,
+    title: show.title.trim(),
+    poster: show.poster,
+    seasons: show.seasons.map((season) => ({ ...season, progressStatus: 'want' as const })),
+    ...(show.originalTitle ? { originalTitle: show.originalTitle } : {}),
+    ...(show.backdrop ? { backdrop: show.backdrop } : {}),
+    ...(show.firstAirDate ? { firstAirDate: show.firstAirDate } : {}),
+    ...(show.releaseYear ? { releaseYear: show.releaseYear } : {}),
+    ...(show.overview ? { overview: show.overview } : {}),
+    ...(typeof show.voteAverage === 'number' ? { voteAverage: show.voteAverage } : {}),
+    ...(show.genres?.length ? { genres: show.genres } : {}),
+    ...(options?.tags?.length ? { tags: options.tags } : {}),
+    ...(options?.autoTags?.length ? { autoTags: options.autoTags } : {}),
+    ...(options?.note ? { note: options.note } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const jsonFile = new File(root, `${id}.json`);
+  if (!jsonFile.exists) jsonFile.create({ intermediates: true, overwrite: true });
+  jsonFile.write(JSON.stringify(item, null, 2));
+  const mtime = jsonFile.lastModified ?? Date.now();
+  upsertCachedItems(getSourceId(source), [{ id, mtime, rawJson: JSON.stringify(item), item }]);
   return item;
 }
 

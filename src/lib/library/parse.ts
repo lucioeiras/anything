@@ -1,6 +1,11 @@
 import { decodeHTML } from 'entities';
 import { TRACKABLE_TYPES, validDate } from './activity';
-import { ITEM_TYPES, type LibraryItem, type LibraryItemType } from './types';
+import {
+  ITEM_TYPES,
+  MEDIA_PROGRESS_STATUSES,
+  type LibraryItem,
+  type LibraryItemType,
+} from './types';
 import { parseAudioWaveform } from './audioWaveform';
 import { normalizeRelatedIds } from './related';
 
@@ -140,6 +145,50 @@ export function parseItem(raw: unknown): LibraryItem {
         }));
     }
   }
+  if (item.type === 'tvshow') {
+    if (typeof item.originalTitle === 'string') item.originalTitle = decodeHTML(item.originalTitle);
+    if (typeof item.overview === 'string') item.overview = decodeHTML(item.overview);
+    if (Array.isArray(item.genres)) {
+      item.genres = item.genres.map((genre) =>
+        typeof genre === 'string' ? decodeHTML(genre) : String(genre)
+      );
+    }
+    item.seasons = Array.isArray(item.seasons)
+      ? item.seasons
+          .filter(
+            (season): season is Record<string, unknown> =>
+              isObject(season) &&
+              Number.isInteger(season.seasonNumber) &&
+              typeof season.name === 'string'
+          )
+          .map((season) => ({
+            ...Object.fromEntries(Object.entries(season).filter(([key]) => key !== 'review')),
+            name: decodeHTML(season.name as string),
+            progressStatus: MEDIA_PROGRESS_STATUSES.includes(
+              season.progressStatus as (typeof MEDIA_PROGRESS_STATUSES)[number]
+            )
+              ? season.progressStatus
+              : 'want',
+            ...(typeof season.overview === 'string'
+              ? { overview: decodeHTML(season.overview) }
+              : {}),
+            ...(season.review &&
+            isObject(season.review) &&
+            (typeof season.review.rating === 'number' || typeof season.review.comments === 'string')
+              ? {
+                  review: {
+                    ...(typeof season.review.rating === 'number'
+                      ? { rating: season.review.rating }
+                      : {}),
+                    ...(typeof season.review.comments === 'string'
+                      ? { comments: decodeHTML(season.review.comments) }
+                      : {}),
+                  },
+                }
+              : {}),
+          }))
+      : [];
+  }
   if (item.type === 'game') {
     if (typeof item.description === 'string') {
       item.description = decodeHTML(item.description);
@@ -193,6 +242,7 @@ const REQUIRED_FIELDS: Record<LibraryItemType, string[]> = {
   book: ['isbn', 'title'],
   music: ['title', 'artist', 'cover'],
   movie: ['title', 'poster'],
+  tvshow: ['title', 'poster'],
   game: ['title', 'cover'],
 };
 

@@ -23,6 +23,12 @@ const labels = {
     completed: 'Watched',
     abandoned: 'Abandoned',
   },
+  tvshow: {
+    want: 'Want to watch',
+    'in-progress': 'Watching',
+    completed: 'Watched',
+    abandoned: 'Abandoned',
+  },
   game: {
     want: 'Want to play',
     'in-progress': 'Playing',

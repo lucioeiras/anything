@@ -6,6 +6,7 @@ type CardReviewProps = {
   comments: string;
   onRatingChange: (rating: number) => void;
   onCommentsChange: (comments: string) => void;
+  compact?: boolean;
 };
 
 export function CardReview({
@@ -13,16 +14,21 @@ export function CardReview({
   comments: reviewComments,
   onRatingChange: setReviewRating,
   onCommentsChange: setReviewComments,
+  compact = false,
 }: CardReviewProps) {
   return (
-    <View className="py-6 px-6 border-b border-zinc-800 gap-4">
-      <View className="w-full flex-row justify-between items-center">
-        <View className="flex-row items-center gap-2">
-          <SmileyIcon size={16} color="#D4D4D8" />
-          <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-            My review
-          </Text>
-        </View>
+    <View className={compact ? 'gap-4 pt-4' : 'py-6 px-6 border-b border-zinc-800 gap-4'}>
+      <View
+        className={`w-full flex-row items-center ${compact ? 'justify-start' : 'justify-between'}`}
+      >
+        {!compact && (
+          <View className="flex-row items-center gap-2">
+            <SmileyIcon size={16} color="#D4D4D8" />
+            <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
+              My review
+            </Text>
+          </View>
+        )}
 
         {/* Estrelas */}
         <View className="flex-row items-center">
@@ -31,20 +37,23 @@ export function CardReview({
             const fullRating = index + 1;
             const fillWidth =
               reviewRating !== null && reviewRating >= fullRating
-                ? 20
+                ? 24
                 : reviewRating !== null && reviewRating >= halfRating
-                  ? 10
+                  ? 12
                   : 0;
 
             return (
-              <View key={index} className="h-6 w-8 items-center justify-center">
-                <StarIcon size={20} color="#52525B" weight="light" />
+              <View
+                key={index}
+                className={`h-7 w-10 justify-center ${compact ? 'items-start' : 'items-center'}`}
+              >
+                <StarIcon size={24} color="#52525B" weight="light" />
                 {fillWidth > 0 && (
                   <View
                     className="absolute overflow-hidden"
-                    style={{ left: 4.5, top: 1.5, width: fillWidth, height: 20 }}
+                    style={{ left: compact ? 0 : 8, top: 2, width: fillWidth, height: 24 }}
                   >
-                    <StarIcon size={20} color="#FFFFFF" weight="fill" />
+                    <StarIcon size={24} color="#FFFFFF" weight="fill" />
                   </View>
                 )}
                 <Pressable
@@ -52,14 +61,14 @@ export function CardReview({
                   accessibilityLabel={`${halfRating} out of 5 stars`}
                   accessibilityState={{ selected: reviewRating === halfRating }}
                   onPress={() => setReviewRating(halfRating)}
-                  className="absolute left-0 top-0 h-6 w-1/2"
+                  className="absolute left-0 top-0 h-7 w-1/2"
                 />
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${fullRating} out of 5 stars`}
                   accessibilityState={{ selected: reviewRating === fullRating }}
                   onPress={() => setReviewRating(fullRating)}
-                  className="absolute right-0 top-0 h-6 w-1/2"
+                  className="absolute right-0 top-0 h-7 w-1/2"
                 />
               </View>
             );

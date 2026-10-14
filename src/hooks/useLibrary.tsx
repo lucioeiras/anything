@@ -9,6 +9,7 @@ import {
   addImageToLibrary,
   addLinkItemToLibrary,
   addMovieItemToLibrary,
+  addTvShowItemToLibrary,
   addMusicItemToLibrary,
   addPdfToLibrary,
   addVideoToLibrary,
@@ -36,6 +37,7 @@ import {
   type AddImageOptions,
   type AddVideoOptions,
   type AddMovieOptions,
+  type AddTvShowOptions,
   type AddPdfOptions,
   type DeletedItemBackup,
   type LibrarySource,
@@ -53,6 +55,7 @@ import type {
   LibraryItemType,
   LibraryItem,
   MovieItem,
+  TvShowItem,
   MusicItem,
   NoteItem,
   PdfItem,
@@ -150,6 +153,10 @@ export type LibraryContextValue = {
       note?: string;
     }
   ) => Promise<MovieItem>;
+  addTvShowItem: (
+    show: AddTvShowOptions,
+    options?: { tags?: string[]; autoTags?: string[]; note?: string }
+  ) => Promise<TvShowItem>;
   addGameItem: (
     game: AddGameOptions,
     options?: {
@@ -530,6 +537,20 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     [source, setSource, load]
   );
 
+  const addTvShowItem = useCallback(
+    async (
+      show: AddTvShowOptions,
+      options?: { tags?: string[]; autoTags?: string[]; note?: string }
+    ) => {
+      const targetSource = source ?? { kind: 'local' as const, name: 'App Library' };
+      if (!source) setSource(targetSource);
+      const item = await addTvShowItemToLibrary(targetSource, show, options);
+      await load(targetSource);
+      return item;
+    },
+    [source, setSource, load]
+  );
+
   const addGameItem = useCallback(
     async (
       game: AddGameOptions,
@@ -750,6 +771,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     addBookItem,
     addMusicItem,
     addMovieItem,
+    addTvShowItem,
     addGameItem,
     deleteItem,
     deleteItems,

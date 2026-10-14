@@ -10,6 +10,7 @@ import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import { NewVideoModal } from '@/components/modals/NewVideoModal';
+import { NewTvShowModal } from '@/components/modals/NewTvShowModal';
 import type {
   PickedAudioAsset,
   PickedImageAsset,
@@ -24,6 +25,7 @@ type Props = {
   isBookModalOpen: boolean;
   isMusicModalOpen: boolean;
   isMovieModalOpen: boolean;
+  isTvShowModalOpen: boolean;
   isGameModalOpen: boolean;
   isEntertainmentModalOpen: boolean;
   isImageModalOpen: boolean;
@@ -38,7 +40,17 @@ type Props = {
   selectedItems: LibraryItem[];
   onClose: (
     item:
-      'note' | 'link' | 'book' | 'music' | 'movie' | 'game' | 'image' | 'pdf' | 'video' | 'audio'
+      | 'note'
+      | 'link'
+      | 'book'
+      | 'music'
+      | 'movie'
+      | 'tvshow'
+      | 'game'
+      | 'image'
+      | 'pdf'
+      | 'video'
+      | 'audio'
   ) => void;
   onDismiss: () => void;
   onCloseEntertainment: () => void;
@@ -52,6 +64,7 @@ export function BoardAddModals({
   isBookModalOpen,
   isMusicModalOpen,
   isMovieModalOpen,
+  isTvShowModalOpen,
   isGameModalOpen,
   isEntertainmentModalOpen,
   isImageModalOpen,
@@ -95,6 +108,11 @@ export function BoardAddModals({
       <NewMovieModal
         visible={isMovieModalOpen}
         onClose={() => onClose('movie')}
+        onDismiss={onDismiss}
+      />
+      <NewTvShowModal
+        visible={isTvShowModalOpen}
+        onClose={() => onClose('tvshow')}
         onDismiss={onDismiss}
       />
       <NewGameModal

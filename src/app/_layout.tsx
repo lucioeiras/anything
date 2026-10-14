@@ -37,6 +37,7 @@ function openControlDestination(item: string, token: string) {
     'book',
     'music',
     'movie',
+    'tvshow',
     'game',
     'image',
     'pdf',
@@ -122,8 +123,8 @@ function RootNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="index" options={{ animation: 'none' }} />
+      <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
       <Stack.Screen name="handle-share" />
       <Stack.Screen name="settings" />
       <Stack.Screen

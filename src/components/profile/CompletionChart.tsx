@@ -4,6 +4,7 @@ import {
   ArticleIcon,
   BookOpenIcon,
   FilmSlateIcon,
+  TelevisionIcon,
   GameControllerIcon,
   YoutubeLogoIcon,
 } from 'phosphor-react-native';
@@ -77,6 +78,7 @@ function getArtwork(item: LibraryItem): string | undefined {
     case 'game':
       return item.cover;
     case 'movie':
+    case 'tvshow':
       return item.poster;
     case 'article':
     case 'youtube':
@@ -94,11 +96,13 @@ function CompletionCover({ item, artwork }: { item: LibraryItem; artwork?: strin
       ? BookOpenIcon
       : item.type === 'movie'
         ? FilmSlateIcon
-        : item.type === 'game'
-          ? GameControllerIcon
-          : item.type === 'youtube'
-            ? YoutubeLogoIcon
-            : ArticleIcon;
+        : item.type === 'tvshow'
+          ? TelevisionIcon
+          : item.type === 'game'
+            ? GameControllerIcon
+            : item.type === 'youtube'
+              ? YoutubeLogoIcon
+              : ArticleIcon;
   return (
     <Pressable
       accessibilityRole="button"

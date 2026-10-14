@@ -31,6 +31,7 @@ function getPreviewImage(item: LinkableItem): string | undefined {
     case 'link':
       return item.favicon;
     case 'movie':
+    case 'tvshow':
       return item.poster;
     case 'book':
       return item.cover;
@@ -51,6 +52,8 @@ function getPreviewSubtitle(item: LinkableItem): string | undefined {
       return item.description || item.url;
     case 'movie':
       return item.releaseYear || item.releaseDate?.slice(0, 4);
+    case 'tvshow':
+      return item.releaseYear || item.firstAirDate?.slice(0, 4);
     case 'book':
       return item.authors.join(', ') || item.publishedDate?.slice(0, 4);
     case 'game':
@@ -65,6 +68,7 @@ function getPreviewSubtitle(item: LinkableItem): string | undefined {
 function getInitialAspectRatio(item: LinkableItem): number {
   switch (item.type) {
     case 'movie':
+    case 'tvshow':
       return 2 / 3;
     case 'book':
       return item.coverAspectRatio && item.coverAspectRatio > 0 ? item.coverAspectRatio : 2 / 3;

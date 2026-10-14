@@ -30,16 +30,27 @@ export default function CardDetailScreen() {
   }, [state, id]);
 
   const [translateY] = useState(() => new Animated.Value(0));
+  const [isDismissing, setIsDismissing] = useState(false);
 
   const dismissScreen = useCallback(() => {
+    if (isDismissing) return;
+    setIsDismissing(true);
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT,
       duration: 220,
       useNativeDriver: true,
-    }).start(() => {
-      router.back();
+    }).start(({ finished }) => {
+      if (!finished) {
+        setIsDismissing(false);
+        return;
+      }
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/board');
+      }
     });
-  }, [translateY]);
+  }, [isDismissing, translateY]);
 
   const panResponder = useMemo(
     () =>
@@ -69,12 +80,18 @@ export default function CardDetailScreen() {
 
   const handleSelectTag = useCallback(
     (tag: string) => {
+      if (isDismissing) return;
+      setIsDismissing(true);
       selectTag(tag);
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
+      }).start(({ finished }) => {
+        if (!finished) {
+          setIsDismissing(false);
+          return;
+        }
         if (router.canGoBack()) {
           router.back();
         } else {
@@ -82,17 +99,23 @@ export default function CardDetailScreen() {
         }
       });
     },
-    [translateY, selectTag]
+    [isDismissing, translateY, selectTag]
   );
 
   const handleSelectType = useCallback(
     (type: LibraryItemType, label: string) => {
+      if (isDismissing) return;
+      setIsDismissing(true);
       selectCardType(type, label);
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
+      }).start(({ finished }) => {
+        if (!finished) {
+          setIsDismissing(false);
+          return;
+        }
         if (router.canGoBack()) {
           router.back();
         } else {
@@ -100,22 +123,28 @@ export default function CardDetailScreen() {
         }
       });
     },
-    [translateY, selectCardType]
+    [isDismissing, translateY, selectCardType]
   );
 
   const handleSelectFolder = useCallback(
     (name: string) => {
+      if (isDismissing) return;
+      setIsDismissing(true);
       setSearchQuery('');
       clearSearchTag();
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
+      }).start(({ finished }) => {
+        if (!finished) {
+          setIsDismissing(false);
+          return;
+        }
         router.replace({ pathname: '/board', params: { folderKind: 'tag', folderKey: name } });
       });
     },
-    [translateY, setSearchQuery, clearSearchTag]
+    [isDismissing, translateY, setSearchQuery, clearSearchTag]
   );
 
   if (!item) {

@@ -198,6 +198,12 @@ export function upsertCachedItems(
           if (item.releaseYear) parts.push(item.releaseYear);
           if (item.overview) parts.push(item.overview);
           text = parts.length > 0 ? parts.join(' · ') : null;
+        } else if (item.type === 'tvshow') {
+          const parts: string[] = [];
+          if (item.genres?.length) parts.push(item.genres.join(', '));
+          if (item.releaseYear) parts.push(item.releaseYear);
+          if (item.overview) parts.push(item.overview);
+          text = parts.length > 0 ? parts.join(' · ') : null;
         } else if (item.type === 'game') {
           const parts: string[] = [];
           if (item.platforms?.length) parts.push(item.platforms.join(', '));

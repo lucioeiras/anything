@@ -221,6 +221,36 @@ export type MovieItem = BaseItem & {
   }[];
 };
 
+export type TvShowSeason = {
+  tmdbId?: number;
+  seasonNumber: number;
+  name: string;
+  poster?: ImageRef;
+  overview?: string;
+  airDate?: string;
+  episodeCount?: number;
+  progressStatus: MediaProgressStatus;
+  completedAt?: string;
+  review?: { rating?: number; comments?: string };
+};
+
+export type TvShowItem = BaseItem & {
+  type: 'tvshow';
+  completedAt?: string;
+  progressStatus?: MediaProgressStatus;
+  tmdbId: number;
+  title: string;
+  originalTitle?: string;
+  poster: ImageRef;
+  backdrop?: ImageRef;
+  firstAirDate?: string;
+  releaseYear?: string;
+  overview?: string;
+  voteAverage?: number;
+  genres?: string[];
+  seasons: TvShowSeason[];
+};
+
 export type GameItem = BaseItem & {
   type: 'game';
   review?: MediaReview;
@@ -259,6 +289,7 @@ export type LibraryItem =
   | BookItem
   | MusicItem
   | MovieItem
+  | TvShowItem
   | GameItem;
 
 export type LibraryItemType = LibraryItem['type'];
@@ -279,6 +310,7 @@ export const ITEM_TYPES: readonly LibraryItemType[] = [
   'book',
   'music',
   'movie',
+  'tvshow',
   'game',
 ];
 

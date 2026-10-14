@@ -56,6 +56,7 @@ import { CardMediaDetails } from './CardMediaDetails';
 import { CardPdfReader } from './CardPdfReader';
 import { CardPreview } from './CardPreview';
 import { CardReview } from './CardReview';
+import { TvShowSeasons } from './TvShowSeasons';
 import { RelatedCardsPicker } from './RelatedCardsPicker';
 import { RelatedCardsSection } from './RelatedCardsSection';
 
@@ -70,7 +71,7 @@ function isLinkType(type: LibraryItem['type']): boolean {
   );
 }
 
-type TrackableItemType = 'book' | 'movie' | 'game' | 'article' | 'youtube';
+type TrackableItemType = 'book' | 'movie' | 'tvshow' | 'game' | 'article' | 'youtube';
 
 function isTrackableItem(
   item: LibraryItem
@@ -78,6 +79,7 @@ function isTrackableItem(
   return (
     item.type === 'book' ||
     item.type === 'movie' ||
+    item.type === 'tvshow' ||
     item.type === 'game' ||
     item.type === 'article' ||
     item.type === 'youtube'
@@ -668,6 +670,9 @@ export function CardDetailContent({
         const yearStr = item.releaseYear ? ` [${item.releaseYear}]` : '';
         const msg = `Movie: ${item.title}${yearStr}${dirStr}${item.overview ? `\n\n${item.overview}` : ''}`;
         await Share.share({ message: msg, url: item.poster });
+      } else if (item.type === 'tvshow') {
+        const msg = `TV show: ${item.title}${item.releaseYear ? ` (${item.releaseYear})` : ''}${item.overview ? `\n\n${item.overview}` : ''}`;
+        await Share.share({ message: msg, url: item.poster });
       } else if (item.type === 'game') {
         const platStr = item.platforms?.length ? ` (${item.platforms.join(', ')})` : '';
         const yearStr = item.releaseYear ? ` [${item.releaseYear}]` : '';
@@ -722,6 +727,11 @@ export function CardDetailContent({
         }`;
         await Clipboard.setStringAsync(textToCopy);
         showFeedback('Movie details copied to clipboard');
+      } else if (item.type === 'tvshow') {
+        await Clipboard.setStringAsync(
+          `${item.title}${item.releaseYear ? ` (${item.releaseYear})` : ''}${item.overview ? `\n\n${item.overview}` : ''}`
+        );
+        showFeedback('TV show details copied to clipboard');
       } else if (item.type === 'game') {
         const textToCopy = `${item.title}${item.releaseYear ? ` (${item.releaseYear})` : ''}${
           item.platforms?.length ? `\nPlatforms: ${item.platforms.join(', ')}` : ''
@@ -772,7 +782,9 @@ export function CardDetailContent({
             ? item.website
             : item.type === 'movie' && item.tmdbId
               ? `https://www.themoviedb.org/movie/${item.tmdbId}`
-              : undefined;
+              : item.type === 'tvshow' && item.tmdbId
+                ? `https://www.themoviedb.org/tv/${item.tmdbId}`
+                : undefined;
     if (!targetUrl) return;
     try {
       if (await Linking.canOpenURL(targetUrl)) {
@@ -1131,6 +1143,17 @@ export function CardDetailContent({
                   onCommentsChange={setReviewComments}
                 />
               )}
+
+            {item.type === 'tvshow' && (
+              <TvShowSeasons
+                seasons={item.seasons}
+                onChange={(seasons) => {
+                  updateItem(item.id, { seasons }).catch((e) =>
+                    console.warn('Failed to save season progress', e)
+                  );
+                }}
+              />
+            )}
 
             {/* Notes Section */}
             <View

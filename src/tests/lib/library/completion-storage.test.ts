@@ -1,4 +1,8 @@
-import { updateItemInLibrary, updateItemsInLibrary } from '@/lib/library/storage';
+import {
+  addTvShowItemToLibrary,
+  updateItemInLibrary,
+  updateItemsInLibrary,
+} from '@/lib/library/storage';
 import { parseItem } from '@/lib/library/parse';
 const mockFiles = new Map<string, string>();
 let mockWriteFailure: ((name: string, text: string) => boolean) | undefined;
@@ -18,6 +22,9 @@ jest.mock('expo-file-system', () => {
     }
     get exists() {
       return mockFiles.has(this.name);
+    }
+    create() {
+      mockFiles.set(this.name, '');
     }
     async text() {
       return mockFiles.get(this.name);
@@ -82,6 +89,31 @@ it('records automatic reading-log completion in the same update', async () => {
   });
   expect(read().completedAt).toBe('2026-02-01T12:00:00.000Z');
   expect(read().readingLogs).toHaveLength(1);
+});
+it('creates TV shows with independent want-to-watch statuses for every season', async () => {
+  mockFiles.clear();
+  const show = await addTvShowItemToLibrary(source, {
+    tmdbId: 9,
+    title: 'Example show',
+    poster: 'poster.jpg',
+    seasons: [
+      { seasonNumber: 0, name: 'Specials', progressStatus: 'completed' },
+      { seasonNumber: 1, name: 'Season 1', progressStatus: 'abandoned' },
+    ],
+  });
+  expect(show.progressStatus).toBe('want');
+  expect(show.seasons.map((season) => season.progressStatus)).toEqual(['want', 'want']);
+  const saved = [...mockFiles.values()]
+    .map((value) => JSON.parse(value))
+    .find((item) => item.type === 'tvshow');
+  expect(saved).toMatchObject({
+    type: 'tvshow',
+    tmdbId: 9,
+    seasons: [
+      { seasonNumber: 0, progressStatus: 'want' },
+      { seasonNumber: 1, progressStatus: 'want' },
+    ],
+  });
 });
 it('leaves legacy completed cards undated when edited', async () => {
   mockFiles.set('book.json', JSON.stringify({ ...original, progressStatus: 'completed' }));
