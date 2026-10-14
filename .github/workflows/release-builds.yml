@@ -17,8 +17,9 @@ jobs:
     name: Build APK and IPA
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    environment: Production
     env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
 
     steps:
       - name: Check out repository
