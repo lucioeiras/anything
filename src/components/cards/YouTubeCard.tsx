@@ -7,6 +7,7 @@ import { Text, View } from 'react-native';
 import type { YouTubeItem } from '@/lib/library/types';
 
 import { ProgressStatus } from './ProgressStatus';
+import { LocalizedText } from '@/components/LocalizedText';
 
 cssInterop(ExpoImage, { className: 'style' });
 
@@ -67,7 +68,9 @@ export const YouTubeCard = ({
             <ProgressStatus type="youtube" status={progressStatus} align="start" />
             <View className="flex-row items-center gap-2 mt-2">
               <YoutubeLogoIcon size={14} color="#F43F5E" weight="fill" />
-              <Text className="font-sans-semibold text-sm text-rose-500">YouTube</Text>
+              <Text className="font-sans-semibold text-sm text-rose-500">
+                <LocalizedText>YouTube</LocalizedText>
+              </Text>
             </View>
           </>
         )}

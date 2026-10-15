@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import '@/global.css';
 import { LibraryProvider, useLibrary } from '@/hooks/useLibrary';
+import { LocalizationProvider } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -155,12 +156,14 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={CustomDarkTheme}>
-        <LibraryProvider>
-          <RootNavigator />
-        </LibraryProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <LocalizationProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={CustomDarkTheme}>
+          <LibraryProvider>
+            <RootNavigator />
+          </LibraryProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </LocalizationProvider>
   );
 }

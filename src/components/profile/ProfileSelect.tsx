@@ -1,6 +1,7 @@
 import { CaretDownIcon, CaretUpIcon, CheckIcon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View, Text } from 'react-native';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   label: string;
@@ -9,13 +10,17 @@ type Props = {
   onSelect: (value: string) => void;
 };
 export function ProfileSelect({ label, value, options, onSelect }: Props) {
+  useLocalization();
   const [open, setOpen] = useState(false);
   const Caret = open ? CaretUpIcon : CaretDownIcon;
   return (
     <View className="relative shrink-0" style={{ zIndex: open ? 20 : 0 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label}: ${options.find((o) => o.value === value)?.label ?? value}`}
+        accessibilityLabel={translate('%{label}: %{value}', {
+          label: translate(label),
+          value: translate(options.find((o) => o.value === value)?.label ?? value),
+        })}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((current) => !current)}
         onAccessibilityEscape={() => setOpen(false)}
@@ -23,7 +28,7 @@ export function ProfileSelect({ label, value, options, onSelect }: Props) {
         className="flex-row items-center gap-2 rounded-full border border-zinc-700 px-4 py-2"
       >
         <Text className="font-sans-medium text-sm text-zinc-300">
-          {options.find((o) => o.value === value)?.label ?? value}
+          {translate(options.find((o) => o.value === value)?.label ?? value)}
         </Text>
         <Caret size={16} color="#A1A1AA" />
       </Pressable>
@@ -54,7 +59,7 @@ export function ProfileSelect({ label, value, options, onSelect }: Props) {
               <Pressable
                 key={option.value}
                 accessibilityRole="menuitem"
-                accessibilityLabel={option.label}
+                accessibilityLabel={translate(option.label)}
                 accessibilityState={{ selected: option.value === value }}
                 className={`min-h-12 flex-row items-center justify-between gap-3 px-4 py-3 ${option.value === value ? 'bg-zinc-800' : ''}`}
                 onPress={() => {
@@ -62,7 +67,9 @@ export function ProfileSelect({ label, value, options, onSelect }: Props) {
                   setOpen(false);
                 }}
               >
-                <Text className="font-sans-medium text-sm text-zinc-200">{option.label}</Text>
+                <Text className="font-sans-medium text-sm text-zinc-200">
+                  {translate(option.label)}
+                </Text>
                 {option.value === value && <CheckIcon size={16} color="#FFFFFF" />}
               </Pressable>
             ))}

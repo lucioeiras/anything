@@ -32,10 +32,13 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { advanceReviewQueue, createReviewQueue, getReviewSwipeAction } from '@/lib/library/review';
 import { getSourceId, type DeletedItemBackup } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type ReviewQueueState = { sourceId: string; ids: string[] };
 
 export default function ReviewScreen() {
+  useLocalization();
   const { source, state, deleteItems, restoreItems } = useLibrary();
   const setFloatingTabOverlay = useFloatingTabOverlay();
   const insets = useSafeAreaInsets();
@@ -125,7 +128,10 @@ export default function ReviewScreen() {
           },
           (error: unknown) => {
             setIsToastVisible(false);
-            Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete card');
+            Alert.alert(
+              translate('Error'),
+              error instanceof Error ? error.message : 'Failed to delete card'
+            );
             setPendingDeletes((current) => current.filter((pending) => pending !== deletion));
           }
         );
@@ -258,7 +264,10 @@ export default function ReviewScreen() {
     try {
       await restoreItems(backups);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restore card');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to restore card'
+      );
     }
   }, [pendingDeletes, restoreBackup, restoreItems]);
 
@@ -288,18 +297,18 @@ export default function ReviewScreen() {
           >
             <View className="flex-row items-center justify-center gap-4 pt-5">
               <Button
-                accessibilityLabel="Delete card"
+                accessibilityLabel={translate('Delete card')}
                 variant="secondary"
                 icon={<XIcon size={20} weight="bold" />}
-                text="Delete"
+                text={translate('Delete')}
                 onPress={() => beginSwipe('delete')}
                 disabled={!currentItem || !!outgoingItem}
               />
               <Button
-                accessibilityLabel="Keep card"
+                accessibilityLabel={translate('Keep card')}
                 variant="secondary"
                 icon={<CheckIcon size={20} weight="bold" />}
-                text="Keep"
+                text={translate('Keep')}
                 onPress={() => beginSwipe('keep')}
                 disabled={!currentItem || !!outgoingItem}
               />
@@ -335,14 +344,14 @@ export default function ReviewScreen() {
         <View className="flex-1 px-12" style={{ paddingBottom: 92 + insets.bottom }}>
           {state.status === 'loading' && (
             <View className="flex-1 items-center justify-center">
-              <ActivityIndicator accessibilityLabel="Loading cards" color="#a1a1aa" />
+              <ActivityIndicator accessibilityLabel={translate('Loading cards')} color="#a1a1aa" />
             </View>
           )}
 
           {state.status === 'error' && (
             <View className="flex-1 items-center justify-center gap-3 px-4">
               <Text className="text-center font-sans text-base text-zinc-400">
-                Could not load your library.
+                <LocalizedText>Could not load your library.</LocalizedText>
               </Text>
             </View>
           )}
@@ -350,10 +359,10 @@ export default function ReviewScreen() {
           {state.status === 'ready' && items.length === 0 && (
             <View className="flex-1 items-center justify-center px-4">
               <Text className="text-center font-sans-semibold text-lg text-white">
-                No cards to review yet
+                <LocalizedText>No cards to review yet</LocalizedText>
               </Text>
               <Text className="mt-2 text-center font-sans text-base text-zinc-400">
-                Cards you save will appear here.
+                <LocalizedText>Cards you save will appear here.</LocalizedText>
               </Text>
             </View>
           )}
@@ -389,7 +398,7 @@ export default function ReviewScreen() {
                           style={[{ transform: [{ rotate: '-12deg' }] }, keepStampAnimatedStyle]}
                         >
                           <Text className="font-sans-bold text-xl tracking-widest text-emerald-400">
-                            KEEP
+                            <LocalizedText>KEEP</LocalizedText>
                           </Text>
                         </Animated.View>
                         <Animated.View
@@ -398,7 +407,7 @@ export default function ReviewScreen() {
                           style={[{ transform: [{ rotate: '12deg' }] }, deleteStampAnimatedStyle]}
                         >
                           <Text className="font-sans-bold text-xl tracking-widest text-rose-400">
-                            DELETE
+                            <LocalizedText>DELETE</LocalizedText>
                           </Text>
                         </Animated.View>
                       </Animated.View>
@@ -432,7 +441,7 @@ export default function ReviewScreen() {
                         style={[{ transform: [{ rotate: '-12deg' }] }, outgoingKeepStampStyle]}
                       >
                         <Text className="font-sans-bold text-xl tracking-widest text-emerald-400">
-                          KEEP
+                          <LocalizedText>KEEP</LocalizedText>
                         </Text>
                       </Animated.View>
                       <Animated.View
@@ -441,7 +450,7 @@ export default function ReviewScreen() {
                         style={[{ transform: [{ rotate: '12deg' }] }, outgoingDeleteStampStyle]}
                       >
                         <Text className="font-sans-bold text-xl tracking-widest text-rose-400">
-                          DELETE
+                          <LocalizedText>DELETE</LocalizedText>
                         </Text>
                       </Animated.View>
                     </Animated.View>
@@ -450,7 +459,7 @@ export default function ReviewScreen() {
                 {!currentItem && !outgoingItem && (
                   <View className="items-center justify-center">
                     <ActivityIndicator
-                      accessibilityLabel="Preparing review cards"
+                      accessibilityLabel={translate('Preparing review cards')}
                       color="#a1a1aa"
                     />
                   </View>

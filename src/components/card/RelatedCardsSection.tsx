@@ -5,6 +5,7 @@ import { getRelatedItems } from '@/lib/library/related';
 import type { LibraryItem } from '@/lib/library/types';
 import { ShareNetworkIcon } from 'phosphor-react-native';
 import { RelatedCardTile } from './RelatedCardTile';
+import { LocalizedText } from '@/components/LocalizedText';
 
 export function RelatedCardsSection({ item, items }: { item: LibraryItem; items: LibraryItem[] }) {
   const related = getRelatedItems(item, items);
@@ -15,7 +16,9 @@ export function RelatedCardsSection({ item, items }: { item: LibraryItem; items:
       <View className="flex-row items-center gap-2 px-6">
         <ShareNetworkIcon size={16} color="#E4E4E7" />
         <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-          Related cards ({related.length})
+          <LocalizedText>Related cards (</LocalizedText>
+          {related.length}
+          <LocalizedText>)</LocalizedText>
         </Text>
       </View>
 

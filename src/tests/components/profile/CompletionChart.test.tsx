@@ -60,8 +60,8 @@ it('renders covers and thumbnails in each month and opens the selected card', as
     },
   ];
   await render(<CompletionChart months={months} year={2026} />);
-  expect(screen.getByLabelText('Jan 2026: 2 cards completed')).toBeTruthy();
-  expect(screen.getByLabelText('Feb 2026: 3 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('January 2026: 2 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('February 2026: 3 cards completed')).toBeTruthy();
   expect(screen.getByText('5 cards completed in 2026')).toBeTruthy();
   expect(
     ['book', 'movie', 'game', 'article', 'youtube'].map(
@@ -86,7 +86,7 @@ it('keeps cards without covers or with unavailable images visible and tappable',
     nativeEvent: { error: 'offline' },
   });
   expect(screen.getByTestId('completion-cover-fallback-book')).toBeTruthy();
-  expect(screen.getByLabelText('Mar 2026: 2 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('March 2026: 2 cards completed')).toBeTruthy();
 });
 it('keeps every cover in a busy month and retains empty month rows', async () => {
   const months = emptyMonths();
@@ -97,6 +97,6 @@ it('keeps every cover in a busy month and retains empty month rows', async () =>
   }));
   await render(<CompletionChart months={months} year={2026} />);
   expect(screen.getByLabelText('Open Book 29')).toBeTruthy();
-  expect(screen.getByLabelText('Dec 2026: 30 cards completed')).toBeTruthy();
-  expect(screen.getByLabelText('Jan 2026: 0 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('December 2026: 30 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('January 2026: 0 cards completed')).toBeTruthy();
 });

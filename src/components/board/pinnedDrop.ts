@@ -1,5 +1,11 @@
 export type PinnedDropTarget = { type: 'remove' } | { type: 'reorder'; index: number };
 
+export const PINNED_DROP_ANIMATION_DURATION = 160;
+
+export function schedulePinnedRemoval(onRemove: (itemId: string) => void, itemId: string) {
+  setTimeout(onRemove, PINNED_DROP_ANIMATION_DURATION + 40, itemId);
+}
+
 export function getPinnedDropTarget(
   touch: { x: number; y: number },
   container: { x: number; y: number; width: number; height: number },

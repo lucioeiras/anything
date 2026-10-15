@@ -7,6 +7,7 @@ import {
 import { Text, View } from 'react-native';
 
 import type { LibraryItem, MediaProgressStatus } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type TrackableItemType = Extract<LibraryItem, { progressStatus?: MediaProgressStatus }>['type'];
 
@@ -64,7 +65,7 @@ const colors = {
 } as const;
 
 export function getProgressLabel(type: TrackableItemType, status: MediaProgressStatus): string {
-  return labels[type][status];
+  return translate(labels[type][status]);
 }
 
 export function ProgressStatus({
@@ -76,6 +77,7 @@ export function ProgressStatus({
   status?: MediaProgressStatus;
   align?: 'center' | 'start';
 }) {
+  useLocalization();
   const currentStatus =
     (type === 'article' || type === 'youtube') && status === 'abandoned' ? 'want' : status;
   const Icon = icons[currentStatus];

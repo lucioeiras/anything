@@ -12,6 +12,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import { CardReview } from '@/components/card/CardReview';
 import type { MediaProgressStatus, TvShowSeason } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const STATUSES: MediaProgressStatus[] = ['want', 'in-progress', 'completed', 'abandoned'];
 
@@ -56,6 +58,7 @@ export function TvShowSeasons({
   seasons: TvShowSeason[];
   onChange: (seasons: TvShowSeason[]) => void;
 }) {
+  useLocalization();
   const [draft, setDraft] = useState(seasons);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function TvShowSeasons({
       <View className="flex-row items-center gap-2">
         <TelevisionIcon size={15} color="#E4E4E7" weight="bold" />
         <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
-          Seasons
+          <LocalizedText>Seasons</LocalizedText>
         </Text>
       </View>
 
@@ -87,7 +90,7 @@ export function TvShowSeasons({
           const statusTag = STATUS_TAGS[status];
           const StatusIcon = statusTag.Icon;
           const metadata = [
-            season.episodeCount ? `${season.episodeCount} episodes` : null,
+            season.episodeCount ? `${season.episodeCount} ${translate('episodes')}` : null,
             season.airDate ? season.airDate.slice(0, 4) : null,
           ].filter(Boolean);
 
@@ -121,7 +124,10 @@ export function TvShowSeasons({
                     </View>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${LABELS[status]} for ${season.name}. Tap to change status`}
+                      accessibilityLabel={translate('Change status: %{status}, %{title}', {
+                        status: translate(LABELS[status]),
+                        title: season.name,
+                      })}
                       onPress={() =>
                         updateSeason(season.seasonNumber, { progressStatus: nextStatus })
                       }
@@ -133,7 +139,7 @@ export function TvShowSeasons({
                         className={`font-sans-medium text-xs ${statusTag.text}`}
                         numberOfLines={1}
                       >
-                        {LABELS[status]}
+                        {translate(LABELS[status])}
                       </Text>
                       <ArrowsClockwiseIcon size={10} color={statusTag.color} />
                     </Pressable>
@@ -159,7 +165,9 @@ export function TvShowSeasons({
           );
         })
       ) : (
-        <Text className="font-sans text-sm text-zinc-500">No seasons listed by TMDB.</Text>
+        <Text className="font-sans text-sm text-zinc-500">
+          <LocalizedText>No seasons listed by TMDB.</LocalizedText>
+        </Text>
       )}
     </View>
   );

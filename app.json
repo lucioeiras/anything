@@ -7,6 +7,24 @@
     "icon": "./assets/images/icon.png",
     "scheme": "anything",
     "userInterfaceStyle": "dark",
+    "locales": {
+      "en": {
+        "ios": {
+          "NSCameraUsageDescription": "Anything uses your camera to add images to your library.",
+          "NSMicrophoneUsageDescription": "Allow Anything to access your microphone to record audio.",
+          "NSPhotoLibraryAddUsageDescription": "Anything needs access to save images to your camera roll.",
+          "NSPhotoLibraryUsageDescription": "Anything accesses your photos so you can add images to your library."
+        }
+      },
+      "pt-BR": {
+        "ios": {
+          "NSCameraUsageDescription": "O Anything usa sua câmera para adicionar imagens à biblioteca.",
+          "NSMicrophoneUsageDescription": "Permita que o Anything acesse o microfone para gravar áudio.",
+          "NSPhotoLibraryAddUsageDescription": "O Anything precisa acessar as fotos para salvar imagens no rolo da câmera.",
+          "NSPhotoLibraryUsageDescription": "O Anything acessa suas fotos para que você possa adicionar imagens à biblioteca."
+        }
+      }
+    },
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.diegoeiras.anything",
@@ -111,6 +129,15 @@
           "microphonePermission": "Allow Anything to access your microphone to record audio.",
           "enableBackgroundPlayback": false,
           "enableBackgroundRecording": false
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["en", "pt-BR"],
+            "android": ["en", "pt-BR"]
+          }
         }
       ]
     ],

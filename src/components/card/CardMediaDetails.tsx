@@ -6,6 +6,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { cleanRawgDescription } from '@/lib/games/rawg';
 import type { LibraryItem } from '@/lib/library/types';
 import { getProfileUrl } from '@/lib/movies/tmdb';
+import { LocalizedText } from '@/components/LocalizedText';
 
 export function CardMediaDetails({ item }: { item: LibraryItem }) {
   const gameDescription = item.type === 'game' ? cleanRawgDescription(item.description || '') : '';
@@ -17,7 +18,7 @@ export function CardMediaDetails({ item }: { item: LibraryItem }) {
           <View className="flex-row items-center gap-2">
             <FilmSlateIcon size={14} color="#E4E4E7" weight="bold" />
             <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-              Overview
+              <LocalizedText>Overview</LocalizedText>
             </Text>
           </View>
           <Text className="font-sans text-base text-zinc-300 leading-relaxed">
@@ -31,7 +32,7 @@ export function CardMediaDetails({ item }: { item: LibraryItem }) {
           <View className="flex-row items-center gap-2">
             <FilmSlateIcon size={14} color="#E4E4E7" weight="bold" />
             <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-              Overview
+              <LocalizedText>Overview</LocalizedText>
             </Text>
           </View>
           <Text className="font-sans text-base text-zinc-300 leading-relaxed">
@@ -47,11 +48,13 @@ export function CardMediaDetails({ item }: { item: LibraryItem }) {
             <View className="flex-row items-center gap-2">
               <UsersThreeIcon size={14} color="#E4E4E7" weight="bold" />
               <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                Cast
+                <LocalizedText>Cast</LocalizedText>
               </Text>
             </View>
             <Text className="font-sans text-xs text-zinc-500">
-              Top {Math.min(item.cast?.length ?? 0, 20)} of {item.cast?.length ?? 0}
+              <LocalizedText>Top </LocalizedText>
+              {Math.min(item.cast?.length ?? 0, 20)} <LocalizedText>of </LocalizedText>
+              {item.cast?.length ?? 0}
             </Text>
           </View>
 
@@ -102,7 +105,7 @@ export function CardMediaDetails({ item }: { item: LibraryItem }) {
           <View className="flex-row items-center gap-2">
             <GameControllerIcon size={14} color="#E4E4E7" weight="bold" />
             <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-              About
+              <LocalizedText>About</LocalizedText>
             </Text>
           </View>
           {gameDescription ? (

@@ -2,6 +2,7 @@ import { useVideoPlayer } from 'expo-video';
 import { PauseIcon, PlayIcon } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, Text } from 'react-native';
+import { translate, useLocalization } from '@/lib/i18n';
 
 export function MusicPreviewPlayer({
   previewUrl,
@@ -16,6 +17,7 @@ export function MusicPreviewPlayer({
     playing: boolean;
   } | null>;
 }) {
+  useLocalization();
   const [isPlaying, setIsPlaying] = useState(false);
   const player = useVideoPlayer(previewUrl, (p) => {
     p.loop = false;
@@ -62,7 +64,7 @@ export function MusicPreviewPlayer({
         <PlayIcon size={16} color="#FB7185" weight="fill" />
       )}
       <Text className="font-sans-medium text-sm text-rose-200">
-        {isPlaying ? 'Pause preview' : 'Play 30s preview'}
+        {translate(isPlaying ? 'Pause preview' : 'Play 30s preview')}
       </Text>
     </Pressable>
   );

@@ -21,8 +21,11 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 export default function AddElementScreen() {
+  useLocalization();
   const { controlItem, controlToken } = useLocalSearchParams<{
     controlItem?: string;
     controlToken?: string;
@@ -51,7 +54,10 @@ export default function AddElementScreen() {
       if (!recorderState.isRecording) {
         const permission = await AudioModule.requestRecordingPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Microphone access required', 'Allow microphone access to record audio.');
+          Alert.alert(
+            translate('Microphone access required'),
+            translate('Allow microphone access to record audio.')
+          );
           return;
         }
         await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
@@ -77,7 +83,10 @@ export default function AddElementScreen() {
           });
       }
     } catch (error) {
-      Alert.alert('Audio recording failed', error instanceof Error ? error.message : 'Try again.');
+      Alert.alert(
+        translate('Audio recording failed'),
+        error instanceof Error ? error.message : 'Try again.'
+      );
     } finally {
       setIsRecordingAction(false);
     }
@@ -102,7 +111,10 @@ export default function AddElementScreen() {
         },
       });
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to pick image');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to pick image'
+      );
     } finally {
       setIsPickingMedia(false);
     }
@@ -140,7 +152,7 @@ export default function AddElementScreen() {
         });
       }
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to pick media');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to pick media');
     } finally {
       setIsPickingMedia(false);
     }
@@ -171,7 +183,7 @@ export default function AddElementScreen() {
       });
     } catch (e) {
       console.error('Failed to pick PDF:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to pick PDF');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to pick PDF');
     } finally {
       setIsPickingPdf(false);
     }
@@ -281,11 +293,13 @@ export default function AddElementScreen() {
         className="w-full"
       >
         <Text className="font-sans-medium text-2xl text-white text-center w-full">
-          Save <Text className="text-2xl text-blue-500 text-center"> anything</Text> you want
+          {translate('Save anything you want')}
         </Text>
         <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-96">
-          You can record audio, add notes, to-do's, quotes, links, movies, TV shows, games, PDFs,
-          songs, X posts and Reddit posts, articles, books or YouTube videos
+          <LocalizedText>
+            You can record audio, add notes, to-do's, quotes, links, movies, TV shows, games, PDFs,
+            songs, X posts and Reddit posts, articles, books or YouTube videos
+          </LocalizedText>
         </Text>
 
         <View className="mt-10 gap-4">
@@ -296,7 +310,7 @@ export default function AddElementScreen() {
             >
               <NotePencilIcon size={24} color="#000" weight="duotone" />
               <Text className="font-sans-semibold text-lg text-zinc-950">
-                A thought to remember
+                <LocalizedText>A thought to remember</LocalizedText>
               </Text>
             </Pressable>
 
@@ -305,7 +319,9 @@ export default function AddElementScreen() {
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <LinkIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">Found on the web</Text>
+              <Text className="font-sans-semibold text-lg text-white">
+                <LocalizedText>Found on the web</LocalizedText>
+              </Text>
             </Pressable>
           </View>
 
@@ -322,7 +338,9 @@ export default function AddElementScreen() {
                   <FilePdfIcon size={24} color="#fff" weight="duotone" />
                 )}
               </AddActionIconSlot>
-              <Text className="font-sans-semibold text-lg text-white">Important document</Text>
+              <Text className="font-sans-semibold text-lg text-white">
+                <LocalizedText>Important document</LocalizedText>
+              </Text>
             </Pressable>
 
             <Pressable
@@ -337,16 +355,18 @@ export default function AddElementScreen() {
                   <ImagesSquareIcon size={24} color="#fff" weight="duotone" />
                 )}
               </AddActionIconSlot>
-              <Text className="font-sans-semibold text-lg text-white">A photo or video</Text>
+              <Text className="font-sans-semibold text-lg text-white">
+                <LocalizedText>A photo or video</LocalizedText>
+              </Text>
             </Pressable>
 
             <Pressable
               onPress={handleRecordAudio}
               disabled={isRecordingAction}
               accessibilityRole="button"
-              accessibilityLabel={
+              accessibilityLabel={translate(
                 recorderState.isRecording ? 'Stop audio recording' : 'Record audio'
-              }
+              )}
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-70 rounded-xl"
             >
               <AddActionIconSlot>
@@ -362,8 +382,10 @@ export default function AddElementScreen() {
               </AddActionIconSlot>
               <Text className="font-sans-semibold text-lg text-white">
                 {recorderState.isRecording
-                  ? `Recording · ${Math.floor((recorderState.durationMillis ?? 0) / 1000)}s`
-                  : `Speak my mind`}
+                  ? translate('Recording · %{seconds}s', {
+                      seconds: Math.floor((recorderState.durationMillis ?? 0) / 1000),
+                    })
+                  : translate('Speak my mind')}
               </Text>
             </Pressable>
 
@@ -378,7 +400,9 @@ export default function AddElementScreen() {
               className="p-6 max-w-80 justify-between h-40 w-40 bg-zinc-900 active:opacity-80 rounded-xl"
             >
               <FilmSlateIcon size={24} color="#fff" weight="duotone" />
-              <Text className="font-sans-semibold text-lg text-white">To watch, read, or play</Text>
+              <Text className="font-sans-semibold text-lg text-white">
+                <LocalizedText>To watch, read, or play</LocalizedText>
+              </Text>
             </Pressable>
           </View>
         </View>

@@ -23,6 +23,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedAudioAsset } from '@/lib/library/storage';
 import type { AudioItem } from '@/lib/library/types';
 import { generateAutoTagsAsync } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewAudioModalProps = {
   visible: boolean;
@@ -33,6 +35,7 @@ type NewAudioModalProps = {
 };
 
 export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: NewAudioModalProps) {
+  useLocalization();
   const { addAudio, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const titleInputRef = useRef<TextInput>(null);
@@ -138,7 +141,10 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
       onClose();
     } catch (error) {
       console.error('Failed to save audio:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save audio');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to save audio'
+      );
     } finally {
       setSaving(false);
     }
@@ -185,9 +191,11 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
                 </Text>
               </Pressable>
               <View className="flex-1 gap-3">
-                <Text className="font-sans-semibold text-2xl text-white">Add a recording</Text>
+                <Text className="font-sans-semibold text-2xl text-white">
+                  <LocalizedText>Add a recording</LocalizedText>
+                </Text>
                 <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                  Add a title, tags and note to this audio.
+                  <LocalizedText>Add a title, tags and note to this audio.</LocalizedText>
                 </Text>
               </View>
             </View>
@@ -198,7 +206,7 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
                 ref={titleInputRef}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Add a title to this audio"
+                placeholder={translate('Add a title to this audio')}
                 placeholderTextColor="#71717A"
                 returnKeyType="next"
                 onSubmitEditing={() => tagsInputRef.current?.focus()}
@@ -226,7 +234,7 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
               <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
@@ -234,7 +242,7 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a text note to this audio..."
+                  placeholder={translate('Add a text note to this audio...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -248,14 +256,14 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
 
           <ActionFooter bottomInset={insets.bottom}>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save audio"
+              accessibilityLabel={translate('Save audio')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -266,7 +274,7 @@ export function NewAudioModal({ visible, asset, onClose, onDismiss, onSaved }: N
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save audio"
+              text={translate('Save audio')}
             />
           </ActionFooter>
         </View>

@@ -23,6 +23,7 @@ import {
 
 import { STATUS_FOLDERS } from '@/lib/library/organize';
 import type { MediaProgressStatus } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const statusIcons = {
   want: BookmarkSimpleIcon,
@@ -59,6 +60,7 @@ export function SearchBar({
   trailingAction,
   bottomOffset = 0,
 }: SearchBarProps) {
+  useLocalization();
   const inputRef = useRef<TextInput>(null);
 
   if (!visible) return null;
@@ -128,7 +130,10 @@ export function SearchBar({
                     key={`${filter.kind}:${filter.label}`}
                     onPress={filter.onRemove}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${filter.kind} filter ${filter.label}`}
+                    accessibilityLabel={translate('Remove %{kind} filter %{label}', {
+                      kind: translate(filter.kind),
+                      label: filter.label,
+                    })}
                     className={`max-w-full flex-row items-center gap-1.5 rounded-full px-3 py-1.5 active:opacity-70 ${status ? '' : isTag ? 'bg-blue-500/15' : isDate ? 'bg-amber-500/15' : 'bg-violet-500/15'}`}
                     style={status ? { backgroundColor: `${status.color}26` } : undefined}
                   >
@@ -148,7 +153,7 @@ export function SearchBar({
                 ref={inputRef}
                 value={value}
                 onChangeText={onChangeText}
-                placeholder={filters.length > 0 ? 'Search within...' : placeholder}
+                placeholder={translate(filters.length > 0 ? 'Search within...' : placeholder)}
                 placeholderTextColor="#71717b"
                 className="min-w-0 flex-1 font-sans text-2xl text-white leading-tight"
                 returnKeyType="search"
@@ -164,7 +169,7 @@ export function SearchBar({
                 onPress={handleClear}
                 hitSlop={10}
                 className="p-1.5 rounded-full bg-zinc-700 items-center justify-center active:opacity-70"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={translate('Clear search')}
               >
                 <XIcon size={12} color="#E4E4E7" weight="bold" />
               </Pressable>

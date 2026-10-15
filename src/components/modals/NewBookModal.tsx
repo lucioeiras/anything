@@ -30,6 +30,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { fetchBookByIsbn, normalizeIsbn, type BookMetadata } from '@/lib/books/isbn';
 import type { BookItem } from '@/lib/library/types';
 import { generateAutoTagsAsync } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewBookModalProps = {
   visible: boolean;
@@ -46,6 +48,7 @@ export function NewBookModal({
   onDismiss,
   onSaved,
 }: NewBookModalProps) {
+  useLocalization();
   const { addBookItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -235,7 +238,7 @@ export function NewBookModal({
       onSaved?.(item);
     } catch (e) {
       console.error('Failed to save book:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save book');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save book');
     } finally {
       setSaving(false);
     }
@@ -268,10 +271,14 @@ export function NewBookModal({
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add a new book</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add a new book</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Enter the book&apos;s ISBN (10 or 13 digits) to automatically fetch its details,
-                authors, cover and synopsis.
+                <LocalizedText>
+                  Enter the book&apos;s ISBN (10 or 13 digits) to automatically fetch its details,
+                  authors, cover and synopsis.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -283,7 +290,7 @@ export function NewBookModal({
                 ref={inputRef}
                 value={isbn}
                 onChangeText={handleIsbnChange}
-                placeholder="ISBN (e.g. 9780132350884)"
+                placeholder={translate('ISBN (e.g. 9780132350884)')}
                 placeholderTextColor="#71717A"
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -305,7 +312,7 @@ export function NewBookModal({
                     hitSlop={8}
                     className="p-1.5 rounded-full bg-amber-500/20 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Search ISBN"
+                    accessibilityLabel={translate('Search ISBN')}
                   >
                     <MagnifyingGlassIcon size={16} color="#F59E0B" weight="bold" />
                   </Pressable>
@@ -315,7 +322,7 @@ export function NewBookModal({
                     hitSlop={8}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Clear ISBN"
+                    accessibilityLabel={translate('Clear ISBN')}
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
@@ -370,12 +377,14 @@ export function NewBookModal({
                       )}
                       {book.pageCount && (
                         <Text className="font-sans text-sm text-zinc-400">
-                          • {book.pageCount} pgs
+                          <LocalizedText>• </LocalizedText>
+                          {book.pageCount} <LocalizedText>pgs</LocalizedText>
                         </Text>
                       )}
                       {book.publisher && (
                         <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
-                          • {book.publisher}
+                          <LocalizedText>• </LocalizedText>
+                          {book.publisher}
                         </Text>
                       )}
                     </View>
@@ -415,7 +424,7 @@ export function NewBookModal({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
 
@@ -424,7 +433,7 @@ export function NewBookModal({
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a personal note about this book..."
+                  placeholder={translate('Add a personal note about this book...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -439,14 +448,14 @@ export function NewBookModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save book"
+              accessibilityLabel={translate('Save book')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -457,7 +466,7 @@ export function NewBookModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save book"
+              text={translate('Save book')}
             />
           </ActionFooter>
         </View>

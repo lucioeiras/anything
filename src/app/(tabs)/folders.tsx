@@ -14,8 +14,10 @@ import { FolderTile } from '@/components/organize/FolderTile';
 import { useLibrary } from '@/hooks/useLibrary';
 import { getTagGroups, matchesStatus, STATUS_FOLDERS } from '@/lib/library/organize';
 import { getLibraryFolders, getSourceId, saveLibraryFolders } from '@/lib/library/storage';
+import { translate, useLocalization } from '@/lib/i18n';
 
 export default function OrganizeScreen() {
+  useLocalization();
   const { source, state, setSearchQuery, clearSearchTag, updateItem } = useLibrary();
   const [saved, setSaved] = useState<{ source: string; names: string[] } | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -44,10 +46,10 @@ export default function OrganizeScreen() {
           }}
         >
           <Button
-            accessibilityLabel="Create folder"
+            accessibilityLabel={translate('Create folder')}
             variant="secondary"
             icon={<PlusIcon size={20} color="#FFFFFF" weight="bold" />}
-            text="New Folder"
+            text={translate('New Folder')}
             disabled={saved?.source !== sourceId}
             onPress={() => setIsCreateOpen(true)}
           />
@@ -69,7 +71,7 @@ export default function OrganizeScreen() {
       .catch(() => {
         if (active) {
           setSaved({ source: sourceId, names: [] });
-          Alert.alert('Could not load folders', 'Please try again.');
+          Alert.alert(translate('Could not load folders'), translate('Please try again.'));
         }
       });
     return () => {
@@ -90,7 +92,7 @@ export default function OrganizeScreen() {
         (existing) => existing.toLocaleLowerCase() === name.toLocaleLowerCase()
       )
     ) {
-      Alert.alert('Folder already exists', 'Choose a different name.');
+      Alert.alert(translate('Folder already exists'), translate('Choose a different name.'));
       return false;
     }
 
@@ -100,16 +102,16 @@ export default function OrganizeScreen() {
       setSaved({ source: sourceId, names: next });
       return true;
     } catch {
-      Alert.alert('Could not create folder', 'Please try again.');
+      Alert.alert(translate('Could not create folder'), translate('Please try again.'));
       return false;
     }
   };
 
   const confirmDeleteFolder = (name: string) => {
-    Alert.alert('Delete folder?', `“${name}” will be removed from your folders.`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(translate('Delete folder?'), `“${name}” will be removed from your folders.`, [
+      { text: translate('Cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: translate('Delete'),
         style: 'destructive',
         onPress: async () => {
           if (saved?.source !== sourceId) return;
@@ -126,7 +128,7 @@ export default function OrganizeScreen() {
             await saveLibraryFolders(source, next);
             setSaved({ source: sourceId, names: next });
           } catch {
-            Alert.alert('Could not delete folder', 'Please try again.');
+            Alert.alert(translate('Could not delete folder'), translate('Please try again.'));
           }
         },
       },

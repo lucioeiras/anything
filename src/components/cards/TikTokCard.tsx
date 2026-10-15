@@ -3,6 +3,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { cssInterop } from 'nativewind';
 import { PlayIcon, TiktokLogoIcon } from 'phosphor-react-native';
 import { Text, View } from 'react-native';
+import { LocalizedText } from '@/components/LocalizedText';
 
 cssInterop(ExpoImage, { className: 'style' });
 
@@ -61,7 +62,9 @@ export function TikTokCard({
         {!compact && (
           <View className="flex-row items-center gap-2 mt-2">
             <TiktokLogoIcon size={14} color="#25F4EE" weight="fill" />
-            <Text className="font-sans-semibold text-sm text-cyan-300">TikTok</Text>
+            <Text className="font-sans-semibold text-sm text-cyan-300">
+              <LocalizedText>TikTok</LocalizedText>
+            </Text>
           </View>
         )}
       </View>

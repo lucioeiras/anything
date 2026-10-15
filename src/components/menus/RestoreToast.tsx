@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type RestoreToastProps = {
   visible: boolean;
@@ -20,6 +22,7 @@ export function RestoreToast({
   onRestore,
   onDismiss,
 }: RestoreToastProps) {
+  useLocalization();
   const [progress, setProgress] = useState(1);
   const onDismissRef = useRef(onDismiss);
 
@@ -74,15 +77,16 @@ export function RestoreToast({
         style={{ backgroundColor: 'rgba(24, 24, 27, 0.88)' }}
       >
         <Text className="pl-2 font-sans-medium text-base text-zinc-300 ml-2">
-          You deleted <Text className="font-sans-bold text-white">{count}</Text>{' '}
+          <LocalizedText>You deleted </LocalizedText>
+          <Text className="font-sans-bold text-white">{count}</Text>{' '}
           {count === 1 ? 'card' : 'cards'}
         </Text>
 
         <Button
-          accessibilityLabel="Restore deleted cards"
+          accessibilityLabel={translate('Restore deleted cards')}
           variant="primary"
           icon={undefined}
-          text="Restore"
+          text={translate('Restore')}
           onPress={onRestore}
           shadowColor="#FFFFFF"
           shadowOpacity={0.16}

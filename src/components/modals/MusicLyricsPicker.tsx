@@ -25,6 +25,8 @@ import { ActionFooter } from '@/components/ActionFooter';
 import { Button } from '@/components/Button';
 import { formatDuration, searchITunesMusic, type MusicMetadata } from '@/lib/music/itunes';
 import { getSongLyrics } from '@/lib/music/lyrics';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   visible: boolean;
@@ -33,6 +35,7 @@ type Props = {
 };
 
 export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
+  useLocalization();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,7 +185,7 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
             }
             className="w-10 h-10 justify-center"
             accessibilityRole="button"
-            accessibilityLabel={song ? 'Back to song search' : 'Close lyrics picker'}
+            accessibilityLabel={translate(song ? 'Back to song search' : 'Close lyrics picker')}
           >
             {song ? (
               <ArrowLeftIcon size={24} color="#FFFFFF" />
@@ -192,13 +195,15 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
           </Pressable>
           <View className="flex-1 items-center px-2 gap-0.5">
             <Text className="font-sans-semibold text-lg text-white">
-              {song ? 'Select lyrics' : 'Find a song'}
+              {translate(song ? 'Select lyrics' : 'Find a song')}
             </Text>
             {song && (
               <Text className="font-sans text-xs text-zinc-400">
                 {selectedCount
-                  ? `${selectedCount} ${selectedCount === 1 ? 'line' : 'lines'} selected`
-                  : 'Tap a line to select it'}
+                  ? translate(selectedCount === 1 ? '1 line selected' : '%{count} lines selected', {
+                      count: selectedCount,
+                    })
+                  : translate('Tap a line to select it')}
               </Text>
             )}
           </View>
@@ -240,7 +245,10 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
                     onPress={() => handleLinePress(index)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: index >= start && index <= end }}
-                    accessibilityLabel={`Lyric line ${index + 1}: ${line}`}
+                    accessibilityLabel={translate('Lyric line %{number}: %{line}', {
+                      number: index + 1,
+                      line,
+                    })}
                     className={`rounded-2xl px-5 py-3 mb-2 ${index >= start && index <= end ? 'bg-zinc-600' : 'active:bg-zinc-900'}`}
                   >
                     <Text
@@ -256,7 +264,7 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
             </ScrollView>
             <ActionFooter bottomInset={insets.bottom}>
               <Button
-                accessibilityLabel="Add selected lyrics to note"
+                accessibilityLabel={translate('Add selected lyrics to note')}
                 variant="primary"
                 onPress={handleConfirm}
                 disabled={!selectedCount}
@@ -267,16 +275,20 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
                     weight="bold"
                   />
                 }
-                text="Add to note"
+                text={translate('Add to note')}
               />
             </ActionFooter>
           </>
         ) : (
           <>
             <View className="px-8 py-6 gap-2">
-              <Text className="font-sans-semibold text-2xl text-white">Song lyrics</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Song lyrics</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400">
-                Search the iTunes catalog, then choose a passage for your note.
+                <LocalizedText>
+                  Search the iTunes catalog, then choose a passage for your note.
+                </LocalizedText>
               </Text>
             </View>
             <View className="flex-row items-center gap-4 px-8 py-5 border-t border-b border-zinc-800">
@@ -285,7 +297,7 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
                 ref={searchInputRef}
                 value={query}
                 onChangeText={handleQueryChange}
-                placeholder="Search song or artist..."
+                placeholder={translate('Search song or artist...')}
                 placeholderTextColor="#71717A"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -345,7 +357,9 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
               ))}
               {!searching && query.trim().length > 1 && results.length === 0 && (
                 <Text className="font-sans text-sm text-zinc-500 text-center py-12">
-                  No songs found for "{query}"
+                  <LocalizedText>No songs found for "</LocalizedText>
+                  {query}
+                  <LocalizedText>"</LocalizedText>
                 </Text>
               )}
             </ScrollView>
@@ -353,16 +367,20 @@ export function MusicLyricsPicker({ visible, onClose, onSelect }: Props) {
             {loadingLyrics && (
               <View className="absolute inset-0 bg-zinc-950/80 items-center justify-center gap-4 px-8">
                 <ActivityIndicator size="large" color="#3B82F6" />
-                <Text className="font-sans-medium text-zinc-200">Loading lyrics...</Text>
+                <Text className="font-sans-medium text-zinc-200">
+                  <LocalizedText>Loading lyrics...</LocalizedText>
+                </Text>
 
                 <Pressable
                   onPress={handleCancelLyrics}
                   accessibilityRole="button"
-                  accessibilityLabel="Cancel loading lyrics"
+                  accessibilityLabel={translate('Cancel loading lyrics')}
                   className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-zinc-700 px-8 py-3 active:bg-zinc-900"
                 >
                   <XIcon size={18} color="#FFFFFF" weight="bold" />
-                  <Text className="font-sans-semibold text-base text-white">Cancel</Text>
+                  <Text className="font-sans-semibold text-base text-white">
+                    <LocalizedText>Cancel</LocalizedText>
+                  </Text>
                 </Pressable>
               </View>
             )}

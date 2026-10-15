@@ -11,6 +11,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { getTagGroups, STATUS_FOLDERS } from '@/lib/library/organize';
 import { getLibraryFolders, getSourceId, saveLibraryFolders } from '@/lib/library/storage';
 import type { LibraryItem } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   visible: boolean;
@@ -20,6 +22,7 @@ type Props = {
 };
 
 export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
+  useLocalization();
   const { source, state, updateItem } = useLibrary();
   const insets = useSafeAreaInsets();
   const storageKey = `anything:folders:${getSourceId(source)}`;
@@ -47,7 +50,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
       .catch(() => {
         if (active) {
           setSaved({ key: storageKey, names: [] });
-          Alert.alert('Could not load folders', 'Please try again.');
+          Alert.alert(translate('Could not load folders'), translate('Please try again.'));
         }
       });
     return () => {
@@ -68,7 +71,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
       onClose();
     } catch (error) {
       Alert.alert(
-        'Could not add all cards',
+        translate('Could not add all cards'),
         error instanceof Error ? error.message : 'Please try again.'
       );
     } finally {
@@ -83,7 +86,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
         (existing) => existing.toLocaleLowerCase() === name.toLocaleLowerCase()
       )
     ) {
-      Alert.alert('Folder already exists', 'Choose a different name.');
+      Alert.alert(translate('Folder already exists'), translate('Choose a different name.'));
       return false;
     }
 
@@ -93,38 +96,42 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
       setSaved({ key: storageKey, names: next });
       return true;
     } catch {
-      Alert.alert('Could not create folder', 'Please try again.');
+      Alert.alert(translate('Could not create folder'), translate('Please try again.'));
       return false;
     }
   };
 
   const confirmDeleteFolder = (name: string) => {
     if (saving || folderNames === null) return;
-    Alert.alert('Delete folder?', `“${name}” will be removed from your folders and cards.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          if (saving || folderNames === null) return;
-          const next = folderNames.filter((folderName) => folderName !== name);
-          try {
-            const taggedItems = libraryItems.filter((item) =>
-              item.tags?.some((tag) => tag.trim() === name)
-            );
-            for (const item of taggedItems) {
-              await updateItem(item.id, {
-                tags: item.tags?.filter((tag) => tag.trim() !== name) ?? [],
-              });
+    Alert.alert(
+      translate('Delete folder?'),
+      `“${name}” will be removed from your folders and cards.`,
+      [
+        { text: translate('Cancel'), style: 'cancel' },
+        {
+          text: translate('Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            if (saving || folderNames === null) return;
+            const next = folderNames.filter((folderName) => folderName !== name);
+            try {
+              const taggedItems = libraryItems.filter((item) =>
+                item.tags?.some((tag) => tag.trim() === name)
+              );
+              for (const item of taggedItems) {
+                await updateItem(item.id, {
+                  tags: item.tags?.filter((tag) => tag.trim() !== name) ?? [],
+                });
+              }
+              await saveLibraryFolders(source, next);
+              setSaved({ key: storageKey, names: next });
+            } catch {
+              Alert.alert(translate('Could not delete folder'), translate('Please try again.'));
             }
-            await saveLibraryFolders(source, next);
-            setSaved({ key: storageKey, names: next });
-          } catch {
-            Alert.alert('Could not delete folder', 'Please try again.');
-          }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleClose = () => {
@@ -147,10 +154,12 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
         >
           <View className="gap-2 px-2 pb-8">
             <Text className="font-sans-semibold text-2xl text-white text-center">
-              Add to folder
+              <LocalizedText>Add to folder</LocalizedText>
             </Text>
             <Text className="font-sans text-base text-zinc-400 text-center">
-              {items.length} {items.length === 1 ? 'card' : 'cards'} selected
+              {translate(items.length === 1 ? '1 card selected' : '%{count} cards selected', {
+                count: items.length,
+              })}
             </Text>
           </View>
 
@@ -174,9 +183,11 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
           {folderNames === null && <ActivityIndicator className="py-6" color="#A1A1AA" />}
           {folderNames?.length === 0 && (
             <View className="flex-1 items-center justify-center px-8 py-12">
-              <Text className="font-sans-medium text-lg text-zinc-100">No folders yet</Text>
+              <Text className="font-sans-medium text-lg text-zinc-100">
+                <LocalizedText>No folders yet</LocalizedText>
+              </Text>
               <Text className="mt-2 text-center font-sans text-base text-zinc-500">
-                Create a folder to organize these cards.
+                <LocalizedText>Create a folder to organize these cards.</LocalizedText>
               </Text>
             </View>
           )}
@@ -184,7 +195,7 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
 
         <ActionFooter bottomInset={insets.bottom}>
           <Button
-            accessibilityLabel="Cancel"
+            accessibilityLabel={translate('Cancel')}
             onPress={handleClose}
             disabled={saving}
             icon={
@@ -194,15 +205,15 @@ export function AddToFolderModal({ visible, items, onClose, onAdded }: Props) {
                 <XIcon size={20} color="#FFFFFF" weight="bold" />
               )
             }
-            text="Cancel"
+            text={translate('Cancel')}
           />
           <Button
-            accessibilityLabel="Create folder"
+            accessibilityLabel={translate('Create folder')}
             variant="secondary"
             onPress={() => setIsCreateOpen(true)}
             disabled={saving}
             icon={<PlusIcon size={20} color="#FFFFFF" weight="bold" />}
-            text="New Folder"
+            text={translate('New Folder')}
           />
         </ActionFooter>
       </View>

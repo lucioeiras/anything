@@ -22,12 +22,14 @@ import { Text, View } from 'react-native';
 
 import { cleanRawgDescription } from '@/lib/games/rawg';
 import type { LibraryItem } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
-function formatDateAdded(isoDate: string): string {
+function formatDateAdded(isoDate: string, locale: string): string {
   try {
     const d = new Date(isoDate);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -50,6 +52,8 @@ function formatFileSize(bytes: number): string {
 }
 
 export function CardInfo({ item }: { item: LibraryItem }) {
+  const { language } = useLocalization();
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
   const gameInfo =
     item.type === 'game'
       ? {
@@ -69,14 +73,14 @@ export function CardInfo({ item }: { item: LibraryItem }) {
       <View className="flex-row items-center gap-2">
         <InfoIcon size={14} color="#E4E4E7" weight="bold" />
         <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-          Info
+          <LocalizedText>Info</LocalizedText>
         </Text>
       </View>
 
       <View className="flex-row items-center gap-2.5">
         <CalendarBlankIcon size={16} color="#A1A1AA" />
         <Text className="font-sans text-base text-zinc-400">
-          Added {formatDateAdded(item.createdAt)}
+          {translate('Added %{date}', { date: formatDateAdded(item.createdAt, locale) })}
         </Text>
       </View>
 
@@ -100,7 +104,10 @@ export function CardInfo({ item }: { item: LibraryItem }) {
           {Boolean(item.releaseDate) && (
             <View className="flex-row items-center gap-2.5">
               <CalendarCheckIcon size={16} color="#A1A1AA" />
-              <Text className="font-sans text-base text-zinc-400">Released {item.releaseDate}</Text>
+              <Text className="font-sans text-base text-zinc-400">
+                <LocalizedText>Released </LocalizedText>
+                {item.releaseDate}
+              </Text>
             </View>
           )}
           {Boolean(item.director) && (
@@ -114,14 +121,16 @@ export function CardInfo({ item }: { item: LibraryItem }) {
           {Boolean(item.runtime) && (
             <View className="flex-row items-center gap-2.5">
               <ClockIcon size={16} color="#A1A1AA" />
-              <Text className="font-sans text-base text-zinc-400">{item.runtime} min</Text>
+              <Text className="font-sans text-base text-zinc-400">
+                {item.runtime} <LocalizedText>min</LocalizedText>
+              </Text>
             </View>
           )}
           {typeof item.voteAverage === 'number' && item.voteAverage > 0 && (
             <View className="flex-row items-center gap-2.5">
               <StarIcon size={16} color="#A1A1AA" />
               <Text className="font-sans text-base text-zinc-400">
-                {item.voteAverage.toFixed(1)} / 10
+                {item.voteAverage.toFixed(1)} <LocalizedText>/ 10</LocalizedText>
               </Text>
             </View>
           )}
@@ -142,7 +151,8 @@ export function CardInfo({ item }: { item: LibraryItem }) {
             <View className="flex-row items-center gap-2.5">
               <CalendarCheckIcon size={16} color="#A1A1AA" />
               <Text className="font-sans text-base text-zinc-400">
-                First aired {item.firstAirDate}
+                <LocalizedText>First aired </LocalizedText>
+                {item.firstAirDate}
               </Text>
             </View>
           )}
@@ -150,7 +160,7 @@ export function CardInfo({ item }: { item: LibraryItem }) {
             <View className="flex-row items-center gap-2.5">
               <StarIcon size={16} color="#A1A1AA" />
               <Text className="font-sans text-base text-zinc-400">
-                {item.voteAverage.toFixed(1)} / 10
+                {item.voteAverage.toFixed(1)} <LocalizedText>/ 10</LocalizedText>
               </Text>
             </View>
           )}
@@ -168,7 +178,9 @@ export function CardInfo({ item }: { item: LibraryItem }) {
           {item.musicKind === 'album' && (
             <View className="flex-row items-center gap-2.5">
               <DiscIcon size={16} color="#A1A1AA" />
-              <Text className="font-sans text-base text-zinc-400">Album</Text>
+              <Text className="font-sans text-base text-zinc-400">
+                <LocalizedText>Album</LocalizedText>
+              </Text>
             </View>
           )}
           {item.album && (
@@ -200,7 +212,8 @@ export function CardInfo({ item }: { item: LibraryItem }) {
             <View className="flex-row items-center gap-2.5">
               <CalendarCheckIcon size={16} color="#A1A1AA" />
               <Text className="font-sans text-base text-zinc-400">
-                Released {formatDateAdded(gameInfo.released)}
+                <LocalizedText>Released </LocalizedText>
+                {formatDateAdded(gameInfo.released, locale)}
               </Text>
             </View>
           )}
@@ -208,14 +221,16 @@ export function CardInfo({ item }: { item: LibraryItem }) {
             <View className="flex-row items-center gap-2.5">
               <StarIcon size={16} color="#A1A1AA" />
               <Text className="font-sans text-base text-zinc-400">
-                {gameInfo.rating.toFixed(1)} / 5
+                {gameInfo.rating.toFixed(1)} <LocalizedText>/ 5</LocalizedText>
               </Text>
             </View>
           )}
           {!!gameInfo?.metacritic && gameInfo.metacritic > 0 && (
             <View className="flex-row items-center gap-2.5">
               <StarIcon size={16} color="#A1A1AA" />
-              <Text className="font-sans text-base text-zinc-400">{gameInfo.metacritic} / 100</Text>
+              <Text className="font-sans text-base text-zinc-400">
+                {gameInfo.metacritic} <LocalizedText>/ 100</LocalizedText>
+              </Text>
             </View>
           )}
           {!!gameInfo?.platforms?.length && (
@@ -257,7 +272,10 @@ export function CardInfo({ item }: { item: LibraryItem }) {
         <>
           <View className="flex-row items-center gap-2.5">
             <BarcodeIcon size={16} color="#A1A1AA" />
-            <Text className="font-sans text-base text-zinc-400">ISBN {item.isbn}</Text>
+            <Text className="font-sans text-base text-zinc-400">
+              <LocalizedText>ISBN </LocalizedText>
+              {item.isbn}
+            </Text>
           </View>
           {item.authors && item.authors.length > 0 && (
             <View className="flex-row items-center gap-2.5">
@@ -274,7 +292,9 @@ export function CardInfo({ item }: { item: LibraryItem }) {
           {item.pageCount && (
             <View className="flex-row items-center gap-2.5">
               <BookOpenIcon size={16} color="#A1A1AA" />
-              <Text className="font-sans text-base text-zinc-400">{item.pageCount} pages</Text>
+              <Text className="font-sans text-base text-zinc-400">
+                {item.pageCount} <LocalizedText>pages</LocalizedText>
+              </Text>
             </View>
           )}
         </>

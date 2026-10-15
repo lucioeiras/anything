@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionFooter } from '@/components/ActionFooter';
 import { Button } from '@/components/Button';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewFolderModalProps = {
   visible: boolean;
@@ -24,6 +26,7 @@ type NewFolderModalProps = {
 };
 
 export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalProps) {
+  useLocalization();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -69,9 +72,13 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
             showsVerticalScrollIndicator={false}
           >
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Create a new folder</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Create a new folder</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Add the folder name as a tag to any card to place it here.
+                <LocalizedText>
+                  Add the folder name as a tag to any card to place it here.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -84,9 +91,9 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
                 onSubmitEditing={handleCreate}
                 returnKeyType="done"
                 maxLength={40}
-                placeholder="Folder name"
+                placeholder={translate('Folder name')}
                 placeholderTextColor="#71717A"
-                accessibilityLabel="Folder name"
+                accessibilityLabel={translate('Folder name')}
                 className="flex-1 font-sans text-xl text-white leading-tight"
                 style={styles.borderlessInput}
                 underlineColorAndroid="transparent"
@@ -97,7 +104,7 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
                   hitSlop={10}
                   className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Clear folder name"
+                  accessibilityLabel={translate('Clear folder name')}
                 >
                   <XIcon size={12} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -107,15 +114,15 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
 
           <ActionFooter bottomInset={insets.bottom}>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
 
             <Button
-              accessibilityLabel="Create folder"
+              accessibilityLabel={translate('Create folder')}
               variant="primary"
               onPress={handleCreate}
               disabled={!canSave}
@@ -126,7 +133,7 @@ export function NewFolderModal({ visible, onClose, onCreate }: NewFolderModalPro
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Create folder"
+              text={translate('Create folder')}
             />
           </ActionFooter>
         </View>

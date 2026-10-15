@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Text } from 'react-native';
 
 import { SearchBar } from '@/components/menus/SearchBar';
+import { setActiveLanguage } from '@/lib/i18n/locale';
 
 describe('SearchBar', () => {
   it('renders the default placeholder and forwards typed text', async () => {
@@ -78,6 +79,23 @@ describe('SearchBar', () => {
     );
     await fireEvent.press(getByLabelText('Remove tag filter travel'));
     expect(onRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it('localizes both the default and scoped placeholders', async () => {
+    setActiveLanguage('pt');
+    const { getByPlaceholderText, rerender } = await render(
+      <SearchBar value="" onChangeText={jest.fn()} />
+    );
+    expect(getByPlaceholderText('Buscar cartões, tags e notas...')).toBeTruthy();
+    await rerender(
+      <SearchBar
+        value=""
+        onChangeText={jest.fn()}
+        filters={[{ kind: 'tag', label: 'trabalho', onRemove: jest.fn() }]}
+      />
+    );
+    expect(getByPlaceholderText('Buscar aqui dentro...')).toBeTruthy();
+    setActiveLanguage('en');
   });
 });
 

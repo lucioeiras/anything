@@ -22,6 +22,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { type ResolvedMetadata, resolveUrlMetadata } from '@/lib/library/metadata';
 import type { LinkUploadItem } from '@/lib/library/storage';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewLinkModalProps = {
   visible: boolean;
@@ -40,6 +42,7 @@ export function NewLinkModal({
   onDismiss,
   onSaved,
 }: NewLinkModalProps) {
+  useLocalization();
   const { addLinkItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
@@ -253,7 +256,7 @@ export function NewLinkModal({
       onClose();
     } catch (e) {
       console.error('Failed to save link:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save link');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save link');
     } finally {
       setSaving(false);
     }
@@ -288,10 +291,14 @@ export function NewLinkModal({
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add a new link</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add a new link</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                You can add any link, but YouTube videos, Tweets, Reddit posts, and articles have
-                special views.
+                <LocalizedText>
+                  You can add any link, but YouTube videos, Tweets, Reddit posts, and articles have
+                  special views.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -303,7 +310,7 @@ export function NewLinkModal({
                 ref={inputRef}
                 value={url}
                 onChangeText={handleUrlChange}
-                placeholder="Type or paste your link here"
+                placeholder={translate('Type or paste your link here')}
                 placeholderTextColor="#71717A"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -324,7 +331,7 @@ export function NewLinkModal({
                   hitSlop={10}
                   className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Clear link"
+                  accessibilityLabel={translate('Clear link')}
                 >
                   <XIcon size={12} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -338,7 +345,7 @@ export function NewLinkModal({
                 ref={titleInputRef}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Add a title here..."
+                placeholder={translate('Add a title here...')}
                 placeholderTextColor="#71717A"
                 returnKeyType="next"
                 onSubmitEditing={() => {
@@ -372,7 +379,7 @@ export function NewLinkModal({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
 
@@ -381,7 +388,7 @@ export function NewLinkModal({
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a text note to this link..."
+                  placeholder={translate('Add a text note to this link...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -396,14 +403,14 @@ export function NewLinkModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom}>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save link"
+              accessibilityLabel={translate('Save link')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -414,7 +421,7 @@ export function NewLinkModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save link"
+              text={translate('Save link')}
             />
           </ActionFooter>
         </View>

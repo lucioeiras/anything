@@ -15,6 +15,8 @@ import {
 import type { LibraryItem } from '@/lib/library/types';
 import { ActionFooter } from './ActionFooter';
 import { ProgressiveBlur } from './effects/ProgressiveBlur';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   visible: boolean;
@@ -25,6 +27,7 @@ type Props = {
 };
 
 export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: Props) {
+  useLocalization();
   const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
   const insets = useSafeAreaInsets();
@@ -67,7 +70,9 @@ export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: 
       <View className="flex-1 bg-zinc-950" style={{ paddingTop: insets.top + 16 }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-6 mb-5">
-          <Text className="font-sans-semibold text-2xl text-white">Select source</Text>
+          <Text className="font-sans-semibold text-2xl text-white">
+            <LocalizedText>Select source</LocalizedText>
+          </Text>
         </View>
 
         {/* Search Bar */}
@@ -77,7 +82,7 @@ export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: 
             ref={inputRef}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search your library"
+            placeholder={translate('Search your library')}
             placeholderTextColor="#71717A"
             className="flex-1 font-sans text-xl text-white leading-tight"
             autoCorrect={false}
@@ -89,7 +94,7 @@ export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: 
               onPress={handleClear}
               hitSlop={10}
               className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
-              accessibilityLabel="Clear search"
+              accessibilityLabel={translate('Clear search')}
             >
               <XIcon size={12} color="#E4E4E7" weight="bold" />
             </Pressable>
@@ -111,7 +116,7 @@ export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: 
           contentContainerStyle={styles.contentContainer}
           ListEmptyComponent={
             <Text className="font-sans text-sm text-zinc-500 text-center">
-              {query.trim() ? 'No matching content' : 'No content available to link'}
+              {translate(query.trim() ? 'No matching content' : 'No content available to link')}
             </Text>
           }
         />
@@ -127,10 +132,10 @@ export function SourcePicker({ visible, items, selectedId, onSelect, onClose }: 
           <View className="items-center gap-3">
             <View className="flex-row items-center gap-2">
               <Button
-                accessibilityLabel="Cancel related cards"
+                accessibilityLabel={translate('Cancel related cards')}
                 icon={<XIcon size={24} color="#FFFFFF" weight="bold" />}
                 onPress={onClose}
-                text="Cancel"
+                text={translate('Cancel')}
               />
             </View>
           </View>

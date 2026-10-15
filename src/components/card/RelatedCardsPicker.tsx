@@ -9,6 +9,8 @@ import { Button } from '@/components/Button';
 import { ProgressiveBlur } from '@/components/effects/ProgressiveBlur';
 import type { LibraryItem } from '@/lib/library/types';
 import { RelatedCardTile } from './RelatedCardTile';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   itemId: string;
@@ -28,6 +30,7 @@ export function RelatedCardsPicker({
   onSave,
   onClose,
 }: Props) {
+  useLocalization();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(() => new Set(selectedIds));
@@ -68,15 +71,17 @@ export function RelatedCardsPicker({
     <Modal visible animationType="slide" onRequestClose={close}>
       <View className="flex-1 bg-zinc-950" style={{ paddingTop: insets.top + 16 }}>
         <View className="flex-row items-center justify-between px-6 mb-5">
-          <Text className="font-sans-semibold text-2xl text-white">Select related cards</Text>
+          <Text className="font-sans-semibold text-2xl text-white">
+            <LocalizedText>Select related cards</LocalizedText>
+          </Text>
         </View>
         <View className="flex-row items-center gap-4 border-t border-b border-zinc-800 px-6 mb-4 py-5">
           <MagnifyingGlassIcon size={20} color="#E4E4E7" />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search your library"
-            accessibilityLabel="Search related cards"
+            placeholder={translate('Search your library')}
+            accessibilityLabel={translate('Search related cards')}
             placeholderTextColor="#71717A"
             className="flex-1 font-sans text-xl text-white leading-tight"
             autoCorrect={false}
@@ -86,7 +91,7 @@ export function RelatedCardsPicker({
             <Pressable
               onPress={() => setQuery('')}
               accessibilityRole="button"
-              accessibilityLabel="Clear search"
+              accessibilityLabel={translate('Clear search')}
               hitSlop={12}
             >
               <XIcon size={20} color="#E4E4E7" />
@@ -138,13 +143,13 @@ export function RelatedCardsPicker({
           <View className="items-center gap-3">
             <View className="flex-row items-center gap-2">
               <Button
-                accessibilityLabel="Cancel related cards"
+                accessibilityLabel={translate('Cancel related cards')}
                 icon={<XIcon size={24} color="#FFFFFF" weight="bold" />}
                 disabled={saving}
                 onPress={close}
               />
               <Button
-                accessibilityLabel="Save related cards"
+                accessibilityLabel={translate('Save related cards')}
                 icon={<CheckIcon size={24} color="#FFFFFF" weight="bold" />}
                 variant="primary"
                 disabled={saving}
@@ -158,8 +163,15 @@ export function RelatedCardsPicker({
                 {selectedIdsToSave.length}
                 {'  '}
               </Text>
-              <Text className="font-sans-semibold text-zinc-400">selected</Text>
-              {saving && <Text accessibilityLabel="Saving related cards">{'  '}Saving…</Text>}
+              <Text className="font-sans-semibold text-zinc-400">
+                <LocalizedText>selected</LocalizedText>
+              </Text>
+              {saving && (
+                <Text accessibilityLabel={translate('Saving related cards')}>
+                  {'  '}
+                  <LocalizedText>Saving…</LocalizedText>
+                </Text>
+              )}
             </Text>
           </View>
         </ActionFooter>

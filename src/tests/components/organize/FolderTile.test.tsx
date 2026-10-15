@@ -2,6 +2,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 import { FolderTile } from '@/components/organize/FolderTile';
 import type { LibraryItem } from '@/lib/library/types';
+import { setActiveLanguage } from '@/lib/i18n/locale';
 
 const imageItem = (id: string, image: string): LibraryItem => ({
   id,
@@ -53,5 +54,17 @@ describe('FolderTile', () => {
 
     await fireEvent.press(getByLabelText('Archived, 0 cards'));
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('localizes automatic status folder names without changing custom folder names', async () => {
+    setActiveLanguage('pt');
+    const { getByText, getByLabelText, rerender } = await render(
+      <FolderTile title="In progress" status="in-progress" items={[]} onPress={jest.fn()} />
+    );
+    expect(getByText('Em andamento')).toBeTruthy();
+    expect(getByLabelText('Em andamento, 0 cartões')).toBeTruthy();
+    await rerender(<FolderTile title="Minha pasta" items={[]} onPress={jest.fn()} />);
+    expect(getByText('Minha pasta')).toBeTruthy();
+    setActiveLanguage('en');
   });
 });

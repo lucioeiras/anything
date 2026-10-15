@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { decodeHTML } from 'entities';
+import { LocalizedText } from '@/components/LocalizedText';
 
 cssInterop(ExpoImage, { className: 'style' });
 
@@ -212,7 +213,9 @@ export const TweetCard = ({
           className="flex-row items-center gap-1.5 mt-2"
         >
           <TwitterLogoIcon size={14} color="#0CA5E9" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-sky-500">Twitter</Text>
+          <Text className="font-sans-semibold text-sm text-sky-500">
+            <LocalizedText>Twitter</LocalizedText>
+          </Text>
         </Pressable>
       </View>
     </View>

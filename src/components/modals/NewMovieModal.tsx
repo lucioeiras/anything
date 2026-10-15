@@ -39,6 +39,8 @@ import {
   type TmdbMovieResult,
 } from '@/lib/movies/tmdb';
 import { generateAutoTags } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewMovieModalProps = {
   visible: boolean;
@@ -55,6 +57,7 @@ export function NewMovieModal({
   onDismiss,
   onSaved,
 }: NewMovieModalProps) {
+  useLocalization();
   const { addMovieItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -190,7 +193,10 @@ export function NewMovieModal({
       updateAutoTags(merged);
     } catch (e) {
       console.warn('Failed to load movie details:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not fetch movie details');
+      Alert.alert(
+        translate('Error'),
+        e instanceof Error ? e.message : 'Could not fetch movie details'
+      );
     } finally {
       setIsLoadingDetails(false);
     }
@@ -268,7 +274,7 @@ export function NewMovieModal({
       onSaved?.(item);
     } catch (e) {
       console.error('Failed to save movie item:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save movie item');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save movie item');
     } finally {
       setSaving(false);
     }
@@ -301,9 +307,13 @@ export function NewMovieModal({
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add movie</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add movie</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search movies from The Movie Database (TMDB) to add to your library.
+                <LocalizedText>
+                  Search movies from The Movie Database (TMDB) to add to your library.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -327,7 +337,7 @@ export function NewMovieModal({
                   </Text>
                   <Text className="font-sans text-base text-zinc-400" numberOfLines={1}>
                     {getReleaseYear(selectedMovie.release_date) || '—'}
-                    {selectedMovie.runtime ? ` • ${selectedMovie.runtime} min` : ''}
+                    {selectedMovie.runtime ? ` • ${selectedMovie.runtime} ${translate('min')}` : ''}
                   </Text>
                 </View>
                 <Pressable
@@ -335,7 +345,7 @@ export function NewMovieModal({
                   hitSlop={10}
                   className="p-2 rounded-full bg-zinc-800 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Change movie"
+                  accessibilityLabel={translate('Change movie')}
                 >
                   <XIcon size={16} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -348,7 +358,7 @@ export function NewMovieModal({
                   ref={searchInputRef}
                   value={query}
                   onChangeText={handleQueryChange}
-                  placeholder="Search movie title..."
+                  placeholder={translate('Search movie title...')}
                   placeholderTextColor="#71717A"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -367,7 +377,7 @@ export function NewMovieModal({
                     hitSlop={10}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Clear search"
+                    accessibilityLabel={translate('Clear search')}
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
@@ -382,7 +392,7 @@ export function NewMovieModal({
                   <View className="py-8 items-center justify-center">
                     <ActivityIndicator size={24} color="#60A5FA" />
                     <Text className="font-sans text-sm text-zinc-400 mt-2">
-                      Loading movie details...
+                      <LocalizedText>Loading movie details...</LocalizedText>
                     </Text>
                   </View>
                 )}
@@ -430,7 +440,9 @@ export function NewMovieModal({
                     <View className="py-12 items-center justify-center">
                       <FilmSlateIcon size={32} color="#52525B" weight="duotone" />
                       <Text className="font-sans text-sm text-zinc-500 mt-3">
-                        No movies found for "{query}"
+                        <LocalizedText>No movies found for "</LocalizedText>
+                        {query}
+                        <LocalizedText>"</LocalizedText>
                       </Text>
                     </View>
                   )}
@@ -462,7 +474,7 @@ export function NewMovieModal({
                   <View className="flex-row items-center gap-2">
                     <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                     <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                      Note
+                      <LocalizedText>Note</LocalizedText>
                     </Text>
                   </View>
 
@@ -471,7 +483,7 @@ export function NewMovieModal({
                       ref={noteInputRef}
                       value={note}
                       onChangeText={setNote}
-                      placeholder="Add personal thoughts or notes about this movie..."
+                      placeholder={translate('Add personal thoughts or notes about this movie...')}
                       placeholderTextColor="#71717A"
                       multiline
                       textAlignVertical="top"
@@ -488,14 +500,14 @@ export function NewMovieModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save movie"
+              accessibilityLabel={translate('Save movie')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -506,7 +518,7 @@ export function NewMovieModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save movie"
+              text={translate('Save movie')}
             />
           </ActionFooter>
         </View>

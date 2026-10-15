@@ -8,6 +8,7 @@ import { NewLinkModal } from '@/components/modals/NewLinkModal';
 import { NewNoteModal } from '@/components/modals/NewNoteModal';
 import { NewPdfModal } from '@/components/modals/NewPdfModal';
 import type { PickedImageAsset, PickedPdfAsset } from '@/lib/library/storage';
+import { LocalizedText } from '@/components/LocalizedText';
 
 type IncomingCard =
   | { kind: 'link'; url: string; title?: string }
@@ -79,13 +80,15 @@ export default function HandleShareScreen() {
       {!card && (
         <>
           <Text className="font-sans-semibold text-xl text-white text-center">
-            Nothing to add from this share
+            <LocalizedText>Nothing to add from this share</LocalizedText>
           </Text>
           <Text className="font-sans text-base text-zinc-400 text-center mt-3">
-            Share a link, text, image, or PDF to create a card.
+            <LocalizedText>Share a link, text, image, or PDF to create a card.</LocalizedText>
           </Text>
           <Pressable onPress={finish} className="bg-blue-500 rounded-xl px-6 py-3 mt-6">
-            <Text className="font-sans-semibold text-white">Back to board</Text>
+            <Text className="font-sans-semibold text-white">
+              <LocalizedText>Back to board</LocalizedText>
+            </Text>
           </Pressable>
         </>
       )}

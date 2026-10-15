@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { ReadingCalendarSection } from '@/components/profile/ReadingCalendarSection';
 import type { BookItem } from '@/lib/library/types';
+import { setActiveLanguage } from '@/lib/i18n/locale';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/components/Button', () => ({
@@ -43,8 +44,12 @@ function book(id: string, dates: string[]): BookItem {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers().setSystemTime(new Date(2026, 9, 13, 12));
+  setActiveLanguage('en');
 });
-afterEach(() => jest.useRealTimers());
+afterEach(() => {
+  setActiveLanguage('en');
+  jest.useRealTimers();
+});
 it('shows the annual best streak and stacked covers on days with multiple books', async () => {
   const a = book('a', ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-13']);
   const b = book('b', ['2026-10-13', '2026-10-13']);
@@ -105,6 +110,28 @@ it('shows an empty state and refreshes when the library changes', async () => {
   const view = await render(<ReadingCalendarSection items={[]} />);
   expect(screen.getByText('No reading logs recorded for 2026.')).toBeTruthy();
   await view.rerender(<ReadingCalendarSection items={[book('a', ['2026-10-13'])]} />);
-  expect(screen.getByLabelText('Best reading streak in 2026: 1 days')).toBeTruthy();
+  expect(screen.getByLabelText('Best reading streak in 2026: 1 day')).toBeTruthy();
   expect(screen.queryByText('No reading logs recorded for 2026.')).toBeNull();
+});
+it('localizes the streak heading and day count in Portuguese, including singular', async () => {
+  setActiveLanguage('pt');
+  const { rerender } = await render(
+    <ReadingCalendarSection items={[book('a', ['2026-10-01', '2026-10-02'])]} />
+  );
+  expect(screen.getByText('Maior sequência de leitura em 2026')).toBeTruthy();
+  expect(screen.getByText('2 dias')).toBeTruthy();
+  expect(screen.getAllByText(/^[STQD]$/).map((element) => element.props.children)).toEqual([
+    'S',
+    'T',
+    'Q',
+    'Q',
+    'S',
+    'S',
+    'D',
+  ]);
+  expect(screen.getByLabelText('Maior sequência de leitura em 2026: 2 dias')).toBeTruthy();
+
+  await rerender(<ReadingCalendarSection items={[book('a', ['2026-10-01'])]} />);
+  expect(screen.getByText('1 dia')).toBeTruthy();
+  expect(screen.getByLabelText('Maior sequência de leitura em 2026: 1 dia')).toBeTruthy();
 });

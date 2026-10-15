@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getActiveLocale } from '@/lib/i18n/locale';
 
 export const STORAGE_KEY_TMDB_API_KEY = '@anything_tmdb_api_key';
 
@@ -183,7 +184,7 @@ function buildHeadersAndUrl(
  */
 export async function searchTmdbMovies(
   query: string,
-  language = 'en-US'
+  language = getActiveLocale()
 ): Promise<TmdbMovieResult[]> {
   const apiKey = await getTmdbApiKey();
   if (!apiKey) {
@@ -214,7 +215,7 @@ export async function searchTmdbMovies(
 
 export async function searchTmdbTvShows(
   query: string,
-  language = 'en-US'
+  language = getActiveLocale()
 ): Promise<TmdbTvShowResult[]> {
   const apiKey = await getTmdbApiKey();
   if (!apiKey) throw new Error('TMDB API key is not configured.');
@@ -237,7 +238,7 @@ export async function searchTmdbTvShows(
 
 export async function getTmdbTvShowDetails(
   tmdbId: number,
-  language = 'en-US'
+  language = getActiveLocale()
 ): Promise<TmdbTvShowDetails> {
   const apiKey = await getTmdbApiKey();
   if (!apiKey) throw new Error('TMDB API key is not configured.');
@@ -255,7 +256,7 @@ export async function getTmdbTvShowDetails(
  */
 export async function getTmdbMovieDetails(
   tmdbId: number,
-  language = 'en-US'
+  language = getActiveLocale()
 ): Promise<TmdbMovieDetails> {
   const apiKey = await getTmdbApiKey();
   if (!apiKey) {

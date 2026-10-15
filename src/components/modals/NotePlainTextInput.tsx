@@ -3,6 +3,7 @@ import { TextInput } from 'react-native';
 
 import { formatInline, formatLine } from '@/lib/noteFormatting';
 import type { NoteRichTextInputHandle, NoteRichTextInputProps } from './NoteRichTextInput.types';
+import { translate } from '@/lib/i18n';
 
 export const NoteRichTextInput = forwardRef<NoteRichTextInputHandle, NoteRichTextInputProps>(
   function NoteRichTextInput(
@@ -51,7 +52,7 @@ export const NoteRichTextInput = forwardRef<NoteRichTextInputHandle, NoteRichTex
         className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-32"
         style={{ borderWidth: 0, backgroundColor: 'transparent' }}
         underlineColorAndroid="transparent"
-        accessibilityLabel="Note text"
+        accessibilityLabel={translate('Note text')}
         testID="note-rich-text-input"
       />
     );

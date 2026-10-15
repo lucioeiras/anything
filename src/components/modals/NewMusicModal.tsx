@@ -36,6 +36,8 @@ import {
   type MusicMetadata,
 } from '@/lib/music/itunes';
 import { generateAutoTags } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewMusicModalProps = {
   visible: boolean;
@@ -52,6 +54,7 @@ export function NewMusicModal({
   onDismiss,
   onSaved,
 }: NewMusicModalProps) {
+  useLocalization();
   const { addMusicItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
@@ -237,7 +240,7 @@ export function NewMusicModal({
       onSaved?.(item);
     } catch (e) {
       console.error('Failed to save music item:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save music item');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save music item');
     } finally {
       setSaving(false);
     }
@@ -270,9 +273,13 @@ export function NewMusicModal({
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add music</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add music</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search songs or albums from the iTunes catalog to add to your library.
+                <LocalizedText>
+                  Search songs or albums from the iTunes catalog to add to your library.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -293,7 +300,7 @@ export function NewMusicModal({
                   </Text>
                   {selectedMusic.kind === 'album' ? (
                     <Text className="font-sans text-sm text-zinc-400 mt-0.5">
-                      Album
+                      <LocalizedText>Album</LocalizedText>
                       {selectedMusic.releaseDate &&
                         ` • ${formatReleaseYear(selectedMusic.releaseDate)}`}
                     </Text>
@@ -310,7 +317,7 @@ export function NewMusicModal({
                   hitSlop={10}
                   className="p-2 rounded-full bg-zinc-800 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Change music selection"
+                  accessibilityLabel={translate('Change music selection')}
                 >
                   <XIcon size={16} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -323,7 +330,7 @@ export function NewMusicModal({
                   ref={searchInputRef}
                   value={query}
                   onChangeText={(text) => handleQueryChange(text)}
-                  placeholder="Search song, album, or artist..."
+                  placeholder={translate('Search song, album, or artist...')}
                   placeholderTextColor="#71717A"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -342,7 +349,7 @@ export function NewMusicModal({
                     hitSlop={10}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Clear search"
+                    accessibilityLabel={translate('Clear search')}
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
@@ -359,7 +366,11 @@ export function NewMusicModal({
                     onPress={() => handleSelectMusic(item)}
                     className="flex-row items-center gap-5 px-8 py-5 border-b border-zinc-900 active:bg-zinc-900"
                     accessibilityRole="button"
-                    accessibilityLabel={`${item.kind === 'album' ? 'Álbum' : 'Música'}: ${item.title}, ${item.artist}`}
+                    accessibilityLabel={translate('%{kind}: %{title}, %{artist}', {
+                      kind: translate(item.kind === 'album' ? 'Album' : 'Song'),
+                      title: item.title,
+                      artist: item.artist,
+                    })}
                   >
                     <View className="w-12 h-12 rounded-md bg-zinc-800 overflow-hidden">
                       {item.cover ? (
@@ -380,7 +391,9 @@ export function NewMusicModal({
                         {item.title}
                       </Text>
                       <Text className="font-sans text-sm text-zinc-400" numberOfLines={1}>
-                        {item.kind === 'album' ? 'Album' : 'Música'} • {item.artist}
+                        {item.kind === 'album' ? 'Album' : 'Música'}{' '}
+                        <LocalizedText>• </LocalizedText>
+                        {item.artist}
                         {item.album ? ` • ${item.album}` : ''}
                         {item.kind === 'album' && item.releaseDate
                           ? ` • ${formatReleaseYear(item.releaseDate)}`
@@ -400,7 +413,9 @@ export function NewMusicModal({
                   <View className="py-12 items-center justify-center">
                     <MusicNotesIcon size={32} color="#52525B" weight="duotone" />
                     <Text className="font-sans text-sm text-zinc-500 mt-3">
-                      No songs or albums found for "{query}"
+                      <LocalizedText>No songs or albums found for "</LocalizedText>
+                      {query}
+                      <LocalizedText>"</LocalizedText>
                     </Text>
                   </View>
                 )}
@@ -432,7 +447,7 @@ export function NewMusicModal({
                   <View className="flex-row items-center gap-2">
                     <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                     <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                      Note
+                      <LocalizedText>Note</LocalizedText>
                     </Text>
                   </View>
 
@@ -441,7 +456,12 @@ export function NewMusicModal({
                       ref={noteInputRef}
                       value={note}
                       onChangeText={setNote}
-                      placeholder={`Add personal thoughts or notes about this ${selectedMusic.kind}...`}
+                      placeholder={translate(
+                        'Add personal thoughts or notes about this %{item}...',
+                        {
+                          item: translate(selectedMusic.kind === 'album' ? 'album' : 'song'),
+                        }
+                      )}
                       placeholderTextColor="#71717A"
                       multiline
                       textAlignVertical="top"
@@ -458,14 +478,16 @@ export function NewMusicModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel={`Save ${selectedMusic?.kind ?? 'music'}`}
+              accessibilityLabel={translate('Save %{item}', {
+                item: translate(selectedMusic?.kind === 'album' ? 'Album' : 'Song'),
+              })}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -476,7 +498,9 @@ export function NewMusicModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text={`Save ${selectedMusic?.kind ?? 'music'}`}
+              text={translate('Save %{item}', {
+                item: translate(selectedMusic?.kind === 'album' ? 'Album' : 'Song'),
+              })}
             />
           </ActionFooter>
         </View>

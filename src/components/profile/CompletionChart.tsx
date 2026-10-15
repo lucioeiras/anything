@@ -13,16 +13,26 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { getRelatedCardTitle } from '@/lib/library/related';
 import type { LibraryItem } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** One cover per completion, arranged as a horizontal shelf for each month. */
 export function CompletionChart({ months, year }: { months: LibraryItem[][]; year: number }) {
+  const { language } = useLocalization();
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
   const total = months.reduce((sum, items) => sum + items.length, 0);
   return (
     <View className="mt-6">
       <Text className="mb-4 font-sans text-sm text-zinc-400">
-        {total} {total === 1 ? 'card' : 'cards'} completed in {year}
+        {translate(
+          total === 1 ? '1 card completed in %{year}' : '%{count} cards completed in %{year}',
+          {
+            count: total,
+            year,
+          }
+        )}
       </Text>
       <View className="gap-2">
         {MONTHS.map((month, index) => {
@@ -30,10 +40,14 @@ export function CompletionChart({ months, year }: { months: LibraryItem[][]; yea
           return (
             <View key={month} className="flex-row items-center gap-3">
               <Text
-                accessibilityLabel={`${month} ${year}: ${items.length} cards completed`}
+                accessibilityLabel={translate('%{month} %{year}: %{count} cards completed', {
+                  month: new Date(year, index, 1).toLocaleDateString(locale, { month: 'long' }),
+                  year,
+                  count: items.length,
+                })}
                 className="w-8 font-sans-medium text-xs text-zinc-500"
               >
-                {month}
+                {new Date(year, index, 1).toLocaleDateString(locale, { month: 'short' })}
               </Text>
               <ScrollView
                 horizontal
@@ -65,7 +79,7 @@ export function CompletionChart({ months, year }: { months: LibraryItem[][]; yea
       </View>
       {total === 0 && (
         <Text className="mt-4 font-sans text-sm text-zinc-500">
-          No completions recorded for this selection.
+          <LocalizedText>No completions recorded for this selection.</LocalizedText>
         </Text>
       )}
     </View>
@@ -106,8 +120,8 @@ function CompletionCover({ item, artwork }: { item: LibraryItem; artwork?: strin
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${title}`}
-      accessibilityHint="View completed card details"
+      accessibilityLabel={translate('Open %{title}', { title })}
+      accessibilityHint={translate('View completed card details')}
       onPress={() => router.push({ pathname: '/card/[id]', params: { id: item.id } })}
       style={{ width: 44, height: 64 }}
       className="overflow-hidden rounded-sm bg-zinc-800 active:opacity-70"
