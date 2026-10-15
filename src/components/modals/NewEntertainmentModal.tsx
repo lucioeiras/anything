@@ -15,6 +15,7 @@ import { NewGameModal } from '@/components/modals/NewGameModal';
 import { NewMovieModal } from '@/components/modals/NewMovieModal';
 import { NewMusicModal } from '@/components/modals/NewMusicModal';
 import { NewTvShowModal } from '@/components/modals/NewTvShowModal';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type EntertainmentType = 'book' | 'music' | 'movie' | 'tvshow' | 'game';
 
@@ -43,6 +44,7 @@ export function EntertainmentTabs({
   selectedType: EntertainmentType;
   onSelect: (type: EntertainmentType) => void;
 }) {
+  useLocalization();
   return (
     <ScrollView
       horizontal
@@ -54,7 +56,7 @@ export function EntertainmentTabs({
       {tabs.map((tab) => (
         <Button
           key={tab.id}
-          accessibilityLabel={tab.label}
+          accessibilityLabel={translate(tab.label)}
           accessibilityRole="tab"
           selected={selectedType === tab.id}
           onPress={() => onSelect(tab.id)}
@@ -62,7 +64,7 @@ export function EntertainmentTabs({
           variant={selectedType === tab.id ? 'primary' : 'secondary'}
           backgroundColor="#FFFFFF"
           contentColor={selectedType === tab.id ? '#000000' : '#FFFFFF'}
-          text={tab.label}
+          text={translate(tab.label)}
           icon={tab.icon}
         />
       ))}

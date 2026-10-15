@@ -97,15 +97,15 @@ it('updates chart counts by year and type, with a notice for undated cards', asy
   expect(screen.getByText(/1 completed card\(s\) have no completion date/)).toBeTruthy();
   await fireEvent.press(screen.getByLabelText(`Year: ${year}`));
   await fireEvent.press(screen.getByLabelText(String(year - 1)));
-  expect(screen.getByLabelText(`Jan ${year - 1}: 1 cards completed`)).toBeTruthy();
+  expect(screen.getByLabelText(`January ${year - 1}: 1 cards completed`)).toBeTruthy();
   await fireEvent.press(screen.getByLabelText('Movies'));
-  expect(screen.getByLabelText(`Jan ${year - 1}: 0 cards completed`)).toBeTruthy();
+  expect(screen.getByLabelText(`January ${year - 1}: 0 cards completed`)).toBeTruthy();
   expect(screen.queryByText(/have no completion date/)).toBeNull();
   expect(screen.getByLabelText('Movies').props.accessibilityState.selected).toBe(true);
   await fireEvent.press(screen.getByLabelText('Movies'));
   expect(screen.queryByLabelText('All types')).toBeNull();
   expect(screen.getByLabelText('Movies').props.accessibilityState.selected).toBe(false);
-  expect(screen.getByLabelText(`Jan ${year - 1}: 1 cards completed`)).toBeTruthy();
+  expect(screen.getByLabelText(`January ${year - 1}: 1 cards completed`)).toBeTruthy();
 });
 it('handles loading, errors, retry, and an empty library', async () => {
   mockState = { status: 'loading' };

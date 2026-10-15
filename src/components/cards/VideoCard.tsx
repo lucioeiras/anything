@@ -2,6 +2,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { PlayIcon } from 'phosphor-react-native';
 import { memo, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { translate } from '@/lib/i18n';
 
 export const VideoCard = memo(function VideoCard({ uri, title }: { uri: string; title?: string }) {
   const player = useVideoPlayer(uri, (instance) => {
@@ -44,7 +45,7 @@ export const VideoCard = memo(function VideoCard({ uri, title }: { uri: string; 
         {!isPlaying && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Play video"
+            accessibilityLabel={translate('Play video')}
             onPress={() => player.play()}
             className="absolute inset-0 bg-black/50 items-center justify-center"
           >

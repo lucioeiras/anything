@@ -8,10 +8,12 @@ import {
 
 import { ProgressiveBlur } from '@/components/effects/ProgressiveBlur';
 import { FloatingTabOverlayProvider } from '@/components/menus/FloatingTabOverlay';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const iconSize = 28;
 
 export default function TabLayout() {
+  useLocalization();
   return (
     <FloatingTabOverlayProvider>
       <Tabs
@@ -39,7 +41,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="board"
           options={{
-            title: 'Board',
+            title: translate('Board'),
             tabBarIcon: ({ color, focused }) => (
               <SquaresFourIcon
                 size={iconSize}
@@ -52,7 +54,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="folders"
           options={{
-            title: 'Folders',
+            title: translate('Folders'),
             tabBarIcon: ({ color, focused }) => (
               <FolderIcon
                 size={iconSize}
@@ -65,7 +67,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="review"
           options={{
-            title: 'Review',
+            title: translate('Review'),
             tabBarIcon: ({ color, focused }) => (
               <ArrowCounterClockwiseIcon
                 size={iconSize}
@@ -79,7 +81,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
+            title: translate('Profile'),
             tabBarIcon: ({ color, focused }) => (
               <UserCircleIcon
                 size={iconSize}

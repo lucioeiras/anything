@@ -1,6 +1,7 @@
 import { localDayKey } from '@/lib/library/activity';
 import { CaretLeftIcon, CaretRightIcon } from 'phosphor-react-native';
 import { Pressable, Text, View } from 'react-native';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type Props = {
   month: Date;
@@ -10,7 +11,12 @@ type Props = {
 };
 
 export function ActivityCalendar({ month, byDay, onChangeMonth, onPressDate }: Props) {
-  const firstWeekday = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const { language } = useLocalization();
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
+  const weekdays =
+    language === 'pt' ? ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const calendarWeekday = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const firstWeekday = language === 'pt' ? (calendarWeekday + 6) % 7 : calendarWeekday;
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = Array.from(
     { length: Math.ceil((firstWeekday + days) / 7) * 7 },
@@ -22,18 +28,18 @@ export function ActivityCalendar({ month, byDay, onChangeMonth, onPressDate }: P
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={translate('Previous month')}
           className="h-12 w-12 items-start justify-center"
           onPress={() => onChangeMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
         >
           <CaretLeftIcon size={18} color="#D4D4D8" />
         </Pressable>
         <Text className="font-sans-semibold text-base text-white">
-          {month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+          {month.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={translate('Next month')}
           className="h-12 w-12 items-end justify-center"
           onPress={() => onChangeMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
         >
@@ -41,7 +47,7 @@ export function ActivityCalendar({ month, byDay, onChangeMonth, onPressDate }: P
         </Pressable>
       </View>
       <View className="mb-2 flex-row">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+        {weekdays.map((day, i) => (
           <Text key={i} className="flex-1 text-center font-sans-medium text-xs text-zinc-500">
             {day}
           </Text>
@@ -65,7 +71,14 @@ export function ActivityCalendar({ month, byDay, onChangeMonth, onPressDate }: P
             <Pressable
               key={i}
               accessibilityRole="button"
-              accessibilityLabel={`${date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}, ${count} cards added`}
+              accessibilityLabel={translate('%{date}, %{count} cards added', {
+                date: date.toLocaleDateString(locale, {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                }),
+                count,
+              })}
               onPress={() => onPressDate(key)}
               style={{ width: '14.2857%', height: 64, padding: 2 }}
             >

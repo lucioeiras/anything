@@ -1,4 +1,5 @@
 import { decodeHTML } from 'entities';
+import { getActiveLanguage } from '@/lib/i18n/locale';
 
 export type BookMetadata = {
   isbn: string;
@@ -51,8 +52,11 @@ function cleanHttpsUrl(url?: string): string | undefined {
 /**
  * Fetches book details from Google Books API.
  */
-async function fetchFromGoogleBooks(cleanIsbn: string): Promise<BookMetadata | null> {
-  const endpoint = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
+async function fetchFromGoogleBooks(
+  cleanIsbn: string,
+  language: 'en' | 'pt'
+): Promise<BookMetadata | null> {
+  const endpoint = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}&langRestrict=${language}`;
   const response = await fetch(endpoint);
   if (!response.ok) return null;
 
@@ -198,7 +202,10 @@ async function fetchFromBrasilApi(cleanIsbn: string): Promise<BookMetadata | nul
  *
  * Throws a descriptive error if the book could not be found.
  */
-export async function fetchBookByIsbn(rawIsbn: string): Promise<BookMetadata> {
+export async function fetchBookByIsbn(
+  rawIsbn: string,
+  language: 'en' | 'pt' = getActiveLanguage()
+): Promise<BookMetadata> {
   const cleanIsbn = normalizeIsbn(rawIsbn);
 
   if (!cleanIsbn) {
@@ -211,7 +218,7 @@ export async function fetchBookByIsbn(rawIsbn: string): Promise<BookMetadata> {
 
   // 1. Try Google Books
   try {
-    const googleResult = await fetchFromGoogleBooks(cleanIsbn);
+    const googleResult = await fetchFromGoogleBooks(cleanIsbn, language);
     if (googleResult) {
       // If Google Books returned data but no cover image, check if Open Library has a cover
       if (!googleResult.cover) {

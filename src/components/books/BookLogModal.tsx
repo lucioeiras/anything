@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookLogCalendarGrid } from '@/components/books/BookLogCalendarGrid';
 import { localDateKey, monthFromKey } from '@/components/books/bookLogDates';
 import type { BookItem, BookReadingLog } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type BookLogModalProps = {
   visible: boolean;
@@ -53,6 +55,7 @@ export function BookLogModal({
   onSaved,
   onClose,
 }: BookLogModalProps) {
+  useLocalization();
   const insets = useSafeAreaInsets();
   const [formMonth, setFormMonth] = useState(() =>
     monthFromKey(existingLog?.date ?? localDateKey(new Date()))
@@ -111,25 +114,29 @@ export function BookLogModal({
 
   const confirmDelete = () => {
     if (!existingLog || saving) return;
-    Alert.alert('Remove reading log?', 'This reading entry will be removed.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          setSaving(true);
-          setError('');
-          try {
-            await onDelete(existingLog);
-            onClose();
-          } catch (cause) {
-            setError(cause instanceof Error ? cause.message : 'Could not remove reading log.');
-          } finally {
-            setSaving(false);
-          }
+    Alert.alert(
+      translate('Remove reading log?'),
+      translate('This reading entry will be removed.'),
+      [
+        { text: translate('Cancel'), style: 'cancel' },
+        {
+          text: translate('Remove'),
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            setError('');
+            try {
+              await onDelete(existingLog);
+              onClose();
+            } catch (cause) {
+              setError(cause instanceof Error ? cause.message : 'Could not remove reading log.');
+            } finally {
+              setSaving(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   return (
@@ -152,9 +159,13 @@ export function BookLogModal({
             showsVerticalScrollIndicator={false}
           >
             <View className="gap-3 px-8 pb-8">
-              <Text className="font-sans-semibold text-2xl text-white">Log reading</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Log reading</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Track where you are in this book and save a thought from today.
+                <LocalizedText>
+                  Track where you are in this book and save a thought from today.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -162,7 +173,7 @@ export function BookLogModal({
               <View className="flex-row items-center gap-2">
                 <CalendarBlankIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Reading date
+                  <LocalizedText>Reading date</LocalizedText>
                 </Text>
               </View>
 
@@ -180,18 +191,18 @@ export function BookLogModal({
                 value={page}
                 onChangeText={setPage}
                 keyboardType="number-pad"
-                placeholder="Current page"
+                placeholder={translate('Current page')}
                 placeholderTextColor="#71717A"
-                accessibilityLabel="Current page"
+                accessibilityLabel={translate('Current page')}
                 className="font-sans text-lg text-white flex-1 px-8 py-6 leading-tight border-r border-zinc-800"
               />
               <TextInput
                 value={totalPages}
                 onChangeText={setTotalPages}
                 keyboardType="number-pad"
-                placeholder="Total pages"
+                placeholder={translate('Total pages')}
                 placeholderTextColor="#71717A"
-                accessibilityLabel="Total pages"
+                accessibilityLabel={translate('Total pages')}
                 className="font-sans text-lg text-white flex-1 px-8 py-6 leading-tight"
               />
             </View>
@@ -200,7 +211,7 @@ export function BookLogModal({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
               <TextInput
@@ -208,9 +219,9 @@ export function BookLogModal({
                 onChangeText={setNote}
                 multiline
                 textAlignVertical="top"
-                placeholder="What stood out today?"
+                placeholder={translate('What stood out today?')}
                 placeholderTextColor="#71717A"
-                accessibilityLabel="Reading note"
+                accessibilityLabel={translate('Reading note')}
                 className="min-h-24 font-sans text-base text-zinc-100 leading-relaxed"
               />
             </View>
@@ -227,31 +238,35 @@ export function BookLogModal({
               onPress={close}
               disabled={saving}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               className="flex-1 flex-row items-center justify-center gap-3 border-r border-zinc-800 pt-6 active:bg-zinc-900"
               style={{ paddingBottom: Math.max(insets.bottom, 24) }}
             >
               <XIcon size={20} color="#FFFFFF" weight="bold" />
-              <Text className="font-sans-bold text-lg text-white">Cancel</Text>
+              <Text className="font-sans-bold text-lg text-white">
+                <LocalizedText>Cancel</LocalizedText>
+              </Text>
             </Pressable>
             {existingLog && (
               <Pressable
                 onPress={confirmDelete}
                 disabled={saving}
                 accessibilityRole="button"
-                accessibilityLabel="Remove reading log"
+                accessibilityLabel={translate('Remove reading log')}
                 className="flex-1 flex-row items-center justify-center gap-3 border-r border-zinc-800 pt-6 active:bg-zinc-900"
                 style={{ paddingBottom: Math.max(insets.bottom, 24) }}
               >
                 <TrashSimpleIcon size={20} color="#F87171" />
-                <Text className="font-sans-semibold text-lg text-rose-400">Remove</Text>
+                <Text className="font-sans-semibold text-lg text-rose-400">
+                  <LocalizedText>Remove</LocalizedText>
+                </Text>
               </Pressable>
             )}
             <Pressable
               onPress={save}
               disabled={saving}
               accessibilityRole="button"
-              accessibilityLabel="Save reading log"
+              accessibilityLabel={translate('Save reading log')}
               className="flex-1 flex-row items-center justify-center gap-3 pt-6 active:bg-zinc-900"
               style={{ paddingBottom: Math.max(insets.bottom, 24) }}
             >
@@ -260,7 +275,9 @@ export function BookLogModal({
               ) : (
                 <CheckIcon size={20} color="#F59E0B" weight="bold" />
               )}
-              <Text className="font-sans-semibold text-lg text-amber-500">Save log</Text>
+              <Text className="font-sans-semibold text-lg text-amber-500">
+                <LocalizedText>Save log</LocalizedText>
+              </Text>
             </Pressable>
           </View>
         </View>

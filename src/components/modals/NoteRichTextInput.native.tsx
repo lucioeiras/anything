@@ -9,6 +9,7 @@ import type { TextStyle } from 'react-native';
 
 import { formatInline, formatLine } from '@/lib/noteFormatting';
 import type { NoteRichTextInputHandle, NoteRichTextInputProps } from './NoteRichTextInput.types';
+import { translate } from '@/lib/i18n';
 
 const INPUT_STYLE: TextStyle = {
   flex: 1,
@@ -138,7 +139,7 @@ export const NoteRichTextInput = forwardRef<NoteRichTextInputHandle, NoteRichTex
           className="flex-1 w-full font-sans text-3xl text-white leading-10 px-8 pt-8 pb-32"
           style={{ borderWidth: 0, backgroundColor: 'transparent' }}
           underlineColorAndroid="transparent"
-          accessibilityLabel="Note text"
+          accessibilityLabel={translate('Note text')}
           testID="note-rich-text-input"
         />
       );
@@ -175,7 +176,7 @@ export const NoteRichTextInput = forwardRef<NoteRichTextInputHandle, NoteRichTex
           h6: { fontSize: 18, fontWeight: '500', color: '#D4D4D8' },
           list: { itemSpacing: 4 },
         }}
-        accessibilityLabel="Note text"
+        accessibilityLabel={translate('Note text')}
         testID="note-rich-text-input"
       />
     );

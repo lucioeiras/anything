@@ -7,6 +7,8 @@ import { BookLogCalendarGrid } from '@/components/books/BookLogCalendarGrid';
 import { BookLogModal } from '@/components/books/BookLogModal';
 import { localDateKey, monthFromKey } from '@/components/books/bookLogDates';
 import type { BookItem, BookReadingLog } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate } from '@/lib/i18n';
 
 const PROGRESS_RADIUS = 14;
 const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RADIUS;
@@ -52,7 +54,7 @@ export function BookLogs({
         <View className="flex-row items-center gap-2 px-6 mt-7">
           <HourglassIcon size={14} color="#ffffff" weight="bold" />
           <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-            Progress
+            <LocalizedText>Progress</LocalizedText>
           </Text>
         </View>
       ) : (
@@ -60,7 +62,7 @@ export function BookLogs({
           <View className="flex-row items-center gap-2 px-6">
             <HourglassIcon size={14} color="#ffffff" weight="bold" />
             <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-              Progress
+              <LocalizedText>Progress</LocalizedText>
             </Text>
           </View>
 
@@ -68,7 +70,16 @@ export function BookLogs({
           <View
             className="flex-row items-center gap-3 px-6"
             accessible
-            accessibilityLabel={`${percentage === null ? 'Progress unavailable' : `${percentage}% complete`}, page ${latest?.page ?? 0} of ${total ?? 'unknown'}`}
+            accessibilityLabel={translate(
+              percentage === null
+                ? 'Progress unavailable, page %{page} of %{total}'
+                : '%{percentage}% complete, page %{page} of %{total}',
+              {
+                percentage: percentage ?? 0,
+                page: latest?.page ?? 0,
+                total: total ?? translate('unknown'),
+              }
+            )}
           >
             <Svg width={24} height={24} viewBox="0 0 36 36" accessible={false}>
               <Circle
@@ -97,9 +108,15 @@ export function BookLogs({
             </Svg>
 
             <Text className="font-sans-semibold text-base text-white">
-              {percentage === null ? '—' : percentage}%{'  '}
+              {percentage === null ? '—' : percentage}
+              <LocalizedText>%</LocalizedText>
+              {'  '}
               <Text className="font-sans text-zinc-400">
-                ({latest?.page ?? 0}/{total ?? '—'})
+                <LocalizedText>(</LocalizedText>
+                {latest?.page ?? 0}
+                <LocalizedText>/</LocalizedText>
+                {total ?? '—'}
+                <LocalizedText>)</LocalizedText>
               </Text>
             </Text>
           </View>

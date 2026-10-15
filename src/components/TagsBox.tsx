@@ -37,6 +37,7 @@ import {
 } from 'react-native';
 
 import type { LibraryItemType } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const cardTypeTags = {
   note: { label: 'Note', icon: NotePencilIcon },
@@ -146,6 +147,7 @@ export function TagsBox({
   cardType,
   onCardTypePress,
 }: TagsBoxProps) {
+  useLocalization();
   const fallbackInputRef = useRef<TextInput>(null);
   const effectiveInputRef = inputRef ?? fallbackInputRef;
 
@@ -298,7 +300,9 @@ export function TagsBox({
           <Pressable
             onPress={() => onCardTypePress?.(cardType, cardTypeTag.label)}
             accessibilityRole="button"
-            accessibilityLabel={`Search ${cardTypeTag.label} cards`}
+            accessibilityLabel={translate('Search %{type} cards', {
+              type: translate(cardTypeTag.label),
+            })}
             className="flex-row items-center gap-2 rounded-full bg-zinc-500/15 px-3 py-1 active:opacity-70"
           >
             <CardTypeIcon size={12} color="#A1A1AA" weight="bold" />
@@ -350,7 +354,9 @@ export function TagsBox({
             onFocus={onInputFocus}
             onChangeText={handleTagInputChange}
             onKeyPress={handleTagInputKeyPress}
-            placeholder={tags.length === 0 ? (placeholder ?? 'Add tags here...') : '+ Add more'}
+            placeholder={translate(
+              tags.length === 0 ? (placeholder ?? 'Add tags here...') : '+ Add more'
+            )}
             placeholderTextColor="#71717A"
             returnKeyType="done"
             onSubmitEditing={handleTagInputSubmit}

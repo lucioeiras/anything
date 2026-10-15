@@ -9,6 +9,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { getItemArtwork, STATUS_FOLDERS } from '@/lib/library/organize';
 import type { LibraryItem, MediaProgressStatus } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const statusIcons = {
   want: BookmarkSimpleIcon,
@@ -40,6 +41,8 @@ export function FolderTile({
   onLongPress,
   onToggleHighlight,
 }: Props) {
+  useLocalization();
+  const displayTitle = status ? translate(title) : title;
   const artwork = items
     .map(getItemArtwork)
     .filter((value): value is string => Boolean(value))
@@ -58,7 +61,10 @@ export function FolderTile({
         onLongPress={onLongPress}
         disabled={disabled && !onLongPress}
         accessibilityRole="button"
-        accessibilityLabel={`${title}, ${items.length} cards`}
+        accessibilityLabel={translate('%{title}, %{count} cards', {
+          title: displayTitle,
+          count: items.length,
+        })}
         accessibilityState={{ disabled }}
         className="w-full items-center"
       >
@@ -87,12 +93,15 @@ export function FolderTile({
             style={titleColor ? { color: titleColor } : undefined}
             numberOfLines={2}
           >
-            {title}
+            {displayTitle}
           </Text>
         </View>
 
         <Text className="mt-[3px] font-sans text-xs text-zinc-400">
-          {items.length} {items.length === 1 ? 'card' : 'cards'}
+          {translate('%{count} %{cardLabel}', {
+            count: items.length,
+            cardLabel: translate(items.length === 1 ? 'card' : 'cards'),
+          })}
         </Text>
       </Pressable>
 

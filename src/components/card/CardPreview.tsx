@@ -10,6 +10,7 @@ import { MarkdownNote } from '@/components/card/MarkdownNote';
 import { VinylRecord } from '@/components/effects/VinylRecord';
 import type { LibraryItem } from '@/lib/library/types';
 import { MusicPreviewPlayer } from './MusicPreviewPlayer';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type CardPreviewProps = {
   item: LibraryItem;
@@ -30,6 +31,7 @@ export function CardPreview({
   onTextFocus,
   onDismissEditingTags,
 }: CardPreviewProps) {
+  useLocalization();
   const isMusic = item.type === 'music';
   const isNoteOrQuote = item.type === 'note' || item.type === 'quote';
   const displayItem: LibraryItem =
@@ -147,7 +149,7 @@ export function CardPreview({
                 onBlur={onTextBlur}
                 onFocus={onTextFocus}
                 multiline
-                placeholder="Type quote here..."
+                placeholder={translate('Type quote here...')}
                 placeholderTextColor="#71717A"
                 className="w-full font-sans-medium text-2xl text-white leading-10 text-center mt-6 mb-11"
                 style={{ backgroundColor: 'transparent' }}

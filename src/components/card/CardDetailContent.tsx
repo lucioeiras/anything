@@ -59,6 +59,8 @@ import { CardReview } from './CardReview';
 import { TvShowSeasons } from './TvShowSeasons';
 import { RelatedCardsPicker } from './RelatedCardsPicker';
 import { RelatedCardsSection } from './RelatedCardsSection';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 function isLinkType(type: LibraryItem['type']): boolean {
   return (
@@ -134,6 +136,7 @@ export function CardDetailContent({
   onSelectFolder,
   onSelectType,
 }: CardDetailContentProps) {
+  useLocalization();
   const { addTextItem, deleteItem, updateItem, setRelatedItems, searchItems, state, source } =
     useLibrary();
   const folderStorageKey = `anything:folders:${getSourceId(source)}`;
@@ -173,7 +176,7 @@ export function CardDetailContent({
   const [isLinkPickerOpen, setIsLinkPickerOpen] = useState(false);
   const handleUpdateLinkedItem = (linkedItemId?: string) => {
     updateItem(item.id, { linkedItemId }).catch((e) => {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not update link');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Could not update link');
     });
   };
   const insets = useSafeAreaInsets();
@@ -618,17 +621,20 @@ export function CardDetailContent({
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete Card', 'Are you sure you want to delete this card?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(translate('Delete Card'), translate('Are you sure you want to delete this card?'), [
+      { text: translate('Cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: translate('Delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteItem(item.id);
             onDismiss();
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Failed to delete card');
+            Alert.alert(
+              translate('Error'),
+              e instanceof Error ? e.message : 'Failed to delete card'
+            );
           }
         },
       },
@@ -755,7 +761,10 @@ export function CardDetailContent({
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync(true);
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Photos permission is required to save to Camera Roll.');
+        Alert.alert(
+          translate('Permission Denied'),
+          translate('Photos permission is required to save to Camera Roll.')
+        );
         return;
       }
 
@@ -763,7 +772,7 @@ export function CardDetailContent({
       showFeedback('Saved to Camera Roll!');
     } catch (e) {
       console.warn('Download error', e);
-      Alert.alert('Error', 'Failed to save image to Camera Roll.');
+      Alert.alert(translate('Error'), translate('Failed to save image to Camera Roll.'));
     }
   };
 
@@ -811,7 +820,7 @@ export function CardDetailContent({
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not transcribe this audio.';
         setTranscriptionError(message);
-        if (showError) Alert.alert('Audio transcription failed', message);
+        if (showError) Alert.alert(translate('Audio transcription failed'), message);
       } finally {
         transcriptionInFlightRef.current = false;
         setIsTranscribingAudio(false);
@@ -912,7 +921,7 @@ export function CardDetailContent({
                     ? transcriptInputRef.current?.focus()
                     : tagInputRef.current?.focus()
                 }
-                placeholder="Add a title here..."
+                placeholder={translate('Add a title here...')}
                 placeholderTextColor="#71717A"
                 className="flex-1 font-sans text-xl text-white leading-tight"
                 style={{ borderWidth: 0, backgroundColor: 'transparent' }}
@@ -930,7 +939,7 @@ export function CardDetailContent({
                 <View className="flex-row items-center gap-2">
                   <SubtitlesIcon size={14} color="#E4E4E7" />
                   <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                    Transcript
+                    <LocalizedText>Transcript</LocalizedText>
                   </Text>
                   {isTranscribingAudio && <ActivityIndicator size="small" color="#A1A1AA" />}
                 </View>
@@ -960,13 +969,15 @@ export function CardDetailContent({
                     className="w-full font-sans text-base text-zinc-100 leading-relaxed min-h-[72px]"
                     style={{ borderWidth: 0, backgroundColor: 'transparent' }}
                     underlineColorAndroid="transparent"
-                    accessibilityLabel="Audio transcript"
+                    accessibilityLabel={translate('Audio transcript')}
                   />
                 </Pressable>
 
                 {transcriptionError && (
                   <Text className="font-sans text-sm leading-relaxed text-zinc-500">
-                    Automatic transcription failed. Use the microphone action below to try again.
+                    <LocalizedText>
+                      Automatic transcription failed. Use the microphone action below to try again.
+                    </LocalizedText>
                   </Text>
                 )}
               </View>
@@ -980,7 +991,7 @@ export function CardDetailContent({
                   value={quoteAuthor}
                   onChangeText={setQuoteAuthor}
                   onBlur={handleSaveQuoteAuthor}
-                  placeholder="Add an author..."
+                  placeholder={translate('Add an author...')}
                   placeholderTextColor="#71717A"
                   className="flex-1 font-sans text-xl text-zinc-100 leading-tight"
                   style={{ borderWidth: 0, backgroundColor: 'transparent' }}
@@ -1063,7 +1074,7 @@ export function CardDetailContent({
                 <View className="flex-row items-center gap-2">
                   <BookmarkSimpleIcon size={16} color="#E4E4E7" />
                   <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                    Source
+                    <LocalizedText>Source</LocalizedText>
                   </Text>
                 </View>
 
@@ -1083,7 +1094,9 @@ export function CardDetailContent({
                 <View className="flex-row items-center gap-2">
                   <NotePencilIcon size={15} color="#E4E4E7" />
                   <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                    Linked notes ({linkedNotes.length})
+                    <LocalizedText>Linked notes (</LocalizedText>
+                    {linkedNotes.length}
+                    <LocalizedText>)</LocalizedText>
                   </Text>
                 </View>
                 {linkedNotes.map((linkedNote) => (
@@ -1165,7 +1178,7 @@ export function CardDetailContent({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Notes
+                  <LocalizedText>Notes</LocalizedText>
                 </Text>
               </View>
 
@@ -1185,7 +1198,7 @@ export function CardDetailContent({
                   }}
                   onChangeText={setNote}
                   onBlur={handleSaveNote}
-                  placeholder="Add notes about this card..."
+                  placeholder={translate('Add notes about this card...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"

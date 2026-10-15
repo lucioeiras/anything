@@ -23,6 +23,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedPdfAsset } from '@/lib/library/storage';
 import type { PdfItem } from '@/lib/library/types';
 import { generateAutoTagsAsync, isGibberishOrMachineId } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 function getCleanPdfTitle(fileName?: string | null): string {
   if (!fileName) return '';
@@ -40,6 +42,7 @@ type NewPdfModalProps = {
 };
 
 export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: NewPdfModalProps) {
+  useLocalization();
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -172,7 +175,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
       onClose();
     } catch (e) {
       console.error('Failed to save PDF:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save PDF');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save PDF');
     } finally {
       setSaving(false);
     }
@@ -220,12 +223,14 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
               </View>
 
               <View className="flex-1 gap-2">
-                <Text className="font-sans-semibold text-2xl text-white">Add a new PDF</Text>
+                <Text className="font-sans-semibold text-2xl text-white">
+                  <LocalizedText>Add a new PDF</LocalizedText>
+                </Text>
                 <Text
                   className="font-sans text-base text-zinc-400 leading-relaxed"
                   numberOfLines={2}
                 >
-                  {pdfAsset?.fileName || 'PDF Document'}
+                  {pdfAsset?.fileName || translate('PDF Document')}
                 </Text>
               </View>
             </View>
@@ -238,7 +243,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
                 ref={titleInputRef}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Add a title to this PDF"
+                placeholder={translate('Add a title to this PDF')}
                 placeholderTextColor="#71717A"
                 returnKeyType="next"
                 onSubmitEditing={() => {
@@ -272,7 +277,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
 
@@ -281,7 +286,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a text note to this PDF..."
+                  placeholder={translate('Add a text note to this PDF...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -296,14 +301,14 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom}>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save PDF"
+              accessibilityLabel={translate('Save PDF')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -314,7 +319,7 @@ export function NewPdfModal({ visible, pdfAsset, onClose, onDismiss, onSaved }: 
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save PDF"
+              text={translate('Save PDF')}
             />
           </ActionFooter>
         </View>

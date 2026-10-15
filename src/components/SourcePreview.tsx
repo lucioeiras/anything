@@ -5,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { getLinkableTitle, getLinkableTypeLabel, type LinkableItem } from '@/lib/library/links';
 import type { MusicMetadata } from '@/lib/music/itunes';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type SharedProps = {
   onChange?: () => void;
@@ -91,8 +92,9 @@ export function SourcePreview({
   compact = false,
   containerClassName = '',
 }: Props) {
+  useLocalization();
   const title = item ? getLinkableTitle(item) : pendingMusic.title;
-  const typeLabel = item ? getLinkableTypeLabel(item) : 'Song';
+  const typeLabel = translate(item ? getLinkableTypeLabel(item) : 'Song');
   const image = item ? getPreviewImage(item) : pendingMusic.cover;
   const subtitle = item
     ? getPreviewSubtitle(item)
@@ -185,7 +187,7 @@ export function SourcePreview({
           hitSlop={10}
           className="p-2 rounded-full bg-zinc-800 active:opacity-70"
           accessibilityRole="button"
-          accessibilityLabel="Remove source"
+          accessibilityLabel={translate('Remove source')}
         >
           <XIcon size={16} color="#E4E4E7" weight="bold" />
         </Pressable>

@@ -12,8 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLibrary } from '@/hooks/useLibrary';
 import type { LibrarySource, SavedFolder } from '@/lib/library/storage';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 export default function FolderSelectScreen() {
+  useLocalization();
   const {
     source,
     selectFolder,
@@ -51,7 +54,7 @@ export default function FolderSelectScreen() {
         router.push('/board');
       }
     } catch (e) {
-      Alert.alert('Error opening folder', e instanceof Error ? e.message : String(e));
+      Alert.alert(translate('Error opening folder'), e instanceof Error ? e.message : String(e));
     } finally {
       setOpening(false);
     }
@@ -64,7 +67,7 @@ export default function FolderSelectScreen() {
       await selectFolder(targetSource);
       router.push('/board');
     } catch (e) {
-      Alert.alert('Error opening folder', e instanceof Error ? e.message : String(e));
+      Alert.alert(translate('Error opening folder'), e instanceof Error ? e.message : String(e));
     } finally {
       setOpening(false);
     }
@@ -72,12 +75,12 @@ export default function FolderSelectScreen() {
 
   const handleRemoveFolder = (folder: SavedFolder) => {
     Alert.alert(
-      'Remove folder',
+      translate('Remove folder'),
       `Remove "${folder.name}" from recent folders? Your actual files will not be deleted.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: translate('Cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: translate('Remove'),
           style: 'destructive',
           onPress: () => removeRecentFolder(folder.id),
         },
@@ -99,14 +102,19 @@ export default function FolderSelectScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text className="font-sans-medium text-4xl text-white text-center">
-          Welcome to{' '}
-          <Text className="font-serif-italic text-4xl text-blue-500 text-center"> anything</Text>
+          <LocalizedText>Welcome to</LocalizedText>{' '}
+          <Text className="font-serif-italic text-4xl text-blue-500 text-center">
+            {' '}
+            <LocalizedText>anything</LocalizedText>
+          </Text>
         </Text>
         <Text className="font-sans text-lg text-zinc-300 mt-3 text-center">
-          Open your space folder or create a new one.
+          <LocalizedText>Open your space folder or create a new one.</LocalizedText>
         </Text>
         <Text className="font-sans text-base text-zinc-400 mt-3 text-center max-w-80">
-          Anything is offline-first and believes files should remain under your control.
+          <LocalizedText>
+            Anything is offline-first and believes files should remain under your control.
+          </LocalizedText>
         </Text>
 
         <Pressable
@@ -119,13 +127,15 @@ export default function FolderSelectScreen() {
           ) : (
             <FolderPlusIcon size={20} color="#000" />
           )}
-          <Text className="font-sans-semibold text-lg text-zinc-950">Select a folder</Text>
+          <Text className="font-sans-semibold text-lg text-zinc-950">
+            <LocalizedText>Select a folder</LocalizedText>
+          </Text>
         </Pressable>
 
         {/* Section: Saved / Recent Folders */}
         <View className="mt-12 w-full">
           <Text className="font-sans-semibold text-xs uppercase tracking-wider text-zinc-500 mb-3 px-1">
-            Libraries & Recents
+            <LocalizedText>Libraries & Recents</LocalizedText>
           </Text>
 
           <View className="gap-2.5">
@@ -160,7 +170,7 @@ export default function FolderSelectScreen() {
                         {isActive && (
                           <View className="rounded-full bg-zinc-800 px-2 py-0.5">
                             <Text className="font-sans-medium text-[10px] text-zinc-300">
-                              Last opened
+                              <LocalizedText>Last opened</LocalizedText>
                             </Text>
                           </View>
                         )}
@@ -180,7 +190,7 @@ export default function FolderSelectScreen() {
                         }}
                         hitSlop={10}
                         className="p-2 rounded-lg active:opacity-60"
-                        accessibilityLabel="Remove from recent folders"
+                        accessibilityLabel={translate('Remove from recent folders')}
                       >
                         <TrashSimpleIcon size={18} color="#71717a" />
                       </Pressable>

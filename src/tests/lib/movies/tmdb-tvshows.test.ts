@@ -41,6 +41,15 @@ describe('TMDB TV show requests', () => {
     );
   });
 
+  it('requests localized show details when a locale is supplied', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 42 }) });
+    await getTmdbTvShowDetails(42, 'pt-BR');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/tv/42?language=pt-BR'),
+      expect.anything()
+    );
+  });
+
   it('returns an empty result for blank searches without contacting TMDB', async () => {
     globalThis.fetch = jest.fn();
     await expect(searchTmdbTvShows('  ')).resolves.toEqual([]);

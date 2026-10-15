@@ -57,6 +57,8 @@ import type { NoteItem, QuoteItem } from '@/lib/library/types';
 import type { MusicMetadata } from '@/lib/music/itunes';
 import type { NoteLineType, TextSelection } from '@/lib/noteFormatting';
 import { generateAutoTags, generateAutoTagsAsync } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewNoteModalProps = {
   visible: boolean;
@@ -75,6 +77,7 @@ export function NewNoteModal({
   onDismiss,
   onSaved,
 }: NewNoteModalProps) {
+  useLocalization();
   const { addMusicItem, addTextItem, updateItem, getTags, state } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -216,7 +219,7 @@ export function NewNoteModal({
       onClose();
     } catch (e) {
       console.error('Failed to save note:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save note');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save note');
     } finally {
       setSaving(false);
     }
@@ -402,7 +405,7 @@ export function NewNoteModal({
                   />
                 ) : (
                   <Text className="font-sans text-lg text-zinc-500">
-                    Your Markdown preview will appear here.
+                    <LocalizedText>Your Markdown preview will appear here.</LocalizedText>
                   </Text>
                 )}
               </ScrollView>
@@ -413,7 +416,7 @@ export function NewNoteModal({
                   value={text}
                   onChangeMarkdown={setText}
                   onSelectionChange={setSelection}
-                  placeholder="Type here..."
+                  placeholder={translate('Type here...')}
                   placeholderTextColor="#71717A"
                 />
               </View>
@@ -446,7 +449,7 @@ export function NewNoteModal({
                   ref={titleInputRef}
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="Add a title to this note"
+                  placeholder={translate('Add a title to this note')}
                   placeholderTextColor="#71717A"
                   returnKeyType="next"
                   onSubmitEditing={() => {
@@ -465,7 +468,7 @@ export function NewNoteModal({
                     ref={authorInputRef}
                     value={author}
                     onChangeText={setAuthor}
-                    placeholder="Add an author to this quote"
+                    placeholder={translate('Add an author to this quote')}
                     placeholderTextColor="#71717A"
                     returnKeyType="next"
                     onSubmitEditing={() => tagsInputRef.current?.focus()}
@@ -509,11 +512,13 @@ export function NewNoteModal({
                 <Pressable
                   onPress={() => setIsLinkPickerOpen(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Add source"
+                  accessibilityLabel={translate('Add source')}
                   className="flex-row items-center gap-4 py-5 px-8 border-b border-zinc-800"
                 >
                   <BookmarkSimpleIcon size={20} color="#FFFFFF" />
-                  <Text className="font-sans-semibold text-lg text-white">Add source</Text>
+                  <Text className="font-sans-semibold text-lg text-white">
+                    <LocalizedText>Add source</LocalizedText>
+                  </Text>
                 </Pressable>
               )}
             </ScrollView>
@@ -528,19 +533,19 @@ export function NewNoteModal({
             {view === 'editor' && !isPreviewingMarkdown && isFormattingOpen ? (
               <>
                 <Button
-                  accessibilityLabel="Cancel formatting"
+                  accessibilityLabel={translate('Cancel formatting')}
                   onPress={() => setIsFormattingOpen(false)}
                   disabled={saving}
                   icon={<ArrowLeftIcon size={20} color="#FFFFFF" weight="bold" />}
                 />
                 <Button
-                  accessibilityLabel="Bold"
+                  accessibilityLabel={translate('Bold')}
                   onPress={() => applyFormatting('bold')}
                   disabled={saving}
                   icon={<TextBIcon size={20} color="#FFFFFF" weight="bold" />}
                 />
                 <Button
-                  accessibilityLabel="Italic"
+                  accessibilityLabel={translate('Italic')}
                   onPress={() => applyFormatting('italic')}
                   disabled={saving}
                   icon={<TextItalicIcon size={20} color="#FFFFFF" weight="bold" />}
@@ -558,14 +563,14 @@ export function NewNoteModal({
             ) : (
               <>
                 <Button
-                  accessibilityLabel="Cancel"
+                  accessibilityLabel={translate('Cancel')}
                   onPress={handleClose}
                   disabled={saving}
                   icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
                 />
                 {view === 'editor' && !isPreviewingMarkdown && (
                   <Button
-                    accessibilityLabel="Open text formatting"
+                    accessibilityLabel={translate('Open text formatting')}
                     onPress={() => setIsFormattingOpen(true)}
                     disabled={saving}
                     icon={<TextTIcon size={20} color="#FFFFFF" weight="bold" />}
@@ -573,7 +578,7 @@ export function NewNoteModal({
                 )}
                 {view === 'editor' && (
                   <Button
-                    accessibilityLabel="Add song lyrics"
+                    accessibilityLabel={translate('Add song lyrics')}
                     onPress={() => setIsLyricsPickerOpen(true)}
                     disabled={saving}
                     icon={
@@ -604,7 +609,7 @@ export function NewNoteModal({
                 )}
                 {view === 'editor' ? (
                   <Button
-                    accessibilityLabel="Note info"
+                    accessibilityLabel={translate('Note info')}
                     onPress={handleSwitchToInfo}
                     icon={
                       <InfoIcon size={20} color={hasInfo ? '#3B82F6' : '#FFFFFF'} weight="bold" />
@@ -612,15 +617,15 @@ export function NewNoteModal({
                   />
                 ) : (
                   <Button
-                    accessibilityLabel="Back to note editor"
+                    accessibilityLabel={translate('Back to note editor')}
                     onPress={handleSwitchToEditor}
                     icon={<NotePencilIcon size={20} color="#FFFFFF" weight="bold" />}
-                    text="Note"
+                    text={translate('Note')}
                   />
                 )}
 
                 <Button
-                  accessibilityLabel="Save note"
+                  accessibilityLabel={translate('Save note')}
                   variant="primary"
                   onPress={handleSave}
                   disabled={!canSave}

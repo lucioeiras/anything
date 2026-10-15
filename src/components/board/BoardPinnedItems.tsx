@@ -9,7 +9,11 @@ import Sortable, {
 
 import { ItemCard } from '@/components/cards/ItemCard';
 import type { LibraryItem } from '@/lib/library/types';
-import { getPinnedDropTarget } from '@/components/board/pinnedDrop';
+import {
+  getPinnedDropTarget,
+  PINNED_DROP_ANIMATION_DURATION,
+  schedulePinnedRemoval,
+} from '@/components/board/pinnedDrop';
 
 function getDefaultAspectRatio(item: LibraryItem): number {
   switch (item.type) {
@@ -134,8 +138,12 @@ export function BoardPinnedItems({ items, isEditing, onPress, onReorder, onRemov
 
       containerRef.current?.measureInWindow((x, y, width, height) => {
         const target = getPinnedDropTarget(touch, { x, y, width, height }, toIndex);
-        if (target.type === 'remove') onRemove(itemId);
-        else if (target.index !== items.findIndex((item) => item.id === itemId)) {
+        if (target.type === 'remove') {
+          // Keep the sortable row mounted until its drop animation has finished.
+          // Removing its final item immediately can make Sortables measure a
+          // view that has already been unmounted during the return animation.
+          schedulePinnedRemoval(onRemove, itemId);
+        } else if (target.index !== items.findIndex((item) => item.id === itemId)) {
           onReorder(itemId, target.index);
         }
       });
@@ -202,7 +210,7 @@ export function BoardPinnedItems({ items, isEditing, onPress, onReorder, onRemov
           dragActivationDelay={350}
           dragActivationFailOffset={12}
           activationAnimationDuration={120}
-          dropAnimationDuration={160}
+          dropAnimationDuration={PINNED_DROP_ANIMATION_DURATION}
           activeItemScale={1.04}
           inactiveItemOpacity={0.92}
           reorderTriggerOrigin="touch"

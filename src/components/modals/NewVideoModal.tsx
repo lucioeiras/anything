@@ -26,6 +26,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedVideoAsset } from '@/lib/library/storage';
 import type { VideoItem } from '@/lib/library/types';
 import { generateAutoTagsAsync, isGibberishOrMachineId } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 function getCleanVideoTitle(fileName?: string | null): string {
   if (!fileName) return '';
@@ -43,6 +45,7 @@ type NewVideoModalProps = {
 };
 
 function VideoAssetPreview({ uri }: { uri: string }) {
+  useLocalization();
   const player = useVideoPlayer(uri);
   const { width: windowWidth } = useWindowDimensions();
   const [thumbnail, setThumbnail] = useState<VideoThumbnail | null>(null);
@@ -89,7 +92,9 @@ function VideoAssetPreview({ uri }: { uri: string }) {
         <ExpoImage source={thumbnail} contentFit="contain" style={StyleSheet.absoluteFill} />
       ) : (
         <View className="flex-1 items-center justify-center">
-          <Text className="font-sans text-sm text-zinc-400">Loading preview…</Text>
+          <Text className="font-sans text-sm text-zinc-400">
+            <LocalizedText>Loading preview…</LocalizedText>
+          </Text>
         </View>
       )}
     </View>
@@ -235,7 +240,7 @@ export function NewVideoModal({
       onClose();
     } catch (e) {
       console.error('Failed to save video:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save video');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save video');
     } finally {
       setSaving(false);
     }
@@ -280,9 +285,13 @@ export function NewVideoModal({
                 </View>
               )}
               <View className="flex-1 gap-3">
-                <Text className="font-sans-semibold text-2xl text-white">Add a new video</Text>
+                <Text className="font-sans-semibold text-2xl text-white">
+                  <LocalizedText>Add a new video</LocalizedText>
+                </Text>
                 <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                  Save videos from your gallery to your board with a title, tags and note.
+                  <LocalizedText>
+                    Save videos from your gallery to your board with a title, tags and note.
+                  </LocalizedText>
                 </Text>
               </View>
             </View>
@@ -295,7 +304,7 @@ export function NewVideoModal({
                 ref={titleInputRef}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Add a title to this video"
+                placeholder={translate('Add a title to this video')}
                 placeholderTextColor="#71717A"
                 returnKeyType="next"
                 onSubmitEditing={() => {
@@ -329,7 +338,7 @@ export function NewVideoModal({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
 
@@ -338,7 +347,7 @@ export function NewVideoModal({
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a text note to this video..."
+                  placeholder={translate('Add a text note to this video...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -353,14 +362,14 @@ export function NewVideoModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom}>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save video"
+              accessibilityLabel={translate('Save video')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -371,7 +380,7 @@ export function NewVideoModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save video"
+              text={translate('Save video')}
             />
           </ActionFooter>
         </View>

@@ -38,6 +38,8 @@ import {
   type TmdbTvShowResult,
 } from '@/lib/movies/tmdb';
 import { generateAutoTags } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewTvShowModalProps = {
   visible: boolean;
@@ -54,6 +56,7 @@ export function NewTvShowModal({
   onDismiss,
   onSaved,
 }: NewTvShowModalProps) {
+  useLocalization();
   const { addTvShowItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef<TextInput>(null);
@@ -149,7 +152,7 @@ export function NewTvShowModal({
     } catch (error) {
       console.warn('Failed to load TV show details:', error);
       Alert.alert(
-        'Error',
+        translate('Error'),
         error instanceof Error ? error.message : 'Could not fetch TV show details'
       );
     } finally {
@@ -222,7 +225,10 @@ export function NewTvShowModal({
       onSaved?.(item);
     } catch (error) {
       console.error('Failed to save TV show:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save TV show');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to save TV show'
+      );
     } finally {
       setSaving(false);
     }
@@ -252,9 +258,13 @@ export function NewTvShowModal({
             showsVerticalScrollIndicator={false}
           >
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add TV show</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add TV show</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search TV shows from The Movie Database (TMDB) to add to your library.
+                <LocalizedText>
+                  Search TV shows from The Movie Database (TMDB) to add to your library.
+                </LocalizedText>
               </Text>
             </View>
 
@@ -277,7 +287,9 @@ export function NewTvShowModal({
                   </Text>
                   <Text className="font-sans text-base text-zinc-400" numberOfLines={1}>
                     {getReleaseYear(selectedShow.first_air_date) || '—'}
-                    {` • ${selectedShow.seasons?.length ?? 0} seasons`}
+                    {` • ${translate('%{count} seasons', {
+                      count: selectedShow.seasons?.length ?? 0,
+                    })}`}
                   </Text>
                 </View>
                 <Pressable
@@ -285,7 +297,7 @@ export function NewTvShowModal({
                   hitSlop={10}
                   className="p-2 rounded-full bg-zinc-800 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Change TV show"
+                  accessibilityLabel={translate('Change TV show')}
                 >
                   <XIcon size={16} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -297,7 +309,7 @@ export function NewTvShowModal({
                   ref={searchInputRef}
                   value={query}
                   onChangeText={handleQueryChange}
-                  placeholder="Search TV show title..."
+                  placeholder={translate('Search TV show title...')}
                   placeholderTextColor="#71717A"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -306,7 +318,7 @@ export function NewTvShowModal({
                   style={styles.borderlessInput}
                   underlineColorAndroid="transparent"
                   clearButtonMode="never"
-                  accessibilityLabel="Search TV shows"
+                  accessibilityLabel={translate('Search TV shows')}
                 />
                 {isSearching ? (
                   <ActivityIndicator size={16} color="#A1A1AA" />
@@ -316,7 +328,7 @@ export function NewTvShowModal({
                     hitSlop={10}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Clear search"
+                    accessibilityLabel={translate('Clear search')}
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
@@ -330,7 +342,7 @@ export function NewTvShowModal({
                   <View className="py-8 items-center justify-center">
                     <ActivityIndicator size={24} color="#60A5FA" />
                     <Text className="font-sans text-sm text-zinc-400 mt-2">
-                      Loading TV show details...
+                      <LocalizedText>Loading TV show details...</LocalizedText>
                     </Text>
                   </View>
                 )}
@@ -376,7 +388,9 @@ export function NewTvShowModal({
                     <View className="py-12 items-center justify-center">
                       <TelevisionIcon size={32} color="#52525B" weight="duotone" />
                       <Text className="font-sans text-sm text-zinc-500 mt-3">
-                        No TV shows found for "{query}"
+                        <LocalizedText>No TV shows found for "</LocalizedText>
+                        {query}
+                        <LocalizedText>"</LocalizedText>
                       </Text>
                     </View>
                   )}
@@ -402,7 +416,7 @@ export function NewTvShowModal({
                   <View className="flex-row items-center gap-2">
                     <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                     <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                      Note
+                      <LocalizedText>Note</LocalizedText>
                     </Text>
                   </View>
                   <Pressable onPress={() => noteInputRef.current?.focus()} className="w-full">
@@ -410,7 +424,9 @@ export function NewTvShowModal({
                       ref={noteInputRef}
                       value={note}
                       onChangeText={setNote}
-                      placeholder="Add personal thoughts or notes about this TV show..."
+                      placeholder={translate(
+                        'Add personal thoughts or notes about this TV show...'
+                      )}
                       placeholderTextColor="#71717A"
                       multiline
                       textAlignVertical="top"
@@ -425,14 +441,14 @@ export function NewTvShowModal({
           </ScrollView>
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save TV show"
+              accessibilityLabel={translate('Save TV show')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -443,7 +459,7 @@ export function NewTvShowModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save TV show"
+              text={translate('Save TV show')}
             />
           </ActionFooter>
         </View>

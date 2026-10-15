@@ -2,6 +2,8 @@ import { FolderPlusIcon, PushPinSimpleIcon, TrashSimpleIcon, XIcon } from 'phosp
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type CardSelectionBarProps = {
   visible: boolean;
@@ -24,6 +26,7 @@ export function CardSelectionBar({
   onTogglePin,
   onCancel,
 }: CardSelectionBarProps) {
+  useLocalization();
   if (!visible) return null;
 
   const hasSelection = selectedCount > 0;
@@ -42,13 +45,13 @@ export function CardSelectionBar({
       <View className="items-center gap-3">
         <View className="flex-row items-center gap-2">
           <Button
-            accessibilityLabel="Cancel selection"
+            accessibilityLabel={translate('Cancel selection')}
             variant="secondary"
             icon={<XIcon size={24} color="#FFFFFF" weight="bold" />}
             onPress={onCancel}
           />
           <Button
-            accessibilityLabel="Add selected cards to folder"
+            accessibilityLabel={translate('Add selected cards to folder')}
             variant="secondary"
             contentColor="#FFFFFF"
             icon={<FolderPlusIcon size={24} color="#FFFFFF" weight="bold" />}
@@ -66,7 +69,7 @@ export function CardSelectionBar({
             />
           )}
           <Button
-            accessibilityLabel="Delete selected cards"
+            accessibilityLabel={translate('Delete selected cards')}
             variant="secondary"
             shadowColor="#EF4444"
             shadowOpacity={hasSelection ? 0.2 : 0}
@@ -89,10 +92,15 @@ export function CardSelectionBar({
                 {selectedCount}
                 {'  '}
               </Text>
-              <Text className="text-zinc-400 font-sans-semibold"> selected</Text>
+              <Text className="text-zinc-400 font-sans-semibold">
+                {' '}
+                <LocalizedText>selected</LocalizedText>
+              </Text>
             </>
           ) : (
-            <Text className="text-zinc-400">Select cards</Text>
+            <Text className="text-zinc-400">
+              <LocalizedText>Select cards</LocalizedText>
+            </Text>
           )}
         </Text>
       </View>

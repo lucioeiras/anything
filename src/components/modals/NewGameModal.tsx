@@ -37,6 +37,8 @@ import {
 } from '@/lib/games/rawg';
 import type { GameItem } from '@/lib/library/types';
 import { generateAutoTagsAsync } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type NewGameModalProps = {
   visible: boolean;
@@ -53,6 +55,7 @@ export function NewGameModal({
   onDismiss,
   onSaved,
 }: NewGameModalProps) {
+  useLocalization();
   const { addGameItem, getTags } = useLibrary();
   const insets = useSafeAreaInsets();
 
@@ -273,7 +276,10 @@ export function NewGameModal({
       handleClose();
       onSaved?.(item);
     } catch (e: any) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save game to library.');
+      Alert.alert(
+        translate('Error'),
+        e instanceof Error ? e.message : 'Failed to save game to library.'
+      );
     } finally {
       setSaving(false);
     }
@@ -306,9 +312,11 @@ export function NewGameModal({
           >
             {/* Header */}
             <View className="gap-3 p-8 pt-0">
-              <Text className="font-sans-semibold text-2xl text-white">Add game</Text>
+              <Text className="font-sans-semibold text-2xl text-white">
+                <LocalizedText>Add game</LocalizedText>
+              </Text>
               <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                Search games from RAWG to add them to your library.
+                <LocalizedText>Search games from RAWG to add them to your library.</LocalizedText>
               </Text>
             </View>
 
@@ -343,7 +351,7 @@ export function NewGameModal({
                   hitSlop={10}
                   className="p-2 rounded-full bg-zinc-800 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel="Change game"
+                  accessibilityLabel={translate('Change game')}
                 >
                   <XIcon size={16} color="#E4E4E7" weight="bold" />
                 </Pressable>
@@ -356,7 +364,7 @@ export function NewGameModal({
                   ref={inputRef}
                   value={searchQuery}
                   onChangeText={handleQueryChange}
-                  placeholder="Search game title..."
+                  placeholder={translate('Search game title...')}
                   placeholderTextColor="#71717A"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -376,7 +384,7 @@ export function NewGameModal({
                     hitSlop={10}
                     className="p-1.5 rounded-full bg-zinc-800 items-center justify-center active:opacity-70"
                     accessibilityRole="button"
-                    accessibilityLabel="Clear search"
+                    accessibilityLabel={translate('Clear search')}
                   >
                     <XIcon size={12} color="#E4E4E7" weight="bold" />
                   </Pressable>
@@ -444,7 +452,9 @@ export function NewGameModal({
                     <View className="py-12 items-center justify-center">
                       <GameControllerIcon size={32} color="#52525B" weight="duotone" />
                       <Text className="font-sans text-sm text-zinc-500 mt-3">
-                        No games found for "{searchQuery}"
+                        <LocalizedText>No games found for "</LocalizedText>
+                        {searchQuery}
+                        <LocalizedText>"</LocalizedText>
                       </Text>
                     </View>
                   )}
@@ -472,7 +482,7 @@ export function NewGameModal({
                   <View className="flex-row items-center gap-2">
                     <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                     <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                      Note
+                      <LocalizedText>Note</LocalizedText>
                     </Text>
                   </View>
 
@@ -481,7 +491,7 @@ export function NewGameModal({
                       ref={noteInputRef}
                       value={note}
                       onChangeText={setNote}
-                      placeholder="Add personal thoughts or notes about this game..."
+                      placeholder={translate('Add personal thoughts or notes about this game...')}
                       placeholderTextColor="#71717A"
                       multiline
                       textAlignVertical="top"
@@ -498,14 +508,14 @@ export function NewGameModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save game"
+              accessibilityLabel={translate('Save game')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -516,7 +526,7 @@ export function NewGameModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save game"
+              text={translate('Save game')}
             />
           </ActionFooter>
         </View>

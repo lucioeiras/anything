@@ -8,6 +8,7 @@ import {
   FolderOpenIcon,
   MicrophoneIcon,
   TextTIcon,
+  TranslateIcon,
   TrashSimpleIcon,
   XCircleIcon,
 } from 'phosphor-react-native';
@@ -16,11 +17,15 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { LocalizedText } from '@/components/LocalizedText';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useLocalAI } from '@/lib/ai/useLocalAI';
 import { useWhisperModel } from '@/lib/ai/useWhisperModel';
+import { useLocalization } from '@/lib/i18n';
+import { languageOptions } from '@/lib/i18n/catalog';
 
 export default function SettingsScreen() {
+  const { preference, setPreference, t } = useLocalization();
   const { currentFolderName, pickAndOpenFolder } = useLibrary();
   const [openingFolder, setOpeningFolder] = useState(false);
   const {
@@ -58,19 +63,21 @@ export default function SettingsScreen() {
 
   const handleConfirmDelete = () => {
     Alert.alert(
-      'Remove AI model',
-      'Remove the local model from this device? You can download it again whenever you need AI tags.',
+      t('Remove AI model'),
+      t(
+        'Remove the local model from this device? You can download it again whenever you need AI tags.'
+      ),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => void deleteModel() },
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Remove'), style: 'destructive', onPress: () => void deleteModel() },
       ]
     );
   };
 
   const handleConfirmDeleteWhisper = () => {
-    Alert.alert('Remove transcription model', 'Remove Whisper from this device?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => void whisper.deleteModel() },
+    Alert.alert(t('Remove transcription model'), t('Remove Whisper from this device?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      { text: t('Remove'), style: 'destructive', onPress: () => void whisper.deleteModel() },
     ]);
   };
 
@@ -83,35 +90,80 @@ export default function SettingsScreen() {
       >
         <View className="px-8 pb-8 flex-row items-center gap-4">
           <Button
-            accessibilityLabel="Back to profile"
+            accessibilityLabel={t('Back to profile')}
             size="small"
             icon={<ArrowLeftIcon size={20} color="#FFFFFF" />}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))}
           />
-          <Text className="font-sans-semibold text-2xl text-white">Settings</Text>
+          <Text className="font-sans-semibold text-2xl text-white">
+            <LocalizedText>Settings</LocalizedText>
+          </Text>
+        </View>
+
+        <View className="gap-4 border-b border-zinc-800 px-8 pb-6">
+          <View className="flex-row items-center gap-2">
+            <TranslateIcon size={16} color="#E4E4E7" />
+            <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
+              <LocalizedText>Language</LocalizedText>
+            </Text>
+          </View>
+          <Text className="font-sans text-base leading-relaxed text-zinc-400">
+            <LocalizedText>Choose the language used by Anything.</LocalizedText>
+          </Text>
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel={t('Select app language')}
+            className="gap-1"
+          >
+            {languageOptions.map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => void setPreference(option.value)}
+                accessibilityRole="radio"
+                accessibilityLabel={t(option.label)}
+                accessibilityState={{ checked: preference === option.value }}
+                className="min-h-12 flex-row items-center gap-3 py-2 active:opacity-70"
+              >
+                <View
+                  className={`h-5 w-5 items-center justify-center rounded-full border ${preference === option.value ? 'border-blue-400' : 'border-zinc-600'}`}
+                >
+                  {preference === option.value && (
+                    <View className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                  )}
+                </View>
+                <Text className="font-sans text-base text-white">{t(option.label)}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         <View className="gap-4 border-t border-b border-zinc-800 px-8 py-6">
           <View className="flex-row items-center gap-2">
             <CircleIcon size={16} color="#E4E4E7" />
             <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
-              Current space
+              <LocalizedText>Current space</LocalizedText>
             </Text>
           </View>
           <Text className="font-sans text-base leading-relaxed text-zinc-400">
-            Cards, tags and local files in this space are kept together in one folder.
+            <LocalizedText>
+              Cards, tags and local files in this space are kept together in one folder.
+            </LocalizedText>
           </Text>
           <Pressable
             onPress={handleChangeFolder}
             disabled={openingFolder}
             accessibilityRole="button"
-            accessibilityLabel={`Change space folder. Current space: ${currentFolderName}`}
+            accessibilityLabel={t('Change space folder. Current space: %{name}', {
+              name: currentFolderName,
+            })}
             accessibilityState={{ disabled: openingFolder, busy: openingFolder }}
             className="min-h-14 flex-row items-center gap-4 py-2 active:opacity-70"
           >
             <FolderOpenIcon size={20} color="#D4D4D8" />
             <View className="flex-1">
-              <Text className="font-sans text-xs text-zinc-500">Folder</Text>
+              <Text className="font-sans text-xs text-zinc-500">
+                <LocalizedText>Folder</LocalizedText>
+              </Text>
               <Text className="font-sans text-xl leading-tight text-white" numberOfLines={2}>
                 {currentFolderName}
               </Text>
@@ -128,12 +180,14 @@ export default function SettingsScreen() {
           <View className="flex-row items-center gap-2">
             <TextTIcon size={16} color="#E4E4E7" />
             <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
-              AI Model for Texts
+              <LocalizedText>AI Model for Texts</LocalizedText>
             </Text>
           </View>
           <Text className="font-sans text-base leading-relaxed text-zinc-400">
-            Generate tags for notes and links with a model that runs on your device. After download,
-            it works offline.
+            <LocalizedText>
+              Generate tags for notes and links with a model that runs on your device. After
+              download, it works offline.
+            </LocalizedText>
           </Text>
           <View className="flex-row items-center gap-3 py-2">
             <CpuIcon size={20} color="#D4D4D8" />
@@ -142,7 +196,7 @@ export default function SettingsScreen() {
                 {modelConfig.displayName}
               </Text>
               <Text className="mt-1 font-sans text-sm text-zinc-500">
-                {modelConfig.sizeFormatted} download
+                {modelConfig.sizeFormatted} <LocalizedText>download</LocalizedText>
               </Text>
             </View>
             <Button
@@ -179,16 +233,20 @@ export default function SettingsScreen() {
                 <View className="flex-row items-center gap-3">
                   <ActivityIndicator size="small" color="#3B82F6" />
                   <Text className="font-sans-semibold text-sm text-zinc-200">
-                    Downloading model
+                    <LocalizedText>Downloading model</LocalizedText>
                   </Text>
                 </View>
-                <Text className="font-sans-semibold text-sm text-blue-500">{percentage}%</Text>
+                <Text className="font-sans-semibold text-sm text-blue-500">
+                  {percentage}
+                  <LocalizedText>%</LocalizedText>
+                </Text>
               </View>
               <View className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
                 <View className="h-full bg-blue-500" style={{ width: `${percentage}%` }} />
               </View>
               <Text className="font-sans text-xs text-zinc-500">
-                {formattedWrittenMb} / {formattedTotalMb} MB
+                {formattedWrittenMb} <LocalizedText>/ </LocalizedText>
+                {formattedTotalMb} <LocalizedText>MB</LocalizedText>
               </Text>
             </View>
           )}
@@ -199,11 +257,13 @@ export default function SettingsScreen() {
           <View className="flex-row items-center gap-2">
             <MicrophoneIcon size={16} color="#E4E4E7" />
             <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
-              AI Model for Audio
+              <LocalizedText>AI Model for Audio</LocalizedText>
             </Text>
           </View>
           <Text className="font-sans text-base leading-relaxed text-zinc-400">
-            Transcribe recorded audios on this device. The model works offline after download.
+            <LocalizedText>
+              Transcribe recorded audios on this device. The model works offline after download.
+            </LocalizedText>
           </Text>
           <View className="flex-row items-center gap-3 py-2">
             <CpuIcon size={20} color="#D4D4D8" />
@@ -212,7 +272,7 @@ export default function SettingsScreen() {
                 {whisper.modelConfig.displayName}
               </Text>
               <Text className="mt-1 font-sans text-sm text-zinc-500">
-                {whisper.modelConfig.sizeFormatted} download
+                {whisper.modelConfig.sizeFormatted} <LocalizedText>download</LocalizedText>
               </Text>
             </View>
             <Button
@@ -254,18 +314,20 @@ export default function SettingsScreen() {
                 <View className="flex-row items-center gap-3">
                   <ActivityIndicator size="small" color="#3B82F6" />
                   <Text className="font-sans-semibold text-sm text-zinc-200">
-                    Downloading model
+                    <LocalizedText>Downloading model</LocalizedText>
                   </Text>
                 </View>
                 <Text className="font-sans-semibold text-sm text-blue-500">
-                  {whisperPercentage}%
+                  {whisperPercentage}
+                  <LocalizedText>%</LocalizedText>
                 </Text>
               </View>
               <View className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
                 <View className="h-full bg-blue-500" style={{ width: `${whisperPercentage}%` }} />
               </View>
               <Text className="font-sans text-xs text-zinc-500">
-                {whisperWrittenMb} / {whisperTotalMb} MB
+                {whisperWrittenMb} <LocalizedText>/ </LocalizedText>
+                {whisperTotalMb} <LocalizedText>MB</LocalizedText>
               </Text>
             </View>
           )}

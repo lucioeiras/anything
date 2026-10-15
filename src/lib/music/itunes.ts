@@ -1,4 +1,5 @@
 import { decodeHTML } from 'entities';
+import { getActiveLanguage } from '@/lib/i18n/locale';
 
 export type MusicMetadata = {
   id: number;
@@ -13,6 +14,10 @@ export type MusicMetadata = {
   releaseDate?: string;
   genre?: string;
 };
+
+export function getITunesCountry(language: 'en' | 'pt'): 'US' | 'BR' {
+  return language === 'pt' ? 'BR' : 'US';
+}
 
 /**
  * Replaces low-resolution iTunes artwork dimensions with high-resolution dimensions.
@@ -54,13 +59,14 @@ export function formatReleaseYear(dateString?: string): string {
 export async function searchITunesMusic(
   query: string,
   kind: 'song' | 'album' = 'song',
-  limit = 25
+  limit = 25,
+  country: 'BR' | 'US' = getITunesCountry(getActiveLanguage())
 ): Promise<MusicMetadata[]> {
   const cleanQuery = query.trim();
   if (!cleanQuery) return [];
 
   const encoded = encodeURIComponent(cleanQuery);
-  const endpoint = `https://itunes.apple.com/search?term=${encoded}&entity=${kind}&limit=${limit}`;
+  const endpoint = `https://itunes.apple.com/search?term=${encoded}&entity=${kind}&limit=${limit}&country=${country}`;
 
   try {
     const response = await fetch(endpoint, {

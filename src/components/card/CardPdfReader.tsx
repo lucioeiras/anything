@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { PdfPreview } from '@/components/PdfPreview';
 import type { LibraryItem } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type PdfItem = Extract<LibraryItem, { type: 'pdf' }>;
 
@@ -17,6 +18,7 @@ export function CardPdfReader({
   onClose: () => void;
   topInset: number;
 }) {
+  useLocalization();
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 bg-zinc-950" style={{ paddingTop: topInset }}>
@@ -26,7 +28,7 @@ export function CardPdfReader({
             hitSlop={12}
             className="w-10 h-10 items-center justify-center"
             accessibilityRole="button"
-            accessibilityLabel="Close PDF"
+            accessibilityLabel={translate('Close PDF')}
           >
             <XIcon size={22} color="#FFFFFF" />
           </Pressable>
@@ -34,7 +36,7 @@ export function CardPdfReader({
             className="flex-1 font-sans-medium text-base text-white text-center"
             numberOfLines={1}
           >
-            {item.originalFileName || item.title || 'PDF Document'}
+            {item.originalFileName || item.title || translate('PDF Document')}
           </Text>
           <View className="w-10" />
         </View>

@@ -4,8 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { localDateKey } from '@/components/books/bookLogDates';
 import type { BookReadingLog } from '@/lib/library/types';
-
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+import { translate, useLocalization } from '@/lib/i18n';
 
 type BookLogCalendarGridProps = {
   month: Date;
@@ -22,6 +21,10 @@ export function BookLogCalendarGrid({
   onChangeMonth,
   onPressDate,
 }: BookLogCalendarGridProps) {
+  const { language } = useLocalization();
+  const weekdays =
+    language === 'pt' ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
   const [containerWidth, setContainerWidth] = useState(0);
   const gridBleed = containerWidth / 14;
   const byDate = useMemo(() => {
@@ -49,7 +52,7 @@ export function BookLogCalendarGrid({
         <Pressable
           onPress={() => onChangeMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={translate('Previous month')}
           hitSlop={10}
           className="h-10 items-center justify-center"
           style={{ width: '14.2857%' }}
@@ -58,14 +61,14 @@ export function BookLogCalendarGrid({
         </Pressable>
         <View className="items-center justify-center" style={{ width: '71.4286%' }}>
           <Text className="font-sans-semibold text-base text-white">
-            {month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            {month.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
           </Text>
         </View>
 
         <Pressable
           onPress={() => onChangeMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={translate('Next month')}
           hitSlop={10}
           className="h-10 items-center justify-center"
           style={{ width: '14.2857%' }}
@@ -75,7 +78,7 @@ export function BookLogCalendarGrid({
       </View>
 
       <View className="flex-row mb-2" style={{ marginHorizontal: -gridBleed }}>
-        {WEEKDAYS.map((day, index) => (
+        {weekdays.map((day, index) => (
           <Text key={index} className="flex-1 text-center font-sans-medium text-xs text-zinc-500">
             {day}
           </Text>
@@ -95,7 +98,7 @@ export function BookLogCalendarGrid({
               key={index}
               onPress={() => onPressDate(key)}
               accessibilityRole="button"
-              accessibilityLabel={`${month.toLocaleDateString(undefined, { month: 'long' })} ${day}${dayLogs.length ? ', reading logged' : ''}${hasNote ? ', note available' : ''}`}
+              accessibilityLabel={`${month.toLocaleDateString(locale, { month: 'long' })} ${day}${dayLogs.length ? `, ${translate('reading logged')}` : ''}${hasNote ? `, ${translate('note available')}` : ''}`}
               style={{ width: '14.2857%', height: 48 }}
               className="items-center justify-center"
             >

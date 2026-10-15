@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ActivityCalendar } from '@/components/profile/ActivityCalendar';
 import { CompletionChart } from '@/components/profile/CompletionChart';
 import { ProfileSelect } from '@/components/profile/ProfileSelect';
+import { setActiveLanguage } from '@/lib/i18n/locale';
 
 jest.mock('@/components/Button', () => ({
   Button: ({
@@ -36,10 +37,32 @@ it('announces day counts, opens a day, and navigates months across a year', asyn
   await fireEvent.press(screen.getByLabelText('Previous month'));
   expect(onChangeMonth).toHaveBeenCalledWith(new Date(2025, 11, 1));
 });
+it('starts the Portuguese added-cards calendar on Monday with Portuguese weekday initials', async () => {
+  setActiveLanguage('pt');
+  const { unmount } = await render(
+    <ActivityCalendar
+      month={new Date(2026, 0, 1)}
+      byDay={{}}
+      onPressDate={jest.fn()}
+      onChangeMonth={jest.fn()}
+    />
+  );
+  expect(screen.getAllByText(/^[STQD]$/).map((element) => element.props.children)).toEqual([
+    'S',
+    'T',
+    'Q',
+    'Q',
+    'S',
+    'S',
+    'D',
+  ]);
+  unmount();
+  setActiveLanguage('en');
+});
 it('shows all twelve accessible counts and an empty state', async () => {
   await render(<CompletionChart months={Array.from({ length: 12 }, () => [])} year={2026} />);
-  expect(screen.getByLabelText('Jan 2026: 0 cards completed')).toBeTruthy();
-  expect(screen.getByLabelText('Dec 2026: 0 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('January 2026: 0 cards completed')).toBeTruthy();
+  expect(screen.getByLabelText('December 2026: 0 cards completed')).toBeTruthy();
   expect(screen.getByText('No completions recorded for this selection.')).toBeTruthy();
 });
 it('opens a select, switches its value, and closes the options', async () => {

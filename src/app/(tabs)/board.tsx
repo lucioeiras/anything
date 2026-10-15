@@ -51,6 +51,8 @@ import type {
 } from '@/lib/library/storage';
 import type { MediaProgressStatus } from '@/lib/library/types';
 import { type LibraryItem, type LibraryItemType } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type BoardGridContextType = {
   lastIndices: { col0: number; col1: number };
@@ -86,6 +88,8 @@ const BoardGridContext = createContext<BoardGridContextType>({
 });
 
 export default function BoardScreen() {
+  const { language } = useLocalization();
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
   const boardListRef = useRef<FlashListRef<LibraryItem>>(null);
   const {
     state,
@@ -201,7 +205,7 @@ export default function BoardScreen() {
   const activeFolderKey = activeFolderKind ? folderKey : null;
   const folderLabel =
     activeFolderKind === 'status'
-      ? STATUS_FOLDERS.find((folder) => folder.key === activeFolderKey)?.title
+      ? translate(STATUS_FOLDERS.find((folder) => folder.key === activeFolderKey)?.title ?? '')
       : activeFolderKey;
 
   const clearFolderFilter = useCallback(() => {
@@ -570,7 +574,10 @@ export default function BoardScreen() {
       }
     } catch (error) {
       console.error('Failed to delete cards:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete cards');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to delete cards'
+      );
     }
   }, [deleteItems, selectedCardIds]);
 
@@ -583,7 +590,10 @@ export default function BoardScreen() {
       await restoreItems(backups);
     } catch (error) {
       console.error('Failed to restore cards:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restore cards');
+      Alert.alert(
+        translate('Error'),
+        error instanceof Error ? error.message : 'Failed to restore cards'
+      );
     }
   }, [restoreBackup, restoreItems]);
 
@@ -681,14 +691,14 @@ export default function BoardScreen() {
         Array.from(selectedCardIds),
         pinActionLabel === 'Pin selected cards'
       );
-      if (!succeeded) Alert.alert('Could not update pinned cards');
+      if (!succeeded) Alert.alert(translate('Could not update pinned cards'));
       else if (pinActionLabel === 'Pin selected cards') {
         handleCancelEdition();
         boardListRef.current?.scrollToOffset({ offset: 0, animated: true });
       }
     } catch (error) {
       Alert.alert(
-        'Error',
+        translate('Error'),
         error instanceof Error ? error.message : 'Could not update pinned cards'
       );
     }
@@ -709,7 +719,7 @@ export default function BoardScreen() {
         );
       } catch (error) {
         Alert.alert(
-          'Error',
+          translate('Error'),
           error instanceof Error ? error.message : 'Could not reorder pinned cards'
         );
       } finally {
@@ -723,10 +733,10 @@ export default function BoardScreen() {
     async (itemId: string) => {
       try {
         const succeeded = await setItemsPinned([itemId], false);
-        if (!succeeded) Alert.alert('Could not remove pinned card');
+        if (!succeeded) Alert.alert(translate('Could not remove pinned card'));
       } catch (error) {
         Alert.alert(
-          'Error',
+          translate('Error'),
           error instanceof Error ? error.message : 'Could not remove pinned card'
         );
       }
@@ -805,7 +815,7 @@ export default function BoardScreen() {
           onNoteTextChange={(itemId, text) => {
             updateItem(itemId, { text } as Partial<LibraryItem>).catch((error) => {
               Alert.alert(
-                'Error',
+                translate('Error'),
                 error instanceof Error ? error.message : 'Could not update note'
               );
             });
@@ -842,7 +852,7 @@ export default function BoardScreen() {
           <View className="mb-4 flex-row gap-2 rounded-xl bg-amber-950/60 p-3">
             <WarningIcon size={16} color="#fbbf24" weight="fill" />
             <Text className="flex-1 font-sans text-xs text-amber-200">
-              {state.result.issues.length} file(s) skipped:{' '}
+              {state.result.issues.length} <LocalizedText>file(s) skipped:</LocalizedText>{' '}
               {state.result.issues.map((i) => `${i.file} (${i.reason})`).join(', ')}
             </Text>
           </View>
@@ -850,7 +860,8 @@ export default function BoardScreen() {
 
         {hasDownloads && (
           <Text className="mb-4 font-sans text-xs text-zinc-500">
-            {state.result.pendingDownloads} item(s) still downloading from iCloud…
+            {state.result.pendingDownloads}{' '}
+            <LocalizedText>item(s) still downloading from iCloud…</LocalizedText>
           </Text>
         )}
       </View>
@@ -869,21 +880,44 @@ export default function BoardScreen() {
 
   const renderEmpty = useCallback(() => {
     if (hasActiveFilter) {
-      const typeLabel = activeType ? CARD_TYPE_LABELS[activeType].toLowerCase() : null;
+      const typeLabel = activeType ? translate(CARD_TYPE_LABELS[activeType]).toLowerCase() : null;
       const queryLabel = isSearching && !searchType ? searchQuery.trim() : null;
       return (
         <Centered
-          title="No results found"
+          title={translate('No results found')}
           message={
             activeDay
-              ? `No cards added on ${parseDayKey(activeDay)?.toLocaleDateString()} match your filters`
+              ? translate('No cards added on %{date} match your filters', {
+                  date: parseDayKey(activeDay)?.toLocaleDateString(locale) ?? '',
+                })
               : typeLabel
-                ? `No ${typeLabel}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                ? translate(queryLabel ? 'No %{type} matching "%{query}"' : 'No %{type}', {
+                    type: typeLabel,
+                    query: queryLabel ?? '',
+                  })
                 : activeFolderKind
-                  ? `No cards in ${folderLabel ?? 'this folder'}${searchTag ? ` with tag #${searchTag}` : ''}${queryLabel ? ` matching "${queryLabel}"` : ''}`
+                  ? translate(
+                      searchTag && queryLabel
+                        ? 'No cards in %{folder} with tag #%{tag} matching "%{query}"'
+                        : searchTag
+                          ? 'No cards in %{folder} with tag #%{tag}'
+                          : queryLabel
+                            ? 'No cards in %{folder} matching "%{query}"'
+                            : 'No cards in %{folder}',
+                      {
+                        folder: folderLabel ?? translate('this folder'),
+                        tag: searchTag ?? '',
+                        query: queryLabel ?? '',
+                      }
+                    )
                   : searchTag
-                    ? `No cards with tag #${searchTag}${queryLabel ? ` matching "${queryLabel}"` : ''}`
-                    : `No cards matching "${queryLabel}"`
+                    ? translate(
+                        queryLabel
+                          ? 'No cards with tag #%{tag} matching "%{query}"'
+                          : 'No cards with tag #%{tag}',
+                        { tag: searchTag, query: queryLabel ?? '' }
+                      )
+                    : translate('No cards matching "%{query}"', { query: queryLabel ?? '' })
           }
         >
           <Pressable
@@ -896,7 +930,9 @@ export default function BoardScreen() {
             }}
             className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
           >
-            <Text className="font-sans-medium text-sm text-zinc-200">Clear filters</Text>
+            <Text className="font-sans-medium text-sm text-zinc-200">
+              <LocalizedText>Clear filters</LocalizedText>
+            </Text>
           </Pressable>
         </Centered>
       );
@@ -904,15 +940,17 @@ export default function BoardScreen() {
 
     return (
       <Centered
-        title="You can add anything here"
-        message="This board is yours to save anything you want"
+        title={translate('You can add anything here')}
+        message={translate('This board is yours to save anything you want')}
       >
         <Pressable
           onPress={() => router.push('/add')}
           className="mt-8 flex-row items-center justify-center gap-2 rounded-full bg-white px-5 py-3"
         >
           <PlusIcon size={18} color="#000000" />
-          <Text className="font-sans-semibold text-base text-black">Add new item</Text>
+          <Text className="font-sans-semibold text-base text-black">
+            <LocalizedText>Add new item</LocalizedText>
+          </Text>
         </Pressable>
       </Centered>
     );
@@ -930,6 +968,7 @@ export default function BoardScreen() {
     folderLabel,
     clearFolderFilter,
     clearDateFilter,
+    locale,
   ]);
 
   useFocusEffect(
@@ -943,7 +982,7 @@ export default function BoardScreen() {
             bottomOffset={48 + insets.bottom}
             trailingAction={
               <Button
-                accessibilityLabel="Add new item"
+                accessibilityLabel={translate('Add new item')}
                 variant="primary"
                 shadowColor="#FFFFFF"
                 shadowOpacity={0.24}
@@ -956,7 +995,7 @@ export default function BoardScreen() {
                 ? [
                     {
                       kind: 'date' as const,
-                      label: parseDayKey(activeDay)!.toLocaleDateString(undefined, {
+                      label: parseDayKey(activeDay)!.toLocaleDateString(locale, {
                         day: 'numeric',
                         month: 'numeric',
                       }),
@@ -1011,6 +1050,7 @@ export default function BoardScreen() {
       handleSearchChange,
       insets.bottom,
       activeFolderKind,
+      locale,
       folderLabel,
       activeFolderKey,
       clearFolderFilter,
@@ -1043,13 +1083,13 @@ export default function BoardScreen() {
           )}
 
           {state.status === 'error' && (
-            <Centered title="Couldn't open the library" message={state.error}>
+            <Centered title={translate("Couldn't open the library")} message={state.error}>
               <Pressable
                 onPress={goBack}
                 className="mt-6 rounded-full bg-zinc-800 px-5 py-2.5 active:opacity-80"
               >
                 <Text className="font-sans-medium text-sm text-zinc-200">
-                  Choose another folder
+                  <LocalizedText>Choose another folder</LocalizedText>
                 </Text>
               </Pressable>
             </Centered>

@@ -21,6 +21,7 @@ import { ScrollView } from 'react-native';
 import { TypeFilterButton } from '@/components/menus/TypeFilterButton';
 import { CARD_TYPE_LABELS } from '@/lib/library/activity';
 import { ITEM_TYPES, type LibraryItemType } from '@/lib/library/types';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const CARD_TYPE_ICONS = {
   note: NotePencilIcon,
@@ -49,20 +50,21 @@ export function BoardTypeFilters({
   selectedType: LibraryItemType | null;
   onSelect: (type: LibraryItemType) => void;
 }) {
+  useLocalization();
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerClassName="items-center gap-2 px-3 pt-3"
       keyboardShouldPersistTaps="always"
-      accessibilityLabel="Filter cards by type"
+      accessibilityLabel={translate('Filter cards by type')}
     >
       {ITEM_TYPES.map((type) => {
         const Icon = CARD_TYPE_ICONS[type];
         return (
           <TypeFilterButton
             key={type}
-            label={CARD_TYPE_LABELS[type]}
+            label={translate(CARD_TYPE_LABELS[type])}
             icon={Icon}
             selected={selectedType === type}
             onPress={() => onSelect(type)}

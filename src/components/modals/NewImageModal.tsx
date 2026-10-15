@@ -24,6 +24,8 @@ import { useLibrary } from '@/hooks/useLibrary';
 import type { PickedImageAsset } from '@/lib/library/storage';
 import type { ImageItem } from '@/lib/library/types';
 import { generateAutoTagsAsync, isGibberishOrMachineId } from '@/lib/tags/autoTags';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 function getCleanImageTitle(fileName?: string | null): string {
   if (!fileName) return '';
@@ -47,6 +49,7 @@ export function NewImageModal({
   onDismiss,
   onSaved,
 }: NewImageModalProps) {
+  useLocalization();
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -179,7 +182,7 @@ export function NewImageModal({
       onClose();
     } catch (e) {
       console.error('Failed to save image:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save image');
+      Alert.alert(translate('Error'), e instanceof Error ? e.message : 'Failed to save image');
     } finally {
       setSaving(false);
     }
@@ -240,9 +243,13 @@ export function NewImageModal({
                 </View>
               )}
               <View className="flex-1 gap-3">
-                <Text className="font-sans-semibold text-2xl text-white">Add a new image</Text>
+                <Text className="font-sans-semibold text-2xl text-white">
+                  <LocalizedText>Add a new image</LocalizedText>
+                </Text>
                 <Text className="font-sans text-base text-zinc-400 leading-relaxed">
-                  Save images from your gallery to your board with tags and notes.
+                  <LocalizedText>
+                    Save images from your gallery to your board with tags and notes.
+                  </LocalizedText>
                 </Text>
               </View>
             </View>
@@ -255,7 +262,7 @@ export function NewImageModal({
                 ref={titleInputRef}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Add a title to this image"
+                placeholder={translate('Add a title to this image')}
                 placeholderTextColor="#71717A"
                 returnKeyType="next"
                 onSubmitEditing={() => {
@@ -289,7 +296,7 @@ export function NewImageModal({
               <View className="flex-row items-center gap-2">
                 <NotePencilIcon size={14} color="#E4E4E7" weight="bold" />
                 <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-                  Note
+                  <LocalizedText>Note</LocalizedText>
                 </Text>
               </View>
 
@@ -298,7 +305,7 @@ export function NewImageModal({
                   ref={noteInputRef}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Add a text note to this image..."
+                  placeholder={translate('Add a text note to this image...')}
                   placeholderTextColor="#71717A"
                   multiline
                   textAlignVertical="top"
@@ -313,14 +320,14 @@ export function NewImageModal({
           {/* Action buttons at the bottom */}
           <ActionFooter bottomInset={insets.bottom} overlay>
             <Button
-              accessibilityLabel="Cancel"
+              accessibilityLabel={translate('Cancel')}
               onPress={handleClose}
               disabled={saving}
               icon={<XIcon size={20} color="#FFFFFF" weight="bold" />}
-              text="Cancel"
+              text={translate('Cancel')}
             />
             <Button
-              accessibilityLabel="Save image"
+              accessibilityLabel={translate('Save image')}
               variant="primary"
               onPress={handleSave}
               disabled={!canSave}
@@ -331,7 +338,7 @@ export function NewImageModal({
                   <CheckIcon size={20} color={canSave ? '#000000' : '#71717A'} weight="bold" />
                 )
               }
-              text="Save image"
+              text={translate('Save image')}
             />
           </ActionFooter>
         </View>

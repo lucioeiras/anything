@@ -9,10 +9,14 @@ import { Button } from '@/components/Button';
 import { localDayKey, parseDayKey } from '@/lib/library/activity';
 import { getReadingActivity } from '@/lib/library/readingActivity';
 import type { BookItem, LibraryItem } from '@/lib/library/types';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 const COLORS = { streak: '#60A5FA', reading: '#3F3F46', empty: '#18181B' };
 
 export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
+  const { language } = useLocalization();
+  const locale = language === 'pt' ? 'pt-BR' : 'en-US';
   const [month, setMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -24,7 +28,8 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
     [items, year, today]
   );
   const selectedBooks = selectedDay ? (activity.byDay[selectedDay] ?? []) : [];
-  const firstWeekday = new Date(year, month.getMonth(), 1).getDay();
+  const calendarWeekday = new Date(year, month.getMonth(), 1).getDay();
+  const firstWeekday = language === 'pt' ? (calendarWeekday + 6) % 7 : calendarWeekday;
   const days = new Date(year, month.getMonth() + 1, 0).getDate();
   const cells = Array.from(
     { length: Math.ceil((firstWeekday + days) / 7) * 7 },
@@ -37,21 +42,30 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
   return (
     <View className="border-t border-zinc-800 px-8 py-6">
       <Text className="font-sans-semibold text-sm uppercase tracking-wider text-zinc-200">
-        Reading activity
+        <LocalizedText>Reading activity</LocalizedText>
       </Text>
       <View className="my-4 gap-1">
-        <Text className="font-sans text-sm text-zinc-400">Best reading streak in {year}</Text>
+        <Text className="font-sans text-sm text-zinc-400">
+          {translate('Best reading streak in %{year}', { year })}
+        </Text>
         <Text
-          accessibilityLabel={`Best reading streak in ${year}: ${activity.bestStreak} days`}
+          accessibilityLabel={translate(
+            activity.bestStreak === 1
+              ? 'Best reading streak in %{year}: 1 day'
+              : 'Best reading streak in %{year}: %{count} days',
+            { year, count: activity.bestStreak }
+          )}
           className="font-sans-semibold text-3xl text-blue-400"
         >
-          {activity.bestStreak} {activity.bestStreak === 1 ? 'day' : 'days'}
+          {translate(activity.bestStreak === 1 ? '1 day' : '%{count} days', {
+            count: activity.bestStreak,
+          })}
         </Text>
       </View>
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Previous reading month"
+          accessibilityLabel={translate('Previous reading month')}
           className="h-12 w-12 items-start justify-center"
           onPress={() => {
             setSelectedDay(null);
@@ -61,11 +75,11 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
           <CaretLeftIcon size={18} color="#D4D4D8" />
         </Pressable>
         <Text className="font-sans-semibold text-base text-white">
-          {month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+          {month.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Next reading month"
+          accessibilityLabel={translate('Next reading month')}
           className="h-12 w-12 items-end justify-center"
           onPress={() => {
             setSelectedDay(null);
@@ -76,7 +90,10 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
         </Pressable>
       </View>
       <View className="mb-2 flex-row">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+        {(language === 'pt'
+          ? ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
+          : ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+        ).map((day, index) => (
           <Text key={index} className="flex-1 text-center font-sans-medium text-xs text-zinc-500">
             {day}
           </Text>
@@ -100,7 +117,7 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
               key={key}
               disabled={books.length === 0}
               accessibilityRole={books.length ? 'button' : 'text'}
-              accessibilityLabel={`${date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}, ${books.length} books logged${streak ? ', best reading streak' : ''}${books.length ? `, ${books.map((book) => book.title).join(', ')}` : ''}`}
+              accessibilityLabel={`${date.toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' })}, ${books.length} ${translate('books logged')}${streak ? `, ${translate('best reading streak')}` : ''}${books.length ? `, ${books.map((book) => book.title).join(', ')}` : ''}`}
               onPress={() => (books.length === 1 ? openBook(books[0]) : setSelectedDay(key))}
               style={{ width: '14.2857%', height: 64, padding: 2 }}
             >
@@ -143,7 +160,8 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
                       style={{ zIndex: 4 }}
                     >
                       <Text className="font-sans-bold text-[10px] text-white">
-                        +{books.length - 3}
+                        <LocalizedText>+</LocalizedText>
+                        {books.length - 3}
                       </Text>
                     </View>
                   )}
@@ -154,13 +172,15 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
         })}
       </View>
       <View className="mt-4 flex-row flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        <Legend color={COLORS.streak} label={`Best ${year} streak`} />
-        <Legend color={COLORS.reading} label="Days read" />
-        <Legend color={COLORS.empty} label="No reading" />
+        <Legend color={COLORS.streak} label={translate('Best %{year} streak', { year })} />
+        <Legend color={COLORS.reading} label={translate('Days read')} />
+        <Legend color={COLORS.empty} label={translate('No reading')} />
       </View>
       {activity.readingDays === 0 && (
         <Text className="mt-4 font-sans text-sm text-zinc-500">
-          No reading logs recorded for {year}.
+          <LocalizedText>No reading logs recorded for </LocalizedText>
+          {year}
+          <LocalizedText>.</LocalizedText>
         </Text>
       )}
       <Modal
@@ -173,10 +193,12 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
           <SafeAreaView edges={['bottom']} className="max-h-[80%] rounded-t-3xl bg-zinc-950">
             <View className="flex-row items-center justify-between gap-4 px-6 py-4">
               <Text className="flex-1 font-sans-semibold text-xl text-white">
-                {selectedDay ? parseDayKey(selectedDay)?.toLocaleDateString() : 'Reading logs'}
+                {selectedDay
+                  ? parseDayKey(selectedDay)?.toLocaleDateString(locale)
+                  : translate('Reading logs')}
               </Text>
               <Button
-                accessibilityLabel="Close reading books"
+                accessibilityLabel={translate('Close reading books')}
                 size="small"
                 icon={<XIcon size={20} color="#FFFFFF" />}
                 onPress={() => setSelectedDay(null)}
@@ -187,7 +209,9 @@ export function ReadingCalendarSection({ items }: { items: LibraryItem[] }) {
                 <Pressable
                   key={book.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open reading book ${book.title}`}
+                  accessibilityLabel={translate('Open reading book %{title}', {
+                    title: book.title,
+                  })}
                   onPress={() => openBook(book)}
                   className="min-h-16 flex-row items-center gap-4 border-b border-zinc-800 py-3"
                 >

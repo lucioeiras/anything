@@ -7,6 +7,7 @@ import { Text, View } from 'react-native';
 import { decodeHTML } from 'entities';
 
 import { cleanRedditDescription } from '@/lib/library/metadata';
+import { LocalizedText } from '@/components/LocalizedText';
 
 cssInterop(ExpoImage, { className: 'style' });
 
@@ -72,7 +73,9 @@ export const RedditCard = ({
 
         <View className="flex-row items-center gap-1.5 mt-1">
           <RedditLogoIcon size={14} color="#F97315" weight="fill" />
-          <Text className="font-sans-semibold text-sm text-orange-500">Reddit</Text>
+          <Text className="font-sans-semibold text-sm text-orange-500">
+            <LocalizedText>Reddit</LocalizedText>
+          </Text>
         </View>
       </View>
     </View>

@@ -5,6 +5,8 @@ import { Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { buildAudioWaveform } from '@/lib/library/audioWaveform';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate } from '@/lib/i18n';
 
 function timeLabel(milliseconds: number) {
   const seconds = Math.floor(Math.max(0, milliseconds) / 1000);
@@ -64,7 +66,7 @@ export const AudioCard = memo(function AudioCard({
     <Pressable
       testID="audio-waveform"
       accessibilityRole="button"
-      accessibilityLabel="Seek audio"
+      accessibilityLabel={translate('Seek audio')}
       onLayout={(event: LayoutChangeEvent) => setWaveformWidth(event.nativeEvent.layout.width)}
       onPress={(event) => {
         if (duration <= 0 || waveformWidth <= 0) return;
@@ -119,7 +121,8 @@ export const AudioCard = memo(function AudioCard({
     <Text
       className={`font-sans ${compactWaveform ? 'text-xs' : 'text-sm'} text-zinc-300 ${stackedControls ? 'text-center' : ''}`}
     >
-      {timeLabel(current * 1000)} / {timeLabel(duration * 1000)}
+      {timeLabel(current * 1000)} <LocalizedText>/ </LocalizedText>
+      {timeLabel(duration * 1000)}
     </Text>
   );
 
@@ -127,7 +130,7 @@ export const AudioCard = memo(function AudioCard({
     <Pressable
       onPress={changePlaybackRate}
       accessibilityRole="button"
-      accessibilityLabel={`Playback speed ${rateLabel}`}
+      accessibilityLabel={translate('Playback speed %{speed}', { speed: rateLabel })}
       className="min-w-16 items-center rounded-full bg-zinc-950/80 px-2 py-1 active:opacity-70"
     >
       <Text className="font-sans-semibold text-lg text-zinc-200">{rateLabel}</Text>

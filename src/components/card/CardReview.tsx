@@ -1,5 +1,7 @@
 import { SmileyIcon, StarIcon } from 'phosphor-react-native';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import { LocalizedText } from '@/components/LocalizedText';
+import { translate, useLocalization } from '@/lib/i18n';
 
 type CardReviewProps = {
   rating: number | null;
@@ -16,6 +18,7 @@ export function CardReview({
   onCommentsChange: setReviewComments,
   compact = false,
 }: CardReviewProps) {
+  useLocalization();
   return (
     <View className={compact ? 'gap-4 pt-4' : 'py-6 px-6 border-b border-zinc-800 gap-4'}>
       <View
@@ -25,7 +28,7 @@ export function CardReview({
           <View className="flex-row items-center gap-2">
             <SmileyIcon size={16} color="#D4D4D8" />
             <Text className="font-sans-semibold text-sm tracking-wider uppercase text-zinc-200">
-              My review
+              <LocalizedText>My review</LocalizedText>
             </Text>
           </View>
         )}
@@ -58,14 +61,18 @@ export function CardReview({
                 )}
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${halfRating} out of 5 stars`}
+                  accessibilityLabel={translate('%{rating} out of 5 stars', {
+                    rating: halfRating,
+                  })}
                   accessibilityState={{ selected: reviewRating === halfRating }}
                   onPress={() => setReviewRating(halfRating)}
                   className="absolute left-0 top-0 h-7 w-1/2"
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${fullRating} out of 5 stars`}
+                  accessibilityLabel={translate('%{rating} out of 5 stars', {
+                    rating: fullRating,
+                  })}
                   accessibilityState={{ selected: reviewRating === fullRating }}
                   onPress={() => setReviewRating(fullRating)}
                   className="absolute right-0 top-0 h-7 w-1/2"
@@ -80,7 +87,7 @@ export function CardReview({
         value={reviewComments}
         onChangeText={setReviewComments}
         multiline
-        placeholder="What is your opinion on this?"
+        placeholder={translate('What is your opinion on this?')}
         placeholderTextColor="#71717A"
         textAlignVertical="top"
         className="min-h-24 font-sans text-base text-white"
